@@ -1,8 +1,8 @@
-# CU05 – Log Procedure Execution Details and Clinical/Operational Incidents (Physicians v0.2.0)
+# UC-PHY-05 – Log Procedure Execution Details and Clinical/Operational Incidents (Physicians v0.2.0)
 
 ## Use Case
-- **UC:** `UC05`
-- **RF:** `FR-PHY-18`, `FR-PHY-19`
+- **UC:** `UC-PHY-05`
+- **FR:** `FR-PHY-18`, `FR-PHY-19`
 - **Phase:** Construction
 - **Module:** `sescam-execution-reporting` (v0.2.0)
 - **Minutes:** [Meeting #3 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
