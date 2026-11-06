@@ -1,7 +1,7 @@
-# CU-PHY-01 – Order and Prescribe Diagnostic Procedure (sescam-order-entry v0.1.0)
+# CU01 – Order and Prescribe Diagnostic Procedure (Physicians v0.1.0)
 
 ## Use Case
-- **UC:** `UC-PHY-01`
+- **UC:** `UC01`
 - **RF:** `FR-PHY-01`, `FR-PHY-02`, `FR-PHY-03`, `FR-PHY-04`, `FR-PHY-05`
 - **Phase:** Elaboration
 - **Module:** `sescam-order-entry` (v0.1.0)
