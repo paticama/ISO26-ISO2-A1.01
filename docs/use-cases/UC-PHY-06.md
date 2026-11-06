@@ -1,7 +1,7 @@
-# CU-PHY-06 – Consult Operational Metrics on Orders (sescam-analytics v0.1.0)
+# CU06 – Consult Operational Metrics on Orders (Physicians v0.1.0)
 
 ## Use Case
-- **UC:** `UC-PHY-06`
+- **UC:** `UC06`
 - **RF:** `FR-PHY-20`
 - **Phase:** Late Construction / Transition
 - **Module:** `sescam-analytics` (v0.1.0)
