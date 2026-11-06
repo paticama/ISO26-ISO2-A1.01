@@ -1,8 +1,8 @@
-# CU06 – Consult Operational Metrics on Orders (Physicians v0.1.0)
+# UC-PHY-06 – Consult Operational Metrics on Orders (Physicians v0.1.0)
 
 ## Use Case
-- **UC:** `UC06`
-- **RF:** `FR-PHY-20`
+- **UC:** `UC-PHY-06`
+- **FR:** `FR-PHY-20`
 - **Phase:** Late Construction / Transition
 - **Module:** `sescam-analytics` (v0.1.0)
 - **Minutes:** [Meeting #3 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
