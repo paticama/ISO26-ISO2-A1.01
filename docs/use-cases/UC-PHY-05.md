@@ -5,7 +5,7 @@
 - **RF:** `FR-PHY-18`, `FR-PHY-19`
 - **Phase:** Construction
 - **Module:** `sescam-execution-reporting` (v0.2.0)
-- **Minutes:** [Meeting #2 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
+- **Minutes:** [Meeting #3 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
 - **GitHub Issue:** [#23](https://github.com/paticama/ISO26-ISO2-A1.01/issues/23)
 - **Actor:** Physician User (Generalization: Inherits from base Patient User)
 - **Secondary Actors:** Departmental RIS/PACS, Administrative / Admissions System
