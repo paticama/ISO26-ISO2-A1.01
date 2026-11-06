@@ -1,4 +1,4 @@
-# UC-PHY-U03 – Manage Orders and Consult Clinical Execution Schedules (Physicians v0.3.0)
+# UC-PHY-03 – Manage Orders and Consult Clinical Execution Schedules (Physicians v0.3.0)
 
 ## Use Case
 - **UC:** `UC-PHY-03`
