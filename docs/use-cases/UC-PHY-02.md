@@ -1,8 +1,8 @@
-# CU02 – Order Periodic Follow-up Surveillance Procedure (Physicians v0.2.0)
+# UC-PHY-02 – Order Periodic Follow-up Surveillance Procedure (Physicians v0.2.0)
 
 ## Use Case
-- **UC:** `UC02`
-- **RF:** `FR-PHY-06`, `FR-PHY-07`, `FR-PHY-08`
+- **UC:** `UC-PHY-02`
+- **FR:** `FR-PHY-06`, `FR-PHY-07`, `FR-PHY-08`
 - **Phase:** Construction
 - **Module:** `sescam-order-entry` (v0.2.0)
 - **Minutes:** [Meeting #3 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
