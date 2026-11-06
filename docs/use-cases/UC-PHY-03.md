@@ -5,7 +5,7 @@
 - **RF:** `FR-PHY-09`, `FR-PHY-10`, `FR-PHY-11`
 - **Phase:** Elaboration
 - **Module:** `sescam-order-entry` (v0.3.0)
-- **Minutes:** [Meeting #2 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
+- **Minutes:** [Meeting #3 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
 - **GitHub Issue:** [#21](https://github.com/paticama/ISO26-ISO2-A1.01/issues/21)
 - **Actor:** Physician User (Generalization: Inherits from base Patient User)
 - **Secondary Actors:** Administrative / Admissions System
