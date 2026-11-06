@@ -1,8 +1,8 @@
-# CU04 – Author, Edit, and Review Diagnostic Reports and Medical Images (Physicians v0.1.0)
+# UC-PHY-04 – Author, Edit, and Review Diagnostic Reports and Medical Images (Physicians v0.1.0)
 
 ## Use Case
-- **UC:** `UC04`
-- **RF:** `FR-PHY-12`, `FR-PHY-13`, `FR-PHY-14`, `FR-PHY-15`, `FR-PHY-16`, `FR-PHY-17`
+- **UC:** `UC-PHY-04`
+- **FR:** `FR-PHY-12`, `FR-PHY-13`, `FR-PHY-14`, `FR-PHY-15`, `FR-PHY-16`, `FR-PHY-17`
 - **Phase:** Construction
 - **Module:** `sescam-execution-reporting` (v0.1.0)
 - **Minutes:** [Meeting #3 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
