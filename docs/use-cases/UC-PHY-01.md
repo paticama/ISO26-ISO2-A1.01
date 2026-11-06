@@ -1,8 +1,8 @@
-# CU01 – Order and Prescribe Diagnostic Procedure (Physicians v0.1.0)
+# UC-PHY-01 – Order and Prescribe Diagnostic Procedure (Physicians v0.1.0)
 
 ## Use Case
-- **UC:** `UC01`
-- **RF:** `FR-PHY-01`, `FR-PHY-02`, `FR-PHY-03`, `FR-PHY-04`, `FR-PHY-05`
+- **UC:** `UC-PHY-01`
+- **FR:** `FR-PHY-01`, `FR-PHY-02`, `FR-PHY-03`, `FR-PHY-04`, `FR-PHY-05`
 - **Phase:** Elaboration
 - **Module:** `sescam-order-entry` (v0.1.0)
 - **Minutes:** [Meeting #3 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
