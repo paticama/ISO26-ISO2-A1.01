@@ -5,7 +5,7 @@
 - **RF:** `FR-PHY-20`
 - **Phase:** Late Construction / Transition
 - **Module:** `sescam-analytics` (v0.1.0)
-- **Minutes:** [Meeting #2 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
+- **Minutes:** [Meeting #3 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
 - **GitHub Issue:** [#24](https://github.com/paticama/ISO26-ISO2-A1.01/issues/24)
 - **Actor:** Physician User (Generalization: Inherits from base Patient User)
 - **Secondary Actors:** —
