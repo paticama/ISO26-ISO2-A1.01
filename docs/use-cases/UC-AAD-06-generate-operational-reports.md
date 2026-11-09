@@ -5,8 +5,8 @@
 - **RF:** `FR-AAD-09`
 - **Phase:** Elaboration
 - **Module:** `AAD` (v0.6.0)
-- **Minutes:** Neutral
-- **GitHub Issue:** Neutral
+- **Minutes:** [Minutes of meetings](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
+- **GitHub Issue:** [#89](https://github.com/paticama/ISO26-ISO2-A1.01/issues/89)
 - **Actor:** Admissions Staff
 - **Secondary Actors:** System Administrator (system-wide reporting configuration and access management)
 - **Description:** Enables Admissions Staff to generate operational reports on workload, occupancy, waiting times, cancellations, capacity, and booking outcomes within the permitted scope.

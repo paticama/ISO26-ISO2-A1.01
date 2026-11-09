@@ -5,8 +5,8 @@
 - **RF:** `FR-AAD-10`, `FR-AAD-11`
 - **Phase:** Elaboration
 - **Module:** `AAD` (v0.3.0)
-- **Minutes:** Neutral
-- **GitHub Issue:** Neutral
+- **Minutes:** [Minutes of meetings](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
+- **GitHub Issue:** [#86](https://github.com/paticama/ISO26-ISO2-A1.01/issues/86)
 - **Actor:** Admissions Staff
 - **Secondary Actors:** Physician, Patient, System Administrator (policy and access configuration only)
 - **Description:** Enables Admissions Staff to manage pending examination requests, order them by priority, apply auditable corrections, and pass eligible requests to booking.

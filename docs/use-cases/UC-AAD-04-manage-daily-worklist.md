@@ -5,8 +5,8 @@
 - **RF:** `FR-AAD-08`
 - **Phase:** Elaboration
 - **Module:** `AAD` (v0.4.0)
-- **Minutes:** Neutral
-- **GitHub Issue:** Neutral
+- **Minutes:** [Minutes of meetings](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
+- **GitHub Issue:** [#87](https://github.com/paticama/ISO26-ISO2-A1.01/issues/87)
 - **Actor:** Admissions Staff
 - **Secondary Actors:** Medical staff, System Administrator (configuration and access only)
 - **Description:** Enables Admissions Staff to build and maintain the daily worklist from confirmed appointments and make the current operational workload available to authorized medical staff.

@@ -5,8 +5,8 @@
 - **RF:** `FR-AAD-01`, `FR-AAD-02`, `FR-AAD-03`
 - **Phase:** Elaboration
 - **Module:** `AAD` (v0.1.0)
-- **Minutes:** Neutral
-- **GitHub Issue:** Neutral
+- **Minutes:** [Minutes of meetings](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
+- **GitHub Issue:** [#84](https://github.com/paticama/ISO26-ISO2-A1.01/issues/84)
 - **Actor:** Admissions Staff
 - **Secondary Actors:** Admissions system, Electronic Health Record (EHR / HCE), System Administrator (configuration and access only)
 - **Description:** Enables Admissions Staff to register, consult, update, and discharge patient records while preserving identity, contact, and administrative data and synchronizing the configured patient-record system.
