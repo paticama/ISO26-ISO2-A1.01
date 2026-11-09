@@ -1,4 +1,4 @@
-# UC-AAD-01 – Manage Patient (Admissions v0.1.0)
+# CU-AAD-01 – Manage Patient (Admissions v0.1.0)
 
 ## Use Case
 - **UC:** `UC-AAD-01`

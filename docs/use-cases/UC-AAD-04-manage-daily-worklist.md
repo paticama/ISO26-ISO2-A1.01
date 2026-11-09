@@ -1,4 +1,4 @@
-# UC-AAD-04 – Manage Daily Worklist (Admissions v0.4.0)
+# CU-AAD-04 – Manage Daily Worklist (Admissions v0.4.0)
 
 ## Use Case
 - **UC:** `UC-AAD-04`

@@ -1,4 +1,4 @@
-# UC-AAD-03 – Manage Waitlist and Priority (Admissions v0.3.0)
+# CU-AAD-03 – Manage Waitlist and Priority (Admissions v0.3.0)
 
 ## Use Case
 - **UC:** `UC-AAD-03`

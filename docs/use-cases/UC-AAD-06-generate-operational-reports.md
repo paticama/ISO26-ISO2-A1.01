@@ -1,4 +1,4 @@
-# UC-AAD-06 – Generate Operational Reports (Admissions v0.6.0)
+# CU-AAD-06 – Generate Operational Reports (Admissions v0.6.0)
 
 ## Use Case
 - **UC:** `UC-AAD-06`

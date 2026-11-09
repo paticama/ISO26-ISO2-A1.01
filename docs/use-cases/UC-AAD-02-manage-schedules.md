@@ -1,4 +1,4 @@
-# UC-AAD-02 – Manage Schedules (Admissions v0.2.0)
+# CU-AAD-02 – Manage Schedules (Admissions v0.2.0)
 
 ## Use Case
 - **UC:** `UC-AAD-02`

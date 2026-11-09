@@ -1,4 +1,4 @@
-# UC-AAD-05 – Book Requested Examination (Admissions v0.5.0)
+# CU-AAD-05 – Book Requested Examination (Admissions v0.5.0)
 
 ## Use Case
 - **UC:** `UC-AAD-05`
