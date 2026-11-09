@@ -59,13 +59,8 @@
 - Requirements meeting minutes remain neutral until a confirmed link is available.
 
 ## Effort Estimation
-- **Analysis:** 2 hours
-- **Design:** 1.5 hours
-- **Implementation:** 2.5 hours
-- **Testing:** 1 hour
-- **Documentation:** 1 hour
-- **Total without AI:** 8 hours
-- **Total with AI (Copilot):** 4 hours
+- **Estimated effort without AI:** 8 hours
+- **Estimated effort with AI (Copilot):** 4 hours
 
 ---
 
