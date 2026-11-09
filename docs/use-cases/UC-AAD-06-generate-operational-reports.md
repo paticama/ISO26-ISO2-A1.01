@@ -1,112 +1,75 @@
-# UC-AAD-06 — Generate Operational Reports
+# UC-AAD-06 – Generate Operational Reports (Admissions v0.6.0)
 
-## Phase Elaboration
-
-- **Module:** AAD (Admissions, Appointments and Diagnostics)
+## Use Case
+- **UC:** `UC-AAD-06`
+- **RF:** `FR-AAD-09`
+- **Phase:** Elaboration
+- **Module:** `AAD` (v0.6.0)
 - **Minutes:** Neutral
 - **GitHub Issue:** Neutral
-- **Primary actor:** Admissions Staff
-- **Supporting actor:** System Administrator
-- **Related decisions:** [CU00 initial structure decisions](../../feature/CU00-initial-structure/DECISIONS.md)
+- **Actor:** Admissions Staff
+- **Secondary Actors:** System Administrator (system-wide reporting configuration and access management)
+- **Description:** Enables Admissions Staff to generate operational reports on workload, occupancy, waiting times, cancellations, capacity, and booking outcomes within the permitted scope.
+- **Preconditions:**
+  1. Admissions Staff is authenticated and authorized.
+  2. The reporting period and scope are valid.
+  3. Schedule, booking, waitlist, and worklist data are available.
+- **Postconditions:**
+  1. The report is displayed or exported with its period and filters.
+  2. Empty, incomplete, restricted, or failed results are explicitly identified.
+  3. Source operational records remain unchanged and report access is auditable.
+- **Main Success Scenario (Client–Server Interaction Flow):**
+  1. **[Client]** Admissions Staff opens operational reporting and selects a report type.
+  2. **[Client]** Admissions Staff selects the date range and permitted scope filters.
+  3. **[Server]** The server validates authorization and calculates the requested operational metrics.
+  4. **[Server]** The server returns metrics, period, filters, and data-quality status.
+  5. **[Client]** The system displays the report and allows export in a supported format.
+  6. **[Server]** The system records actor, filters, timestamp, and outcome.
+- **Alternative / Exception Flows:**
+  - **A1. No matching data [Server -> Client]:** An explicit empty result is returned with the selected period and filters.
+  - **A2. Invalid filter [Client]:** The system highlights the invalid parameter and blocks generation.
+  - **A3. Restricted data [Server]:** The result is limited to the actor's authorized scope and the restriction is recorded.
+  - **A4. Export failure [Server -> Client]:** The failure is reported while the on-screen result is preserved when possible.
+  - **A5. Reporting source unavailable [Server -> Client]:** The system returns `SERVICE_UNAVAILABLE` and does not present an incomplete report as complete.
 
-## Goal and scope
+## RADIT Disciplines
+- [x] Requirements: Specify occupancy, waiting-time, cancellation, capacity, and booking reporting.
+- [ ] Architecture: Define reporting data-access and authorization boundaries.
+- [ ] Design: Define report filters, metric calculations, and export contracts.
+- [ ] Implementation: Implement operational report generation and export.
+- [ ] Testing: Test metrics, filters, permissions, empty data, and export failures.
 
-Admissions Staff generates operational reports for workload, attendance, waiting time, cancellations, capacity, and booking outcomes. System Administrator configures report definitions, access, retention, and export limits; the administrator does not receive operational data automatically through this use case.
+## Contracts and Interfaces
+- `Client:` Admissions UI for report type, period, filters, display, and export.
+- `Server:` AAD operational-reporting service.
+- `Reporting interface:` Calculates workload, occupancy, waiting-time, cancellation, capacity, and booking metrics.
+- `Schedule/Booking interface:` Reads schedule capacity and appointment states.
+- `Waitlist/Worklist interface:` Reads queue and operational status data.
+- `Errors:` `INVALID_REPORT_FILTER`, `NO_DATA`, `RESTRICTED_SCOPE`, `SOURCE_DATA_INCOMPLETE`, and `REPORT_EXPORT_FAILED` are returned explicitly; incomplete results are never presented as complete reports.
 
-## Client–Server flow
+## Acceptance Criteria
+- [ ] Admissions Staff can generate permitted operational reports within the authorized scope.
+- [ ] The date range and filters are visible in every result.
+- [ ] Empty, invalid, restricted, and failed results are explicit.
+- [ ] Reports do not mutate patients, schedules, bookings, waitlist entries, or worklists.
+- [ ] Report access and export activity are auditable.
+- [ ] System Administrator report configuration remains separate from operational report generation.
 
-1. The client presents report types and permitted filters.
-2. Admissions Staff selects a report, date range, scope, and output format.
-3. The client sends a typed report request.
-4. The server authorizes the scope, validates filters, applies the report definition, and queries the reporting source.
-5. The server returns a bounded result or creates a tracked export job.
-6. The client displays status, results, or an explicit error and allows a permitted download.
+## Decisions (DECISIONS.md)
+- See [DECISIONS.md](../../feature/CU00-initial-structure/DECISIONS.md).
+- Requirements meeting minutes remain neutral until a confirmed link is available.
 
-## Main flow
+## Effort Estimation
+- **Analysis:** 2.5 hours
+- **Design:** 2 hours
+- **Implementation:** 3 hours
+- **Testing:** 1.5 hours
+- **Documentation:** 1 hour
+- **Total without AI:** 10 hours
+- **Total with AI (Copilot):** 5 hours
 
-1. Admissions Staff selects a configured operational report.
-2. The client requires a valid date range and shows the permitted locations and services.
-3. The server validates range limits, access scope, and report parameters.
-4. The server calculates metrics from consistent operational snapshots and includes the period and scope in the result.
-5. Small reports return immediately; larger exports are queued and expose progress.
-6. The report result includes generation time, source period, filters, and a correlation identifier.
+---
 
-## Alternate and error flows
-
-- Invalid or excessive date range returns `REPORT_RANGE_INVALID`.
-- A report type or filter outside actor scope returns `FORBIDDEN`.
-- No data returns a successful empty report with explicit zero-row metadata, not a fabricated fallback.
-- A queued export that fails returns `REPORT_GENERATION_FAILED` with a retry-safe job state.
-- Unsupported format returns `REPORT_FORMAT_UNSUPPORTED`.
-- Reporting source unavailability returns `SERVICE_UNAVAILABLE`.
-
-## RADIT
-
-### Requirements
-
-- Generate configured operational reports with bounded filters.
-- Enforce actor scope and protect sensitive data.
-- Support immediate results and tracked asynchronous exports.
-- Include reproducibility metadata and audit report access.
-
-### Analysis
-
-Reports must be reproducible for a defined period and scope. Operational queries should use a reporting read model or snapshot so long-running reports do not block transactional AAD operations. Empty data is valid and must be represented explicitly.
-
-### Design
-
-The client uses `ReportCatalogQuery`, `GenerateReportCommand`, `ReportResultQuery`, and `ExportJobQuery`. The server owns report definitions, authorization, aggregation, export jobs, retention, and access audit.
-
-### Implementation
-
-Implement parameter validation, scoped aggregation, snapshot metadata, bounded pagination, asynchronous export jobs, result expiration, and audit events. Keep report formats behind a typed formatter interface.
-
-### Testing
-
-Test metric correctness, date boundaries, empty results, authorization, sensitive-field exclusion, large exports, retry behavior, expiration, format validation, and source outage handling.
-
-### Deployment
-
-Deploy reporting views or snapshot jobs, indexes, export workers, retention policies, and monitoring. Reconcile a sample of report totals with transactional source data before enabling production exports.
-
-## Contracts and interfaces
-
-### Client contract
-
-- `listReportDefinitions() -> ReportDefinition[]`
-- `generateReport(command) -> ReportResult | ExportJob`
-- `getReportResult(id) -> ReportResult`
-- `getExportJob(id) -> ExportJobStatus`
-
-### Server contract
-
-- Enforce report scope, filter limits, retention, and sensitive-field policy.
-- Return reproducibility metadata and stable error codes.
-- Never claim completion for a failed or incomplete export.
-
-### Interfaces
-
-Versioned HTTP/JSON routes live under `/api/aad/reports`. Immediate results use a typed report envelope; asynchronous exports use job status and a time-limited download interface. All access is correlated and auditable.
-
-## Acceptance criteria
-
-- Admissions Staff can generate each permitted operational report for a valid scope.
-- Invalid ranges, unsupported formats, and unauthorized scopes return explicit stable errors.
-- Empty data produces a valid report with zero-row metadata.
-- Large exports expose progress and a definitive success or failure state.
-- Report results include period, scope, filters, generation time, and correlation identifier.
-- Sensitive fields are excluded according to actor permissions.
-- System Administrator report configuration and access policy remain separate from operational report generation.
-
-## Effort estimation
-
-| Work item | Estimate |
-|---|---:|
-| Requirements and metric analysis | 5 h |
-| Reporting and snapshot design | 7 h |
-| Client report and export views | 9 h |
-| Server, aggregation, and worker implementation | 14 h |
-| Automated and reconciliation testing | 12 h |
-| Deployment and monitoring verification | 5 h |
-| **Total** | **52 h** |
-
+<div align="center">
+  <sub>Software Engineering II • Superior School of Informatics (ESI) • University of Castilla-La Mancha (UCLM)</sub>
+</div>

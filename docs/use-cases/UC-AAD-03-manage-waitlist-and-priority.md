@@ -1,113 +1,75 @@
-# UC-AAD-03 — Manage Waitlist and Priority
+# UC-AAD-03 – Manage Waitlist and Priority (Admissions v0.3.0)
 
-## Phase Elaboration
-
-- **Module:** AAD (Admissions, Appointments and Diagnostics)
+## Use Case
+- **UC:** `UC-AAD-03`
+- **RF:** `FR-AAD-10`, `FR-AAD-11`
+- **Phase:** Elaboration
+- **Module:** `AAD` (v0.3.0)
 - **Minutes:** Neutral
 - **GitHub Issue:** Neutral
-- **Primary actor:** Admissions Staff
-- **Supporting actor:** System Administrator
-- **Related decisions:** [CU00 initial structure decisions](../../feature/CU00-initial-structure/DECISIONS.md)
+- **Actor:** Admissions Staff
+- **Secondary Actors:** Physician, Patient, System Administrator (policy and access configuration only)
+- **Description:** Enables Admissions Staff to manage pending examination requests, order them by priority, apply auditable corrections, and pass eligible requests to booking.
+- **Preconditions:**
+  1. Admissions Staff is authenticated and authorized.
+  2. A valid patient and pending examination request are available.
+  3. The priority policy is configured and active.
+- **Postconditions:**
+  1. The waitlist entry has an explicit state and queue position.
+  2. Priority corrections and removals are auditable.
+  3. Eligible requests can be passed to booking without losing priority context.
+- **Main Success Scenario (Client–Server Interaction Flow):**
+  1. **[Client]** Admissions Staff opens waitlist and priority management.
+  2. **[Server]** The system retrieves pending requests and validates patient, examination, priority, and duplicate status.
+  3. **[Client]** Admissions Staff reviews calculated priority and queue position.
+  4. **[Client]** Admissions Staff confirms an entry or records an authorized correction with a reason.
+  5. **[Server]** The server orders active entries using priority and waiting-time rules and records the audit event.
+  6. **[Client]** Admissions Staff selects an eligible request for booking.
+  7. **[Server]** The system updates the queue and transfers the request to the booking workflow.
+- **Alternative / Exception Flows:**
+  - **A1. Duplicate active request [Server]:** The system prevents a duplicate entry and displays the existing request.
+  - **A2. Missing priority data [Server -> Client]:** The entry is marked incomplete and cannot be promoted.
+  - **A3. Priority correction [Server]:** Original value, new value, reason, actor, and timestamp are stored.
+  - **A4. Capacity unavailable [Server -> Client]:** The request remains waiting and its position is recalculated.
+  - **A5. Unauthorized priority change [Server -> Client]:** The change is denied and the queue remains unchanged.
 
-## Goal and scope
+## RADIT Disciplines
+- [x] Requirements: Specify waitlist intake, ordering, correction, and promotion.
+- [ ] Architecture: Define request, waitlist, and priority-policy boundaries.
+- [ ] Design: Define queue-ordering and audit interfaces.
+- [ ] Implementation: Implement waitlist and priority management services.
+- [ ] Testing: Test duplicate prevention, ordering, corrections, removals, and promotion.
 
-Admissions Staff adds eligible requests to a waitlist, reviews their order, and applies authorized priority changes. System Administrator configures priority categories and policy limits; the administrator does not make routine queue decisions.
+## Contracts and Interfaces
+- `Client:` Admissions UI for waitlist review, priority correction, removal, and promotion.
+- `Server:` AAD waitlist and priority service.
+- `Waitlist interface:` Pending-request intake, queue ordering, correction, removal, and promotion contract.
+- `Booking interface:` Transfers an eligible request to the examination-booking service.
+- `Errors:` `DUPLICATE_WAITLIST_ENTRY`, `MISSING_PRIORITY`, `INVALID_REQUEST_STATE`, `CAPACITY_UNAVAILABLE`, and `UNAUTHORIZED_OPERATION` are returned explicitly; no request is silently promoted or removed.
 
-## Client–Server flow
+## Acceptance Criteria
+- [ ] Pending examination requests can be received and displayed.
+- [ ] Active entries are ordered deterministically by priority and waiting time.
+- [ ] Corrections and removals require a reason and audit information.
+- [ ] Duplicate active entries are prevented.
+- [ ] Eligible requests can be transferred to booking with priority context intact.
+- [ ] System Administrator policy configuration remains separate from Admissions Staff queue operations.
 
-1. The client requests a waitlist view for a service, location, and date range.
-2. Admissions Staff adds or updates a request.
-3. The client sends a typed command with the reason for any priority change.
-4. The server validates eligibility, policy, permissions, and queue invariants.
-5. The server assigns a deterministic position or priority score and records an audit event.
-6. The client displays the resulting position and any next action.
+## Decisions (DECISIONS.md)
+- See [DECISIONS.md](../../feature/CU00-initial-structure/DECISIONS.md).
+- Requirements meeting minutes remain neutral until a confirmed link is available.
 
-## Main flow
+## Effort Estimation
+- **Analysis:** 2.5 hours
+- **Design:** 2 hours
+- **Implementation:** 3 hours
+- **Testing:** 1.5 hours
+- **Documentation:** 1 hour
+- **Total without AI:** 10 hours
+- **Total with AI (Copilot):** 5 hours
 
-1. Admissions Staff selects an eligible examination request.
-2. The server verifies that the request has no active appointment and that its patient and service are valid.
-3. The request is inserted using configured priority, clinical urgency classification, request time, and tie-breaker rules.
-4. Admissions Staff may request a priority change with a mandatory reason.
-5. The server recalculates the affected ordering atomically and returns the new positions.
-6. When a slot is released, the client can show the next eligible request for booking.
+---
 
-## Alternate and error flows
-
-- An already booked or cancelled request returns `WAITLIST_NOT_ELIGIBLE`.
-- An unsupported priority category returns `PRIORITY_INVALID`.
-- A missing reason for a manual change returns `REASON_REQUIRED`.
-- A policy limit violation returns `PRIORITY_POLICY_VIOLATION`.
-- A stale queue version returns `CONFLICT`.
-- Unauthorized priority changes return `FORBIDDEN`.
-- Failure while reordering leaves the prior order unchanged and returns `SERVICE_UNAVAILABLE`.
-
-## RADIT
-
-### Requirements
-
-- Add, remove, search, and inspect waitlist entries.
-- Apply deterministic ordering and configured priority rules.
-- Require authorization and reasons for manual priority changes.
-- Preserve queue history and explain every order change.
-
-### Analysis
-
-Queue order is a derived projection of eligible requests and policy inputs. Manual overrides are exceptional, bounded, and auditable. Reordering must be atomic so two staff members cannot produce divergent positions.
-
-### Design
-
-The client uses `WaitlistQuery`, `AddWaitlistEntryCommand`, `ChangePriorityCommand`, and `RemoveWaitlistEntryCommand`. The server owns eligibility, ordering, policy evaluation, and audit records.
-
-### Implementation
-
-Implement queue projections, deterministic tie-breakers, policy validation, transactional reorder operations, optimistic versions, and reason capture. Provide a read model for operational lists.
-
-### Testing
-
-Test deterministic ordering, ties, priority changes, ineligible requests, policy boundaries, concurrent updates, audit completeness, and recovery after failed persistence.
-
-### Deployment
-
-Deploy waitlist and audit schema changes, rebuild the queue projection, and verify that the projection matches source requests before enabling manual priority operations.
-
-## Contracts and interfaces
-
-### Client contract
-
-- `getWaitlist(query) -> WaitlistPage`
-- `addToWaitlist(command) -> WaitlistEntry`
-- `changePriority(id, command, version) -> WaitlistEntry`
-- `removeFromWaitlist(id, reason, version) -> RemovalReceipt`
-
-### Server contract
-
-- Own eligibility and ordering decisions.
-- Require reasons and permissions for manual priority changes.
-- Return the new queue version and audit correlation identifier.
-
-### Interfaces
-
-Versioned HTTP/JSON routes live under `/api/aad/waitlist`. A read-only queue projection interface supports worklists. Errors use stable codes with field and policy details where applicable.
-
-## Acceptance criteria
-
-- An eligible request is placed in a deterministic position.
-- An ineligible request cannot enter or remain in the waitlist.
-- Manual priority changes require the correct permission and a non-empty reason.
-- Two concurrent changes cannot silently lose one another.
-- Every queue-order change is auditable and reconstructable.
-- The client shows explicit policy and validation errors.
-- System Administrator policy configuration cannot be performed through the Admissions Staff operation.
-
-## Effort estimation
-
-| Work item | Estimate |
-|---|---:|
-| Requirements and policy analysis | 5 h |
-| Queue and audit design | 6 h |
-| Client waitlist and priority views | 8 h |
-| Server and projection implementation | 13 h |
-| Automated and integration testing | 10 h |
-| Deployment and projection verification | 4 h |
-| **Total** | **46 h** |
-
+<div align="center">
+  <sub>Software Engineering II • Superior School of Informatics (ESI) • University of Castilla-La Mancha (UCLM)</sub>
+</div>
