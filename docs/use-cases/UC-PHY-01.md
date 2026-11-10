@@ -1,4 +1,4 @@
-# CU01 – Order and Prescribe Diagnostic Procedure (Physicians v0.1.0)
+# UC-PHY-01 – Order and Prescribe Diagnostic Procedure (Physicians v0.1.0)
 
 ## Use Case
 - **UC:** `UC01`
