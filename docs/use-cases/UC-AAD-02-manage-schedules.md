@@ -1,114 +1,71 @@
-# UC-AAD-02 — Manage Schedules
+# CU-AAD-02 – Manage Schedules (Admissions v0.2.0)
 
-## Phase Elaboration
+## Use Case
+- **UC:** `UC-AAD-02`
+- **RF:** `FR-AAD-04`, `FR-AAD-05`, `FR-AAD-06`, `FR-AAD-07`
+- **Phase:** Elaboration
+- **Module:** `AAD` (v0.2.0)
+- **Minutes:** [Minutes of meetings](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
+- **GitHub Issue:** [#85](https://github.com/paticama/ISO26-ISO2-A1.01/issues/85)
+- **Actor:** Admissions Staff
+- **Secondary Actors:** Physician, Medical staff, System Administrator (configuration and access only)
+- **Description:** Enables Admissions Staff to open, update, close, and reopen examination schedules while identifying affected appointments and supporting approved rescheduling actions.
+- **Preconditions:**
+  1. Admissions Staff is authenticated and authorized.
+  2. Examination types, resources, locations, and scheduling rules are configured.
+  3. Existing bookings are available for conflict and impact analysis.
+- **Postconditions:**
+  1. The schedule change is stored with an audit record.
+  2. Affected appointments are identified and preserved for rescheduling or cancellation.
+  3. Confirmed availability is exposed to the booking workflow.
+- **Main Success Scenario (Client–Server Interaction Flow):**
+  1. **[Client]** Admissions Staff opens schedule management and selects a date, resource, or location.
+  2. **[Server]** The system retrieves current schedules, capacity, bookings, and applicable rules.
+  3. **[Client]** Admissions Staff creates or edits a schedule, including time window, resource, location, and capacity.
+  4. **[Client]** Admissions Staff confirms opening, updating, closing, or reopening the schedule.
+  5. **[Server]** The server validates dates, capacity, overlaps, and resource availability.
+  6. **[Server]** The server identifies affected appointments, persists the change, and records the audit event.
+  7. **[Client]** The system displays resulting availability and any required rescheduling actions.
+- **Alternative / Exception Flows:**
+  - **A1. Schedule overlap [Server -> Client]:** The change is rejected and conflicting schedules are displayed.
+  - **A2. Existing appointments affected [Server -> Client]:** The system lists affected appointments before availability is reduced.
+  - **A3. Close schedule [Server]:** New bookings are prevented and existing appointments remain preserved.
+  - **A4. Reopen schedule [Server]:** Capacity and conflicts are revalidated before slots become bookable.
+  - **A5. Invalid configuration [Server -> Client]:** Invalid dates, resources, or capacity are reported and the change is not saved.
+  - **A6. Unauthorized administration [Server -> Client]:** Configuration reserved for System Administrator is denied.
 
-- **Module:** AAD (Admissions, Appointments and Diagnostics)
-- **Minutes:** Neutral
-- **GitHub Issue:** Neutral
-- **Primary actor:** Admissions Staff
-- **Supporting actor:** System Administrator
-- **Related decisions:** [CU00 initial structure decisions](../../feature/CU00-initial-structure/DECISIONS.md)
+## RADIT Disciplines
+- [x] Requirements: Specify schedule lifecycle and appointment impact handling.
+- [ ] Architecture: Define schedule, resource, and booking boundaries.
+- [ ] Design: Define schedule DTOs, conflict rules, and rescheduling contracts.
+- [ ] Implementation: Implement schedule management and availability services.
+- [ ] Testing: Test overlap, capacity, closing, reopening, and affected appointments.
 
-## Goal and scope
+## Contracts and Interfaces
+- `Client:` Admissions UI for schedule search, creation, update, closing, and reopening.
+- `Server:` AAD schedule and availability service.
+- `Schedule interface:` Schedule, resource, capacity, and conflict-validation contract.
+- `Booking interface:` Affected-appointment lookup and rescheduling hand-off.
+- `Errors:` `SCHEDULE_OVERLAP`, `CAPACITY_EXCEEDED`, `INVALID_SCHEDULE`, `APPOINTMENTS_AFFECTED`, and `UNAUTHORIZED_OPERATION` are returned explicitly; no schedule change is silently committed.
 
-Admissions Staff creates and maintains examination schedules, availability windows, capacity, and booking rules. System Administrator defines the services, locations, permissions, and exceptional configuration available to the scheduling process; the administrator does not replace operational schedule ownership.
+## Acceptance Criteria
+- [ ] Admissions Staff can open, update, close, and reopen authorized schedules.
+- [ ] Invalid overlaps and capacity violations are rejected.
+- [ ] Every affected appointment is identified before a change is committed.
+- [ ] Closed schedules cannot accept new bookings.
+- [ ] Reopened schedules pass availability and conflict checks.
+- [ ] System Administrator configuration remains distinct from Admissions Staff operations.
 
-## Client–Server flow
+## Decisions (DECISIONS.md)
+- See [DECISIONS.md](../../feature/CU00-initial-structure/DECISIONS.md).
+- Requirements meeting minutes remain neutral until a confirmed link is available.
 
-1. The client displays schedules filtered by service, location, date, and status.
-2. Admissions Staff submits a schedule command.
-3. The client performs format checks and sends a typed request.
-4. The server authorizes the actor, validates time zones, capacity, overlaps, and dependencies.
-5. The server commits the change atomically and returns the schedule version.
-6. The client refreshes affected views and reports any explicit business error.
+## Effort Estimation
+- **Estimated effort without AI:** 12 hours
+- **Estimated effort with AI (Copilot):** 6 hours
 
-## Main flow
+---
 
-1. Admissions Staff selects a service, location, date range, operating hours, and capacity.
-2. The server validates that the service and location are active and that the interval is valid.
-3. The server rejects overlaps or capacity values outside configured limits.
-4. The schedule is created or updated with version, status, audit metadata, and booking constraints.
-5. Admissions Staff publishes the schedule; only published slots are available to booking flows.
-6. A permitted closure marks future availability unavailable while preserving existing appointments for review.
-
-## Alternate and error flows
-
-- Overlapping intervals return `SCHEDULE_OVERLAP`.
-- Invalid or ambiguous time-zone data returns `SCHEDULE_TIME_INVALID`.
-- Capacity below existing bookings returns `CAPACITY_BELOW_BOOKINGS`.
-- Inactive service or location returns `REFERENCE_INACTIVE`.
-- A stale schedule version returns `CONFLICT`.
-- Publication with no usable slots returns `SCHEDULE_EMPTY`.
-- Permission failures return `FORBIDDEN`; persistence failures return `SERVICE_UNAVAILABLE`.
-
-## RADIT
-
-### Requirements
-
-- Create, edit, publish, close, and search schedules.
-- Validate operating intervals, capacity, service, location, and time zone.
-- Prevent overlaps and preserve historical schedule versions.
-- Keep Admissions Staff operations separate from System Administrator configuration.
-
-### Analysis
-
-Schedules are versioned operational resources. Availability is derived from published intervals minus reservations and closures. All overlap and capacity checks are server-side and transactional.
-
-### Design
-
-The client uses `ScheduleQuery`, `CreateScheduleCommand`, `UpdateScheduleCommand`, `PublishScheduleCommand`, and `CloseScheduleCommand`. The server provides schedule, availability, reference-data, and audit interfaces with optimistic concurrency.
-
-### Implementation
-
-Implement interval validation, overlap queries, publication state transitions, capacity guards, version checks, and client calendar/list views. Store all timestamps with an explicit time zone and retain prior versions.
-
-### Testing
-
-Cover interval boundaries, daylight-saving transitions, overlap detection, capacity changes, publication, closure, stale updates, permissions, and concurrent booking interaction.
-
-### Deployment
-
-Deploy schedule tables, overlap indexes, migration checks, and monitoring for rejected transitions. Confirm time-zone configuration and rollback before opening schedule management.
-
-## Contracts and interfaces
-
-### Client contract
-
-- `listSchedules(query) -> ScheduleSummary[]`
-- `createSchedule(command) -> Schedule`
-- `updateSchedule(id, command, version) -> Schedule`
-- `publishSchedule(id, version) -> Schedule`
-- `closeSchedule(id, reason, version) -> Schedule`
-
-### Server contract
-
-- Validate all temporal and capacity rules transactionally.
-- Expose only schedules within actor scope.
-- Return the committed schedule version and stable error envelope.
-
-### Interfaces
-
-Versioned HTTP/JSON routes live under `/api/aad/schedules`. The availability interface is read-only and derives slots from published schedules. Mutations require an idempotency key and entity version.
-
-## Acceptance criteria
-
-- Admissions Staff can create and publish a valid schedule.
-- Overlapping or invalid intervals cannot be persisted.
-- A schedule cannot publish without at least one valid available slot.
-- Capacity cannot be reduced below existing bookings.
-- System Administrator configuration is distinct from Admissions Staff schedule operations.
-- Concurrent edits produce `CONFLICT` rather than silently overwriting changes.
-- Closed schedules remain auditable and explain why future availability changed.
-
-## Effort estimation
-
-| Work item | Estimate |
-|---|---:|
-| Requirements and analysis | 4 h |
-| Temporal and domain design | 6 h |
-| Client calendar and forms | 9 h |
-| Server and persistence implementation | 12 h |
-| Automated and integration testing | 9 h |
-| Deployment and migration verification | 4 h |
-| **Total** | **44 h** |
-
+<div align="center">
+  <sub>Software Engineering II • Superior School of Informatics (ESI) • University of Castilla-La Mancha (UCLM)</sub>
+</div>

@@ -5,6 +5,9 @@
 - **RF:** `FR-PHY-09`, `FR-PHY-10`, `FR-PHY-11`
 - **Phase:** Elaboration
 - **Module:** `sescam-order-entry` (v0.3.0)
+- **Priority:** Medium (ISO/IEC/IEEE 29148:2018)
+- **UML Relationships:**
+  - Extended by: Mandatory Order Cancellation Audit [Condition: If cancellation requested]
 - **Minutes:** [Meeting #3 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
 - **GitHub Issue:** [#21](https://github.com/paticama/ISO26-ISO2-A1.01/issues/21)
 - **Actor:** Physician User (Generalization: Inherits from base Patient User)

@@ -5,6 +5,9 @@
 - **RF:** `FR-PHY-01`, `FR-PHY-02`, `FR-PHY-03`, `FR-PHY-04`, `FR-PHY-05`
 - **Phase:** Elaboration
 - **Module:** `sescam-order-entry` (v0.1.0)
+- **Priority:** High (ISO/IEC/IEEE 29148:2018)
+- **UML Relationships:**
+  - `<<include>>` Verify Patient Safety Constraints & Contrast Allergies
 - **Minutes:** [Meeting #3 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
 - **GitHub Issue:** [#19](https://github.com/paticama/ISO26-ISO2-A1.01/issues/19)
 - **Actor:** Physician User (Generalization: Inherits from base Patient User)

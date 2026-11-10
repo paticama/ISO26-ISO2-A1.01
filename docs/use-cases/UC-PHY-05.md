@@ -5,9 +5,12 @@
 - **RF:** `FR-PHY-18`, `FR-PHY-19`
 - **Phase:** Construction
 - **Module:** `sescam-execution-reporting` (v0.2.0)
+- **Priority:** Medium (ISO/IEC/IEEE 29148:2018)
+- **UML Relationships:**
+  - Extended by: Record Adverse Contrast Reaction & Clinical Complications [Extension Point: ClinicalComplication]
 - **Minutes:** [Meeting #3 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
 - **GitHub Issue:** [#23](https://github.com/paticama/ISO26-ISO2-A1.01/issues/23)
-- **Actor:** Physician User (Generalization: Inherits from base Patient User)
+- **Actor:** Physician / Radiology Specialist (Generalization: Inherits from base Patient User)
 - **Secondary Actors:** Departmental RIS/PACS, Administrative / Admissions System
 - **Description:** Allows the physician to record radiological procedure execution details and document clinical or operational incidents occurring during the examination.
 - **Preconditions:**

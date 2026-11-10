@@ -1,112 +1,69 @@
-# UC-AAD-04 — Manage Daily Worklist
+# CU-AAD-04 – Manage Daily Worklist (Admissions v0.4.0)
 
-## Phase Elaboration
+## Use Case
+- **UC:** `UC-AAD-04`
+- **RF:** `FR-AAD-08`
+- **Phase:** Elaboration
+- **Module:** `AAD` (v0.4.0)
+- **Minutes:** [Minutes of meetings](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
+- **GitHub Issue:** [#87](https://github.com/paticama/ISO26-ISO2-A1.01/issues/87)
+- **Actor:** Admissions Staff
+- **Secondary Actors:** Medical staff, System Administrator (configuration and access only)
+- **Description:** Enables Admissions Staff to build and maintain the daily worklist from confirmed appointments and make the current operational workload available to authorized medical staff.
+- **Preconditions:**
+  1. Admissions Staff is authenticated and authorized.
+  2. Confirmed appointments and current schedule data are available.
+  3. The operational date and authorized scope are configured.
+- **Postconditions:**
+  1. The worklist reflects the current confirmed appointment state.
+  2. Cancellations, reschedules, and operational status changes are auditable.
+  3. Medical staff can consult the authorized daily workload.
+- **Main Success Scenario (Client–Server Interaction Flow):**
+  1. **[Client]** Admissions Staff selects an operational date and opens the daily worklist.
+  2. **[Server]** The system loads confirmed appointments and current schedule data.
+  3. **[Server]** The system orders entries by time, priority, resource, and configured rules.
+  4. **[Client]** Admissions Staff filters the worklist and records an allowed operational status or exception.
+  5. **[Server]** The server validates the transition, records actor and timestamp, and refreshes the worklist.
+  6. **[Client]** Medical staff consults the current worklist within the authorized scope.
+- **Alternative / Exception Flows:**
+  - **A1. Appointment cancelled [Server]:** The entry is removed or marked according to policy and the cancellation is recorded.
+  - **A2. Appointment rescheduled [Server]:** The entry is moved to the new date and time and its history is preserved.
+  - **A3. Invalid status transition [Server -> Client]:** The system rejects the transition and shows permitted states.
+  - **A4. Stale data [Server -> Client]:** The system indicates unavailable or stale data and does not imply a successful update.
+  - **A5. Unauthorized scope [Server -> Client]:** The system denies access outside the actor's authorized worklist.
 
-- **Module:** AAD (Admissions, Appointments and Diagnostics)
-- **Minutes:** Neutral
-- **GitHub Issue:** Neutral
-- **Primary actor:** Admissions Staff
-- **Supporting actor:** System Administrator
-- **Related decisions:** [CU00 initial structure decisions](../../feature/CU00-initial-structure/DECISIONS.md)
+## RADIT Disciplines
+- [x] Requirements: Specify daily worklist generation and operational status handling.
+- [ ] Architecture: Define worklist composition and synchronization boundaries.
+- [ ] Design: Define worklist views, filters, and status-transition contracts.
+- [ ] Implementation: Implement daily worklist generation and update services.
+- [ ] Testing: Test generation, filtering, cancellation, rescheduling, and authorization.
 
-## Goal and scope
+## Contracts and Interfaces
+- `Client:` Admissions UI and Medical Staff worklist view.
+- `Server:` AAD daily-worklist service.
+- `Worklist interface:` Builds and filters entries from confirmed bookings.
+- `Booking interface:` Reads booking, cancellation, and rescheduling events.
+- `Errors:` `STALE_WORKLIST_DATA`, `INVALID_STATUS_TRANSITION`, `APPOINTMENT_NOT_FOUND`, and `UNAUTHORIZED_SCOPE` are returned explicitly; stale data is never presented as current.
 
-Admissions Staff views and manages the daily operational worklist: arrivals, check-in state, missing information, cancellations, and hand-off status. System Administrator configures statuses and permissions but does not manage the daily queue.
+## Acceptance Criteria
+- [ ] The worklist is built from confirmed appointments.
+- [ ] Changes, cancellations, and reschedules are reflected without duplicate entries.
+- [ ] Entries can be filtered within the authorized scope.
+- [ ] Only valid operational status transitions are accepted.
+- [ ] Medical staff can access the current worklist permitted to them.
+- [ ] System Administrator configuration remains separate from daily operational actions.
 
-## Client–Server flow
+## Decisions (DECISIONS.md)
+- See [DECISIONS.md](../../feature/CU00-initial-structure/DECISIONS.md).
+- Requirements meeting minutes remain neutral until a confirmed link is available.
 
-1. The client requests the worklist for a date, location, and actor scope.
-2. The server builds the list from appointments, waitlist decisions, and operational status.
-3. Admissions Staff opens an item and submits a status transition or note.
-4. The server checks authorization, transition rules, and current version.
-5. The server commits the transition and returns the updated item.
-6. The client refreshes affected counters and displays explicit errors.
+## Effort Estimation
+- **Estimated effort without AI:** 10 hours
+- **Estimated effort with AI (Copilot):** 5 hours
 
-## Main flow
+---
 
-1. Admissions Staff selects the operational day and location.
-2. The client displays appointments grouped by status and sorted by configured operational order.
-3. Staff marks an arrival, identifies missing information, records a hand-off, or marks a cancellation.
-4. The server verifies that the transition is allowed and that required fields are present.
-5. The server records actor, timestamp, reason where required, and the resulting status.
-6. The worklist and summary counters refresh from the committed state.
-
-## Alternate and error flows
-
-- An appointment outside the actor scope returns `FORBIDDEN`.
-- An invalid transition returns `WORKLIST_TRANSITION_INVALID`.
-- A required reason or missing data returns `REASON_REQUIRED` or `WORKLIST_DATA_REQUIRED`.
-- A stale item version returns `CONFLICT`.
-- A cancelled or completed appointment cannot be moved backward without an explicitly configured recovery permission.
-- A service failure returns `SERVICE_UNAVAILABLE` and leaves the prior status intact.
-
-## RADIT
-
-### Requirements
-
-- Show a date- and location-scoped daily worklist.
-- Support explicit operational status transitions and required reasons.
-- Provide filtering, sorting, counters, and refresh after mutations.
-- Preserve an auditable timeline for each item.
-
-### Analysis
-
-The worklist is a read model over appointments and operational events. Status transitions are a state machine, not free-form field edits. The server remains the source of truth while the client may optimistically refresh only after confirmation.
-
-### Design
-
-The client uses `DailyWorklistQuery` and `WorklistTransitionCommand`. The server exposes a worklist projection, transition policy, event log, and counter summary interface.
-
-### Implementation
-
-Implement scoped queries, status-state validation, required reason rules, version checks, event persistence, and client filters. Keep read projection rebuilds safe and observable.
-
-### Testing
-
-Test daily boundaries, location scope, every allowed and rejected transition, required fields, concurrent updates, counter accuracy, projection refresh, and audit chronology.
-
-### Deployment
-
-Deploy status configuration and event schema, build the daily projection, and verify counts against source appointments for representative operating days.
-
-## Contracts and interfaces
-
-### Client contract
-
-- `getDailyWorklist(query) -> DailyWorklist`
-- `transitionWorklistItem(id, command, version) -> WorklistItem`
-- `getWorklistSummary(query) -> WorklistSummary`
-- `getWorklistTimeline(id) -> WorklistEvent[]`
-
-### Server contract
-
-- Enforce scope, state transitions, required reasons, and optimistic concurrency.
-- Return committed status and updated counters.
-- Keep event history append-only.
-
-### Interfaces
-
-Versioned HTTP/JSON routes live under `/api/aad/worklist`. The summary interface is derived from the same committed projection as the item list and includes a correlation identifier.
-
-## Acceptance criteria
-
-- Admissions Staff sees only the worklist scope granted to them.
-- Every supported transition succeeds only from an allowed prior state.
-- Invalid transitions and missing reasons return explicit stable errors.
-- Counters match the committed worklist after a successful transition.
-- Concurrent updates cannot silently overwrite a newer state.
-- Timeline entries identify actor, time, prior state, new state, and reason.
-- System Administrator configuration remains separate from daily operational actions.
-
-## Effort estimation
-
-| Work item | Estimate |
-|---|---:|
-| Requirements and state analysis | 4 h |
-| Projection and state-machine design | 6 h |
-| Client worklist implementation | 9 h |
-| Server and event implementation | 12 h |
-| Automated and integration testing | 10 h |
-| Deployment and projection verification | 4 h |
-| **Total** | **45 h** |
-
+<div align="center">
+  <sub>Software Engineering II • Superior School of Informatics (ESI) • University of Castilla-La Mancha (UCLM)</sub>
+</div>
