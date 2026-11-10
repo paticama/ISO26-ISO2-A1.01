@@ -1,7 +1,7 @@
 # UC-PHY-01 – Order and Prescribe Diagnostic Procedure (Physicians v0.1.0)
 
 ## Use Case
-- **UC:** `UC01`
+- **UC:** `UC-PHY-01`
 - **RF:** `FR-PHY-01`, `FR-PHY-02`, `FR-PHY-03`, `FR-PHY-04`, `FR-PHY-05`
 - **Phase:** Elaboration
 - **Module:** `sescam-order-entry` (v0.1.0)
