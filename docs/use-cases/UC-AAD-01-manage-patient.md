@@ -1,9 +1,10 @@
-# CU-AAD-01 – Manage Patient (Admissions v0.1.0)
+# UC-AAD-01 – Manage Patient (Admissions v0.1.0)
 
 ## Use Case
 - **UC:** `UC-AAD-01`
 - **RF:** `FR-AAD-01`, `FR-AAD-02`, `FR-AAD-03`
 - **Phase:** Elaboration
+- **Priority:** High
 - **Module:** `AAD` (v0.1.0)
 - **Minutes:** [Minutes of meetings](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
 - **GitHub Issue:** [#84](https://github.com/paticama/ISO26-ISO2-A1.01/issues/84)

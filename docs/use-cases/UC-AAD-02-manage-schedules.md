@@ -1,9 +1,10 @@
-# CU-AAD-02 – Manage Schedules (Admissions v0.2.0)
+# UC-AAD-02 – Manage Schedules (Admissions v0.2.0)
 
 ## Use Case
 - **UC:** `UC-AAD-02`
 - **RF:** `FR-AAD-04`, `FR-AAD-05`, `FR-AAD-06`, `FR-AAD-07`
 - **Phase:** Elaboration
+- **Priority:** High
 - **Module:** `AAD` (v0.2.0)
 - **Minutes:** [Minutes of meetings](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
 - **GitHub Issue:** [#85](https://github.com/paticama/ISO26-ISO2-A1.01/issues/85)

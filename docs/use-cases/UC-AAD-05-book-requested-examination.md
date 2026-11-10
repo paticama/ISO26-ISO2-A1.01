@@ -1,9 +1,10 @@
-# CU-AAD-05 – Book Requested Examination (Admissions v0.5.0)
+# UC-AAD-05 – Book Requested Examination (Admissions v0.5.0)
 
 ## Use Case
 - **UC:** `UC-AAD-05`
 - **RF:** `FR-AAD-12`
 - **Phase:** Elaboration
+- **Priority:** High
 - **Module:** `AAD` (v0.5.0)
 - **Minutes:** [Minutes of meetings](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
 - **GitHub Issue:** [#88](https://github.com/paticama/ISO26-ISO2-A1.01/issues/88)
