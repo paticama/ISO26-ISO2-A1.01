@@ -2,7 +2,7 @@
 
 ## Use Case
 - **UC:** `UC-PHY-03`
-- **RF:** `FR-PHY-06`, `FR-PHY-07`, `FR-PHY-08`
+- **FR:** `FR-PHY-06`, `FR-PHY-07`, `FR-PHY-08`
 - **Phase:** Construction
 - **Module:** `sescam-order-entry` (v0.3.0)
 - **Priority:** Medium (ISO/IEC/IEEE 29148:2018)
