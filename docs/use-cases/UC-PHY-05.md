@@ -2,7 +2,7 @@
 
 ## Use Case
 - **UC:** `UC-PHY-05`
-- **RF:** `FR-PHY-09`, `FR-PHY-10`, `FR-PHY-11`, `FR-PHY-17`
+- **FR:** `FR-PHY-09`, `FR-PHY-10`, `FR-PHY-11`, `FR-PHY-17`
 - **Phase:** Construction
 - **Module:** `sescam-execution-reporting` (v0.2.0)
 - **Priority:** Medium (ISO/IEC/IEEE 29148:2018)
