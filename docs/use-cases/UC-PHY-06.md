@@ -1,9 +1,9 @@
-# UC-PHY-06 — Consult Operational Metrics on Orders (Physicians v0.1.0)
+# UC-PHY-06 – Consult Operational Metrics on Orders (Physicians v0.1.0)
 
 ## Use Case
 - **UC:** `UC-PHY-06`
-- **FR:** `FR-PHY-18`, `FR-PHY-19`, `FR-PHY-20`
-- **Phase:** Late Construction
+- **RF:** `FR-PHY-20`
+- **Phase:** Late Construction / Transition
 - **Module:** `sescam-analytics` (v0.1.0)
 - **Priority:** Low (ISO/IEC/IEEE 29148:2018)
 - **UML Relationships:**

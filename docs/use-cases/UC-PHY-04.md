@@ -1,9 +1,9 @@
-# UC-PHY-04 — Author, Edit, and Review Diagnostic Reports and Medical Images (Physicians v0.1.0)
+# UC-PHY-04 – Author, Edit, and Review Diagnostic Reports and Medical Images (Physicians v0.1.0)
 
 ## Use Case
 - **UC:** `UC-PHY-04`
-- **FR:** `FR-PHY-12`, `FR-PHY-13`, `FR-PHY-14`, `FR-PHY-15`, `FR-PHY-16`
-- **Phase:** Elaboration
+- **RF:** `FR-PHY-12`, `FR-PHY-13`, `FR-PHY-14`, `FR-PHY-15`, `FR-PHY-16`, `FR-PHY-17`
+- **Phase:** Construction
 - **Module:** `sescam-execution-reporting` (v0.1.0)
 - **Priority:** High (ISO/IEC/IEEE 29148:2018)
 - **UML Relationships:**

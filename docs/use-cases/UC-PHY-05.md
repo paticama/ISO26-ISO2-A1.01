@@ -1,8 +1,8 @@
-# UC-PHY-05 — Log Procedure Execution Details and Clinical/Operational Incidents (Physicians v0.2.0)
+# UC-PHY-05 – Log Procedure Execution Details and Clinical/Operational Incidents (Physicians v0.2.0)
 
 ## Use Case
 - **UC:** `UC-PHY-05`
-- **FR:** `FR-PHY-09`, `FR-PHY-10`, `FR-PHY-11`, `FR-PHY-17`
+- **RF:** `FR-PHY-18`, `FR-PHY-19`
 - **Phase:** Construction
 - **Module:** `sescam-execution-reporting` (v0.2.0)
 - **Priority:** Medium (ISO/IEC/IEEE 29148:2018)
