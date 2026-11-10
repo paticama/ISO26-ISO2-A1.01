@@ -2,15 +2,15 @@
 
 ## Use Case
 - **UC:** `UC-PHY-06`
-- **RF:** `FR-PHY-20`
-- **Phase:** Late Construction / Transition
+- **RF:** `FR-PHY-18`, `FR-PHY-19`, `FR-PHY-20`
+- **Phase:** Late Construction
 - **Module:** `sescam-analytics` (v0.1.0)
 - **Priority:** Low (ISO/IEC/IEEE 29148:2018)
 - **UML Relationships:**
   - None
 - **Minutes:** [Meeting #3 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
 - **GitHub Issue:** [#24](https://github.com/paticama/ISO26-ISO2-A1.01/issues/24)
-- **Actor:** Physician Supervisor / Department Head (Generalization: Inherits from base Patient User)
+- **Actor:** Physician
 - **Secondary Actors:** —
 - **Description:** Enables the physician to consult analytical and operational metrics regarding their prescribed orders, including patient waiting times, equipment utilization, and follow-up protocol adherence.
 - **Preconditions:**
