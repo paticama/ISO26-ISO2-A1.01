@@ -1,9 +1,10 @@
-# CU-AAD-03 – Manage Waitlist and Priority (Admissions v0.3.0)
+# UC-AAD-03 – Manage Waitlist and Priority (Admissions v0.3.0)
 
 ## Use Case
 - **UC:** `UC-AAD-03`
 - **RF:** `FR-AAD-10`, `FR-AAD-11`
 - **Phase:** Elaboration
+- **Priority:** High
 - **Module:** `AAD` (v0.3.0)
 - **Minutes:** [Minutes of meetings](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
 - **GitHub Issue:** [#86](https://github.com/paticama/ISO26-ISO2-A1.01/issues/86)

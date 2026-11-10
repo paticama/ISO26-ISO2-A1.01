@@ -1,9 +1,10 @@
-# CU-AAD-04 – Manage Daily Worklist (Admissions v0.4.0)
+# UC-AAD-04 – Manage Daily Worklist (Admissions v0.4.0)
 
 ## Use Case
 - **UC:** `UC-AAD-04`
 - **RF:** `FR-AAD-08`
-- **Phase:** Elaboration
+- **Phase:** Construction
+- **Priority:** Medium
 - **Module:** `AAD` (v0.4.0)
 - **Minutes:** [Minutes of meetings](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
 - **GitHub Issue:** [#87](https://github.com/paticama/ISO26-ISO2-A1.01/issues/87)

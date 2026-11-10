@@ -1,9 +1,10 @@
-# CU-AAD-06 – Generate Operational Reports (Admissions v0.6.0)
+# UC-AAD-06 – Generate Operational Reports (Admissions v0.6.0)
 
 ## Use Case
 - **UC:** `UC-AAD-06`
 - **RF:** `FR-AAD-09`
-- **Phase:** Elaboration
+- **Phase:** Late Construction
+- **Priority:** Low
 - **Module:** `AAD` (v0.6.0)
 - **Minutes:** [Minutes of meetings](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
 - **GitHub Issue:** [#89](https://github.com/paticama/ISO26-ISO2-A1.01/issues/89)

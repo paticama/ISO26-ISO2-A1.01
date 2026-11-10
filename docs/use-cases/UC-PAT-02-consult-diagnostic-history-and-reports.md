@@ -3,7 +3,7 @@
 ## Use Case
 - **UC:** `UC-PAT-02`
 - **RF:** `FR-PAT-11`, `FR-PAT-12`, `FR-PAT-13`
-- **Phase:** Construction
+- **Phase:** Elaboration
 - **Module:** `sescam-patient-portal` (v0.2.0)
 - **Priority:** High (ISO/IEC/IEEE 29148:2018 / Inherited from FR-PAT-11, FR-PAT-12 and FR-PAT-13)
 - **UML Relationships:**
