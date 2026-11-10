@@ -1,7 +1,7 @@
-# CU03 – Manage Orders and Consult Clinical Execution Schedules (Physicians v0.3.0)
+# UC-PHY-03 – Manage Orders and Consult Clinical Execution Schedules (Physicians v0.3.0)
 
 ## Use Case
-- **UC:** `UC03`
+- **UC:** `UC-PHY-03`
 - **RF:** `FR-PHY-09`, `FR-PHY-10`, `FR-PHY-11`
 - **Phase:** Elaboration
 - **Module:** `sescam-order-entry` (v0.3.0)
