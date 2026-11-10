@@ -2,7 +2,7 @@
 
 ## Use Case
 - **UC:** `UC-PHY-04`
-- **RF:** `FR-PHY-12`, `FR-PHY-13`, `FR-PHY-14`, `FR-PHY-15`, `FR-PHY-16`
+- **FR:** `FR-PHY-12`, `FR-PHY-13`, `FR-PHY-14`, `FR-PHY-15`, `FR-PHY-16`
 - **Phase:** Elaboration
 - **Module:** `sescam-execution-reporting` (v0.1.0)
 - **Priority:** High (ISO/IEC/IEEE 29148:2018)
