@@ -6,7 +6,7 @@
 - **Phase:** Construction
 - **Priority:** Medium
 - **Module:** `AAD` (v0.4.0)
-- **Minutes:** [Minutes of meetings](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
+- **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
 - **GitHub Issue:** [#87](https://github.com/paticama/ISO26-ISO2-A1.01/issues/87)
 - **Actor:** Admissions Staff
 - **Secondary Actors:** Medical staff, System Administrator (configuration and access only)

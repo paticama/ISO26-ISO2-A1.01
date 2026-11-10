@@ -8,7 +8,7 @@
 - **Priority:** Medium (ISO/IEC/IEEE 29148:2018)
 - **UML Relationships:**
   - Extended by: Record Adverse Contrast Reaction & Clinical Complications [Extension Point: ClinicalComplication]
-- **Minutes:** [Meeting #3 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
+- **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
 - **GitHub Issue:** [#23](https://github.com/paticama/ISO26-ISO2-A1.01/issues/23)
 - **Actor:** Physician
 - **Secondary Actors:** Departmental RIS/PACS, Administrative / Admissions System

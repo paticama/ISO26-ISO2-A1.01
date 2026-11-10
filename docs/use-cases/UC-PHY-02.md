@@ -9,7 +9,7 @@
 - **UML Relationships:**
   - `<<include>>` Verify Patient Safety Constraints & Contrast Allergies
   - `<<extend>>` UC-PHY-04 (Diagnostic Reporting) [Extension Point: FollowUpRecommendation]
-- **Minutes:** [Meeting #3 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
+- **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
 - **GitHub Issue:** [#20](https://github.com/paticama/ISO26-ISO2-A1.01/issues/20)
 - **Actor:** Physician
 - **Secondary Actors:** Administrative / Admissions System

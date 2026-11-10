@@ -8,7 +8,7 @@
 - **Priority:** Medium (ISO/IEC/IEEE 29148:2018)
 - **UML Relationships:**
   - Extended by: Mandatory Order Cancellation Audit [Condition: If cancellation requested]
-- **Minutes:** [Meeting #3 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
+- **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
 - **GitHub Issue:** [#21](https://github.com/paticama/ISO26-ISO2-A1.01/issues/21)
 - **Actor:** Physician
 - **Secondary Actors:** Administrative / Admissions System
