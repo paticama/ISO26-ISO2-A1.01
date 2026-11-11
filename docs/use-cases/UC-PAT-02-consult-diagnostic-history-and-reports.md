@@ -3,9 +3,9 @@
 ## Use Case
 - **UC:** `UC-PAT-02`
 - **RF:** `FR-PAT-11`, `FR-PAT-12`, `FR-PAT-13`
-- **Phase:** Elaboration
+- **Phase:** Construction
 - **Module:** `sescam-patient-portal` (v0.2.0)
-- **Priority:** High (ISO/IEC/IEEE 29148:2018 / Inherited from FR-PAT-11, FR-PAT-12 and FR-PAT-13)
+- **Priority:** Medium (ISO/IEC/IEEE 29148:2018 / Lowered by team decision: read-only consultation with no architectural risk, Criterion 1; FR-PAT-11 to FR-PAT-13 remain High)
 - **UML Relationships:**
   - Related Use Cases: UC-PHY-05 registers the executed procedures listed here; UC-PHY-04 produces the signed reports and addenda; UC-PAT-03 sends the report-availability notice that links to this use case.
 - **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
