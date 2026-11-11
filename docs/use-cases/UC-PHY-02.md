@@ -1,11 +1,12 @@
-# UC-PHY-02 – Order Periodic Follow-up Surveillance Procedure (Physicians v0.2.0)
+# UC-PHY-02 – Order Periodic Follow-up Surveillance Procedure (Physicians v0.3.0)
 
 ## Use Case
 - **UC:** `UC-PHY-02`
 - **RF:** `FR-PHY-04`, `FR-PHY-05`
-- **Phase:** Late Construction
-- **Module:** `sescam-order-entry` (v0.2.0)
-- **Priority:** Low (ISO/IEC/IEEE 29148:2018)
+- **Phase:** Construction
+- **Iteration:** 4
+- **Module:** `sescam-order-entry` (v0.3.0)
+- **Priority:** Medium (ISO/IEC/IEEE 29148:2018)
 - **UML Relationships:**
   - `<<include>>` Verify Patient Safety Constraints & Contrast Allergies
   - `<<extend>>` UC-PHY-04 (Diagnostic Reporting) [Extension Point: FollowUpRecommendation]

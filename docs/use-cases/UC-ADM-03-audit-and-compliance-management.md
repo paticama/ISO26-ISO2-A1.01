@@ -3,9 +3,10 @@
 ## Use Case
 - **UC:** `UC-ADM-03`
 - **RF:** `FR-ADM-11`, `FR-ADM-12`, `FR-ADM-13`, `FR-ADM-14`, `FR-ADM-15`
-- **Phase:** Late Construction
+- **Phase:** Elaboration
+- **Iteration:** 1
 - **Module:** `sescam-system-admin` (v0.3.0)
-- **Priority:** Low
+- **Priority:** High
 - **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
 - **GitHub Issue:** [#54](https://github.com/paticama/ISO26-ISO2-A1.01/issues/54)
 - **Actor:** System administrator or authorized compliance reviewer
