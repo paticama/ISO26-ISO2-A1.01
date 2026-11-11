@@ -3,7 +3,7 @@
 ## Use Case
 - **UC:** `UC-ADM-05`
 - **RF:** `FR-ADM-22`, `FR-ADM-23`, `FR-ADM-24`, `FR-ADM-25`, `FR-ADM-26`
-- **Phase:** Inception
+- **Phase:** Late Construction
 - **Module:** `sescam-system-admin` (v0.5.0)
 - **Priority:** Low
 - **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
