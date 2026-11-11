@@ -1,12 +1,14 @@
 # UC-AAD-04 – Manage Daily Worklist (Admissions v0.4.0)
 
 ## Use Case
-- **UC:** `UC-AAD-04`
-- **RF:** `FR-AAD-08`
-- **Phase:** Construction
-- **Priority:** Medium
-- **Module:** `AAD` (v0.4.0)
-- **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
+- `UC-AAD-04 · FR-AAD-08 · Construction · AAD (v0.4.0) · Minutes of meetings`
+- **Priority:** Medium (realizes FR-AAD-08)
+- **UML Relationships:** None
+
+### Minutes (linked to wiki)
+[Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
+
+- **Related Use Cases:** UC-AAD-02 provides schedule changes; UC-AAD-05 provides booking, rescheduling, and cancellation events.
 - **GitHub Issue:** [#87](https://github.com/paticama/ISO26-ISO2-A1.01/issues/87)
 - **Actor:** Admissions Staff
 - **Secondary Actors:** Medical staff, System Administrator (configuration and access only)
@@ -35,12 +37,15 @@
 
 ## RADIT Disciplines
 - [x] Requirements: Specify daily worklist generation and operational status handling.
-- [ ] Architecture: Define worklist composition and synchronization boundaries.
+- [ ] Analysis: Define worklist composition and synchronization boundaries.
 - [ ] Design: Define worklist views, filters, and status-transition contracts.
 - [ ] Implementation: Implement daily worklist generation and update services.
 - [ ] Testing: Test generation, filtering, cancellation, rescheduling, and authorization.
 
 ## Contracts and Interfaces
+- `Actor:` Admissions Staff.
+- `System:` Admissions Workstation / AAD Module (`AAD` v0.4.0).
+- `Detailed Specification:` [`UC-AAD-04-manage-daily-worklist.md`](https://github.com/paticama/ISO26-ISO2-A1.01/blob/CU00-Alba/docs/use-cases/UC-AAD-04-manage-daily-worklist.md)
 - `Client:` Admissions UI and Medical Staff worklist view.
 - `Server:` AAD daily-worklist service.
 - `Worklist interface:` Builds and filters entries from confirmed bookings.
@@ -57,7 +62,6 @@
 
 ## Decisions (DECISIONS.md)
 - See [DECISIONS.md](../../feature/CU00-initial-structure/DECISIONS.md).
-- Requirements meeting minutes remain neutral until a confirmed link is available.
 
 ## Effort Estimation
 - **Estimated effort without AI:** 10 hours

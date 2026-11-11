@@ -1,12 +1,14 @@
 # UC-AAD-01 – Manage Patient (Admissions v0.1.0)
 
 ## Use Case
-- **UC:** `UC-AAD-01`
-- **RF:** `FR-AAD-01`, `FR-AAD-02`, `FR-AAD-03`
-- **Phase:** Elaboration
-- **Priority:** High
-- **Module:** `AAD` (v0.1.0)
-- **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
+- `UC-AAD-01 · FR-AAD-01, FR-AAD-02, FR-AAD-03 · Elaboration · AAD (v0.1.0) · Minutes of meetings`
+- **Priority:** High (realizes FR-AAD-01, FR-AAD-02, FR-AAD-03)
+- **UML Relationships:** None
+
+### Minutes (linked to wiki)
+[Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
+
+- **Related Use Cases:** UC-PHY-01 and UC-PHY-02 provide pending examination requests; UC-AAD-05 consumes patient data for booking eligibility.
 - **GitHub Issue:** [#84](https://github.com/paticama/ISO26-ISO2-A1.01/issues/84)
 - **Actor:** Admissions Staff
 - **Secondary Actors:** Admissions system, Electronic Health Record (EHR / HCE), System Administrator (configuration and access only)
@@ -24,7 +26,7 @@
   2. **[Server]** The system retrieves matching records and possible duplicate warnings.
   3. **[Client]** Admissions Staff selects an existing patient or starts a new registration.
   4. **[Client]** Admissions Staff enters or updates required patient information and confirms the operation.
-  5. **[Server]** The server validates mandatory fields, formats, duplicate rules, and authorization.
+  5. **[Server]** The server validates mandatory fields, formats, duplicate rules, and authorization as part of the operation.
   6. **[Server]** The server persists the registration, consultation, update, or discharge, records an audit entry, and synchronizes the configured external record.
   7. **[Client]** The system displays the result and synchronization status.
 - **Alternative / Exception Flows:**
@@ -36,12 +38,15 @@
 
 ## RADIT Disciplines
 - [x] Requirements: Specify registration, consultation, update, and discharge workflow.
-- [ ] Architecture: Define the patient-record and EHR integration boundaries.
+- [ ] Analysis: Define the patient-record and EHR integration boundaries.
 - [ ] Design: Define patient DTOs, validation rules, and service interfaces.
 - [ ] Implementation: Implement the AAD patient-management service and integration adapter.
 - [ ] Testing: Unit and integration tests for validation, audit, synchronization, and authorization.
 
 ## Contracts and Interfaces
+- `Actor:` Admissions Staff.
+- `System:` Admissions Workstation / AAD Module (`AAD` v0.1.0).
+- `Detailed Specification:` [`UC-AAD-01-manage-patient.md`](https://github.com/paticama/ISO26-ISO2-A1.01/blob/CU00-Alba/docs/use-cases/UC-AAD-01-manage-patient.md)
 - `Client:` Admissions UI for search, registration, consultation, update, and discharge.
 - `Server:` AAD patient-management service.
 - `Patient/EHR interface:` Patient record and EHR synchronization adapter.
@@ -57,7 +62,6 @@
 
 ## Decisions (DECISIONS.md)
 - See [DECISIONS.md](../../feature/CU00-initial-structure/DECISIONS.md).
-- Requirements meeting minutes remain neutral until a confirmed link is available.
 
 ## Effort Estimation
 - **Estimated effort without AI:** 8 hours

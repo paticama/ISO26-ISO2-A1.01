@@ -1,12 +1,14 @@
 # UC-AAD-06 – Generate Operational Reports (Admissions v0.6.0)
 
 ## Use Case
-- **UC:** `UC-AAD-06`
-- **RF:** `FR-AAD-09`
-- **Phase:** Late Construction
-- **Priority:** Low
-- **Module:** `AAD` (v0.6.0)
-- **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
+- `UC-AAD-06 · FR-AAD-09 · Late Construction · AAD (v0.6.0) · Minutes of meetings`
+- **Priority:** Low (realizes FR-AAD-09)
+- **UML Relationships:** None
+
+### Minutes (linked to wiki)
+[Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
+
+- **Related Use Cases:** UC-AAD-02, UC-AAD-03, UC-AAD-04, and UC-AAD-05 are read-only data sources for report generation.
 - **GitHub Issue:** [#89](https://github.com/paticama/ISO26-ISO2-A1.01/issues/89)
 - **Actor:** Admissions Staff
 - **Secondary Actors:** System Administrator (system-wide reporting configuration and access management)
@@ -35,12 +37,15 @@
 
 ## RADIT Disciplines
 - [x] Requirements: Specify occupancy, waiting-time, cancellation, capacity, and booking reporting.
-- [ ] Architecture: Define reporting data-access and authorization boundaries.
+- [ ] Analysis: Define reporting data-access and authorization boundaries.
 - [ ] Design: Define report filters, metric calculations, and export contracts.
 - [ ] Implementation: Implement operational report generation and export.
 - [ ] Testing: Test metrics, filters, permissions, empty data, and export failures.
 
 ## Contracts and Interfaces
+- `Actor:` Admissions Staff.
+- `System:` Admissions Workstation / AAD Module (`AAD` v0.6.0).
+- `Detailed Specification:` [`UC-AAD-06-generate-operational-reports.md`](https://github.com/paticama/ISO26-ISO2-A1.01/blob/CU00-Alba/docs/use-cases/UC-AAD-06-generate-operational-reports.md)
 - `Client:` Admissions UI for report type, period, filters, display, and export.
 - `Server:` AAD operational-reporting service.
 - `Reporting interface:` Calculates workload, occupancy, waiting-time, cancellation, capacity, and booking metrics.
@@ -58,7 +63,6 @@
 
 ## Decisions (DECISIONS.md)
 - See [DECISIONS.md](../../feature/CU00-initial-structure/DECISIONS.md).
-- Requirements meeting minutes remain neutral until a confirmed link is available.
 
 ## Effort Estimation
 - **Estimated effort without AI:** 10 hours

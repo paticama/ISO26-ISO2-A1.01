@@ -1,12 +1,15 @@
 # UC-AAD-02 – Manage Schedules (Admissions v0.2.0)
 
 ## Use Case
-- **UC:** `UC-AAD-02`
-- **RF:** `FR-AAD-04`, `FR-AAD-05`, `FR-AAD-06`, `FR-AAD-07`
-- **Phase:** Elaboration
-- **Priority:** High
-- **Module:** `AAD` (v0.2.0)
-- **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
+- `UC-AAD-02 · FR-AAD-04, FR-AAD-05, FR-AAD-06, FR-AAD-07 · Elaboration · AAD (v0.2.0) · Minutes of meetings`
+- **Priority:** High (realizes FR-AAD-04, FR-AAD-05, FR-AAD-06, FR-AAD-07)
+- **UML Relationships:**
+  - `<<include>>` Validate Schedule Availability & Conflicts [Condition: a schedule is opened, updated, closed, or reopened]
+
+### Minutes (linked to wiki)
+[Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
+
+- **Related Use Cases:** UC-AAD-04 reflects schedule changes; UC-AAD-05 consumes available slots.
 - **GitHub Issue:** [#85](https://github.com/paticama/ISO26-ISO2-A1.01/issues/85)
 - **Actor:** Admissions Staff
 - **Secondary Actors:** Physician, Medical staff, System Administrator (configuration and access only)
@@ -37,12 +40,15 @@
 
 ## RADIT Disciplines
 - [x] Requirements: Specify schedule lifecycle and appointment impact handling.
-- [ ] Architecture: Define schedule, resource, and booking boundaries.
+- [ ] Analysis: Define schedule, resource, and booking boundaries.
 - [ ] Design: Define schedule DTOs, conflict rules, and rescheduling contracts.
 - [ ] Implementation: Implement schedule management and availability services.
 - [ ] Testing: Test overlap, capacity, closing, reopening, and affected appointments.
 
 ## Contracts and Interfaces
+- `Actor:` Admissions Staff.
+- `System:` Admissions Workstation / AAD Module (`AAD` v0.2.0).
+- `Detailed Specification:` [`UC-AAD-02-manage-schedules.md`](https://github.com/paticama/ISO26-ISO2-A1.01/blob/CU00-Alba/docs/use-cases/UC-AAD-02-manage-schedules.md)
 - `Client:` Admissions UI for schedule search, creation, update, closing, and reopening.
 - `Server:` AAD schedule and availability service.
 - `Schedule interface:` Schedule, resource, capacity, and conflict-validation contract.
@@ -59,7 +65,6 @@
 
 ## Decisions (DECISIONS.md)
 - See [DECISIONS.md](../../feature/CU00-initial-structure/DECISIONS.md).
-- Requirements meeting minutes remain neutral until a confirmed link is available.
 
 ## Effort Estimation
 - **Estimated effort without AI:** 12 hours

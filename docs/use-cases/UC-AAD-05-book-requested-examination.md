@@ -1,12 +1,15 @@
 # UC-AAD-05 – Book Requested Examination (Admissions v0.5.0)
 
 ## Use Case
-- **UC:** `UC-AAD-05`
-- **RF:** `FR-AAD-12`
-- **Phase:** Elaboration
-- **Priority:** High
-- **Module:** `AAD` (v0.5.0)
-- **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
+- `UC-AAD-05 · FR-AAD-12 · Elaboration · AAD (v0.5.0) · Minutes of meetings`
+- **Priority:** High (realizes FR-AAD-12)
+- **UML Relationships:**
+  - `<<include>>` Validate Schedule Availability & Conflicts [Condition: before confirming a booking or rescheduling a slot]
+
+### Minutes (linked to wiki)
+[Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
+
+- **Related Use Cases:** UC-AAD-03 provides priority and waitlist context; UC-AAD-04 reflects booking, rescheduling, and cancellation effects; UC-PAT-03 is Notify Patient; UC-PAT-04 is Follow-ups.
 - **GitHub Issue:** [#88](https://github.com/paticama/ISO26-ISO2-A1.01/issues/88)
 - **Actor:** Admissions Staff
 - **Secondary Actors:** Physician, Patient, Medical staff, System Administrator (policy and access configuration only)
@@ -27,24 +30,28 @@
   4. **[Client]** The client submits the booking request.
   5. **[Server]** The server atomically revalidates request state, eligibility, conflicts, and slot availability.
   6. **[Server]** The server creates the booking, changes the request to `Booked`, consumes capacity, and records an audit event.
-  7. **[Server]** The system sends the configured patient notification and updates the daily worklist.
+  7. **[Server]** The system sends the configured patient notification and updates the daily worklist as booking effects.
   8. **[Client]** The system displays the booking and notification outcome.
 - **Alternative / Exception Flows:**
   - **A1. Occupied slot [Server -> Client]:** The booking is rejected and current compatible slots are returned.
-  - **A2. Reschedule request [Server]:** The new slot is validated, the original history is preserved, and the worklist is updated.
-  - **A3. Cancellation request [Server]:** The cancellation reason is recorded, capacity is released according to policy, and the worklist is updated.
-  - **A4. Notification failure [Server -> Client]:** The booking remains auditable while notification status is marked failed or pending for retry.
-  - **A5. Concurrent booking [Server]:** Stale availability is rejected and capacity cannot be oversold.
-  - **A6. Unauthorized policy action [Server -> Client]:** System Administrator configuration is denied to Admissions Staff.
+  - **A2. No compatible slot [Server -> Client]:** The request remains in the waitlist with its priority and waiting-time context preserved.
+  - **A3. Reschedule request [Server]:** The new slot is validated, the original history is preserved, the patient request is processed, and the worklist is updated.
+  - **A4. Cancellation request [Server]:** The cancellation reason is recorded, capacity is released according to policy, the patient request is processed, and the worklist is updated.
+  - **A5. Notification failure [Server -> Client]:** The booking remains auditable while notification status is marked failed or pending for retry.
+  - **A6. Concurrent booking [Server]:** Stale availability is rejected and capacity cannot be oversold.
+  - **A7. Unauthorized policy action [Server -> Client]:** System Administrator configuration is denied to Admissions Staff.
 
 ## RADIT Disciplines
 - [x] Requirements: Specify examination booking, notification, and worklist integration.
-- [ ] Architecture: Define booking transaction and notification boundaries.
+- [ ] Analysis: Define booking transaction and notification boundaries.
 - [ ] Design: Define booking DTOs, state transitions, and slot-validation contracts.
 - [ ] Implementation: Implement booking, notification, and worklist update services.
 - [ ] Testing: Test occupied slots, priority, state transitions, cancellation, rescheduling, and concurrency.
 
 ## Contracts and Interfaces
+- `Actor:` Admissions Staff.
+- `System:` Admissions Workstation / AAD Module (`AAD` v0.5.0).
+- `Detailed Specification:` [`UC-AAD-05-book-requested-examination.md`](https://github.com/paticama/ISO26-ISO2-A1.01/blob/CU00-Alba/docs/use-cases/UC-AAD-05-book-requested-examination.md)
 - `Client:` Admissions UI for slot selection and booking confirmation.
 - `Server:` AAD examination-booking service.
 - `Schedule interface:` Retrieves and atomically reserves compatible capacity.
@@ -64,7 +71,6 @@
 
 ## Decisions (DECISIONS.md)
 - See [DECISIONS.md](../../feature/CU00-initial-structure/DECISIONS.md).
-- Requirements meeting minutes remain neutral until a confirmed link is available.
 
 ## Effort Estimation
 - **Estimated effort without AI:** 12 hours

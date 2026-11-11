@@ -1,12 +1,14 @@
 # UC-AAD-03 – Manage Waitlist and Priority (Admissions v0.3.0)
 
 ## Use Case
-- **UC:** `UC-AAD-03`
-- **RF:** `FR-AAD-10`, `FR-AAD-11`
-- **Phase:** Construction
-- **Priority:** Medium
-- **Module:** `AAD` (v0.3.0)
-- **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
+- `UC-AAD-03 · FR-AAD-10, FR-AAD-11 · Construction · AAD (v0.3.0) · Minutes of meetings`
+- **Priority:** Medium (realizes FR-AAD-10, FR-AAD-11)
+- **UML Relationships:** None
+
+### Minutes (linked to wiki)
+[Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
+
+- **Related Use Cases:** UC-AAD-05 receives eligible requests for booking; UC-PHY-01 and UC-PHY-02 provide pending examination requests.
 - **GitHub Issue:** [#86](https://github.com/paticama/ISO26-ISO2-A1.01/issues/86)
 - **Actor:** Admissions Staff
 - **Secondary Actors:** Physician, Patient, System Administrator (policy and access configuration only)
@@ -31,17 +33,19 @@
   - **A1. Duplicate active request [Server]:** The system prevents a duplicate entry and displays the existing request.
   - **A2. Missing priority data [Server -> Client]:** The entry is marked incomplete and cannot be promoted.
   - **A3. Priority correction [Server]:** Original value, new value, reason, actor, and timestamp are stored.
-  - **A4. Capacity unavailable [Server -> Client]:** The request remains waiting and its position is recalculated.
-  - **A5. Unauthorized priority change [Server -> Client]:** The change is denied and the queue remains unchanged.
+  - **A4. Unauthorized priority change [Server -> Client]:** The change is denied and the queue remains unchanged.
 
 ## RADIT Disciplines
 - [x] Requirements: Specify waitlist intake, ordering, correction, and promotion.
-- [ ] Architecture: Define request, waitlist, and priority-policy boundaries.
+- [ ] Analysis: Define request, waitlist, and priority-policy boundaries.
 - [ ] Design: Define queue-ordering and audit interfaces.
 - [ ] Implementation: Implement waitlist and priority management services.
 - [ ] Testing: Test duplicate prevention, ordering, corrections, removals, and promotion.
 
 ## Contracts and Interfaces
+- `Actor:` Admissions Staff.
+- `System:` Admissions Workstation / AAD Module (`AAD` v0.3.0).
+- `Detailed Specification:` [`UC-AAD-03-manage-waitlist-and-priority.md`](https://github.com/paticama/ISO26-ISO2-A1.01/blob/CU00-Alba/docs/use-cases/UC-AAD-03-manage-waitlist-and-priority.md)
 - `Client:` Admissions UI for waitlist review, priority correction, removal, and promotion.
 - `Server:` AAD waitlist and priority service.
 - `Waitlist interface:` Pending-request intake, queue ordering, correction, removal, and promotion contract.
@@ -58,7 +62,6 @@
 
 ## Decisions (DECISIONS.md)
 - See [DECISIONS.md](../../feature/CU00-initial-structure/DECISIONS.md).
-- Requirements meeting minutes remain neutral until a confirmed link is available.
 
 ## Effort Estimation
 - **Estimated effort without AI:** 10 hours
