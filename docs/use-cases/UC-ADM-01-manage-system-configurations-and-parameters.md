@@ -4,6 +4,7 @@
 - **UC:** `UC-ADM-01`
 - **RF:** `FR-ADM-01`, `FR-ADM-02`, `FR-ADM-03`, `FR-ADM-04`, `FR-ADM-05`, `FR-ADM-06`
 - **Phase:** Elaboration
+- **Iteration:** 1
 - **Module:** `sescam-system-admin` (v0.1.0)
 - **Priority:** High
 - **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)

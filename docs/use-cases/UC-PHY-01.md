@@ -4,6 +4,7 @@
 - **UC:** `UC-PHY-01`
 - **RF:** `FR-PHY-01`, `FR-PHY-02`, `FR-PHY-03`
 - **Phase:** Elaboration
+- **Iteration:** 2
 - **Module:** `sescam-order-entry` (v0.1.0)
 - **Priority:** High (ISO/IEC/IEEE 29148:2018)
 - **UML Relationships:**

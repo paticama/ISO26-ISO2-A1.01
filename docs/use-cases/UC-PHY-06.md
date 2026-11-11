@@ -4,6 +4,7 @@
 - **UC:** `UC-PHY-06`
 - **RF:** `FR-PHY-18`, `FR-PHY-19`, `FR-PHY-20`
 - **Phase:** Late Construction
+- **Iteration:** 5
 - **Module:** `sescam-analytics` (v0.1.0)
 - **Priority:** Low (ISO/IEC/IEEE 29148:2018)
 - **UML Relationships:**

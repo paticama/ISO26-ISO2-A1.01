@@ -4,6 +4,7 @@
 - **UC:** `UC-PAT-01`
 - **RF:** `FR-PAT-01`, `FR-PAT-02`, `FR-PAT-03`, `FR-PAT-04`, `FR-PAT-05`, `FR-PAT-10`
 - **Phase:** Elaboration
+- **Iteration:** 2
 - **Module:** `sescam-patient-portal` (v0.1.0)
 - **Priority:** High (ISO/IEC/IEEE 29148:2018 / Inherited from FR-PAT-01 and FR-PAT-02)
 - **UML Relationships:**

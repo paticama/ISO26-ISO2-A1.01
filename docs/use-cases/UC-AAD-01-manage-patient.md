@@ -4,6 +4,7 @@
 - **UC:** `UC-AAD-01`
 - **RF:** `FR-AAD-01`, `FR-AAD-02`, `FR-AAD-03`
 - **Phase:** Elaboration
+- **Iteration:** 1
 - **Priority:** High
 - **Module:** `AAD` (v0.1.0)
 - **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
