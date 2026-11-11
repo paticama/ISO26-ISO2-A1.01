@@ -6,7 +6,7 @@
 - **Phase:** Elaboration
 - **Module:** `sescam-system-admin` (v0.2.0)
 - **Priority:** High
-- **Minutes:** [Minutes of meetings](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
+- **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
 - **GitHub Issue:** [#50](https://github.com/paticama/ISO26-ISO2-A1.01/issues/50)
 - **Actor:** System administrator
 - **Description:** Enables an authorized system administrator to assign and maintain user roles so access to system capabilities follows the permissions associated with each role.
@@ -37,7 +37,6 @@
 - [ ] Testing
 
 ## Contracts and Interfaces
-- **Actor:** System administrator.
 - **System:** Administrator Server.
 - **Inputs:** Target user account, requested role assignment or change, and authenticated administrator identity.
 - **Outputs:** Current role assignment, validation and save result, and confirmation of resulting access.

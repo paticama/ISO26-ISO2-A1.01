@@ -10,7 +10,7 @@
   - `<<include>>` View Medical Image Series in DICOM/PACS Viewer
   - Extended by: Issue Diagnostic Report Addendum [Extension Point: PostSignatureRevision]
   - Extended by: UC-PHY-02 (Order Periodic Follow-up) [Extension Point: FollowUpRecommendation]
-- **Minutes:** [Meeting #3 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
+- **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
 - **GitHub Issue:** [#22](https://github.com/paticama/ISO26-ISO2-A1.01/issues/22)
 - **Actor:** Physician
 - **Secondary Actors:** Departmental RIS/PACS Platform, Hospital EHR (HCE), Patient User (Notification)

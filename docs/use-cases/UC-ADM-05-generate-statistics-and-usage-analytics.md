@@ -3,10 +3,10 @@
 ## Use Case
 - **UC:** `UC-ADM-05`
 - **RF:** `FR-ADM-22`, `FR-ADM-23`, `FR-ADM-24`, `FR-ADM-25`, `FR-ADM-26`
-- **Phase:** Inception
+- **Phase:** Late Construction
 - **Module:** `sescam-system-admin` (v0.5.0)
 - **Priority:** Low
-- **Minutes:** [Minutes of meetings](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
+- **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
 - **GitHub Issue:** [#65](https://github.com/paticama/ISO26-ISO2-A1.01/issues/65)
 - **Actor:** System administrator
 - **Description:** Enables an authorized system administrator to generate and review global statistics and usage reports to understand system activity and adoption.
@@ -36,7 +36,6 @@
 - [ ] Testing
 
 ## Contracts and Interfaces
-- **Actor:** System administrator.
 - **System:** Administrator Server.
 - **Inputs:** Report or metric selection, time range, supported filters and grouping options, and authenticated administrator identity.
 - **Outputs:** Global statistics and usage results, data-coverage or freshness information, and explicit validation, empty-result, authorization, and error messages.

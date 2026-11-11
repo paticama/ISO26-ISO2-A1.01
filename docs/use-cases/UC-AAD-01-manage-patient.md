@@ -6,7 +6,7 @@
 - **Phase:** Elaboration
 - **Priority:** High
 - **Module:** `AAD` (v0.1.0)
-- **Minutes:** [Minutes of meetings](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
+- **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
 - **GitHub Issue:** [#84](https://github.com/paticama/ISO26-ISO2-A1.01/issues/84)
 - **Actor:** Admissions Staff
 - **Secondary Actors:** Admissions system, Electronic Health Record (EHR / HCE), System Administrator (configuration and access only)

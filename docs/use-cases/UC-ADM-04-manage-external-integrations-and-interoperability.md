@@ -3,10 +3,10 @@
 ## Use Case
 - **UC:** `UC-ADM-04`
 - **RF:** `FR-ADM-16`, `FR-ADM-17`, `FR-ADM-18`, `FR-ADM-19`, `FR-ADM-20`, `FR-ADM-21`
-- **Phase:** Inception
+- **Phase:** Elaboration
 - **Module:** `sescam-system-admin` (v0.4.0)
-- **Priority:** Medium
-- **Minutes:** [Minutes of meetings](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
+- **Priority:** High (Raised by team decision: SSO, EHR and RIS/PACS integration is the highest technical risk and a dependency of every High use case, Criteria 1 and 3)
+- **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
 - **GitHub Issue:** [#59](https://github.com/paticama/ISO26-ISO2-A1.01/issues/59)
 - **Actor:** System administrator
 - **Description:** Enables an authorized system administrator to configure and monitor external hospital integrations while making connection and synchronization status visible.
@@ -38,7 +38,6 @@
 - [ ] Testing
 
 ## Contracts and Interfaces
-- **Actor:** System administrator.
 - **System:** Administrator Server.
 - **Inputs:** Integration identifier, supported endpoint and connection settings, securely supplied credentials, and authenticated administrator identity.
 - **Outputs:** Configuration status, connection or synchronization health where supported, and diagnostics that do not disclose secrets.

@@ -6,7 +6,7 @@
 - **Phase:** Elaboration
 - **Module:** `sescam-system-admin` (v0.1.0)
 - **Priority:** High
-- **Minutes:** [Minutes of meetings](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
+- **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
 - **GitHub Issue:** [#44](https://github.com/paticama/ISO26-ISO2-A1.01/issues/44)
 - **Actor:** System administrator
 - **Description:** Enables an authorized system administrator to review and update system-wide configuration parameters and see whether changes take effect immediately or require a restart or reload.
@@ -37,7 +37,6 @@
 - [ ] Testing
 
 ## Contracts and Interfaces
-- **Actor:** System administrator.
 - **System:** Administrator Server.
 - **Inputs:** Configuration parameter identifier, proposed value, and authenticated administrator identity.
 - **Outputs:** Current and updated values, validation or save result, and whether a change is active or pending.
