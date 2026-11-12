@@ -1,11 +1,11 @@
-# UC-PAT-04 – Consult My Follow-ups and Clinical Guidelines (Patient v0.5.0)
+# UC-PAT-04 – Consult My Follow-ups and Clinical Guidelines (sescam-orders v0.4.0)
 
 ## Use Case
 - **UC:** `UC-PAT-04`
 - **RF:** `FR-PAT-16`, `FR-PAT-17`, `FR-PAT-18`, `FR-PAT-19`
 - **Phase:** Late Construction
-- **Iteration:** 5
-- **Module:** `sescam-patient-portal` (v0.5.0)
+- **Iteration:** 4
+- **Module:** `sescam-orders` (v0.4.0)
 - **Priority:** Low (ISO/IEC/IEEE 29148:2018 / Inherited from FR-PAT-16 and FR-PAT-17)
 - **UML Relationships:**
   - Related Use Cases: UC-PHY-02 creates the periodic surveillance plans shown here; UC-ADM-01 maintains the clinical protocols and guidelines; once a follow-up is booked (UC-AAD-05) it is also shown in UC-PAT-01.
@@ -65,6 +65,7 @@
 ## Effort Estimation
 - **Estimated effort without AI:** 6 hours
 - **Estimated effort with AI (Copilot):** 3.5 hours
+- **Estimated effort with AI + 25% safety margin:** 4.38 hours
 
 ---
 

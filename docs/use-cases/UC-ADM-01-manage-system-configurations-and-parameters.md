@@ -1,11 +1,11 @@
-# UC-ADM-01 – Manage System Configurations & Parameters (Administrators v0.1.0)
+# UC-ADM-01 – Manage System Configurations & Parameters (sescam-catalogue v0.1.0)
 
 ## Use Case
 - **UC:** `UC-ADM-01`
 - **RF:** `FR-ADM-01`, `FR-ADM-02`, `FR-ADM-03`, `FR-ADM-04`, `FR-ADM-05`, `FR-ADM-06`
 - **Phase:** Elaboration
 - **Iteration:** 1
-- **Module:** `sescam-system-admin` (v0.1.0)
+- **Module:** `sescam-catalogue` (v0.1.0)
 - **Priority:** High
 - **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
 - **GitHub Issue:** [#44](https://github.com/paticama/ISO26-ISO2-A1.01/issues/44)
@@ -38,7 +38,7 @@
 - [ ] Testing
 
 ## Contracts and Interfaces
-- **System:** Administrator Server.
+- **System:** sescam-catalogue.
 - **Inputs:** Configuration parameter identifier, proposed value, and authenticated administrator identity.
 - **Outputs:** Current and updated values, validation or save result, and whether a change is active or pending.
 
@@ -55,6 +55,7 @@
 ## Effort Estimation
 - **Estimated effort without AI:** 8 hours
 - **Estimated effort with AI (Copilot):** 4 hours
+- **Estimated effort with AI + 25% safety margin:** 5 hours
 
 ---
 

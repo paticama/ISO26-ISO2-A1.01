@@ -1,11 +1,11 @@
-# UC-PHY-03 – Manage Orders and Consult Clinical Execution Schedules (Physicians v0.2.0)
+# UC-PHY-03 – Manage Orders and Consult Clinical Execution Schedules (sescam-orders v0.2.0)
 
 ## Use Case
 - **UC:** `UC-PHY-03`
 - **RF:** `FR-PHY-06`, `FR-PHY-07`, `FR-PHY-08`
 - **Phase:** Construction
 - **Iteration:** 3
-- **Module:** `sescam-order-entry` (v0.2.0)
+- **Module:** `sescam-orders` (v0.2.0)
 - **Priority:** Medium (ISO/IEC/IEEE 29148:2018)
 - **Dependencies:** FR-PHY-08 depends on FR-PHY-07 and FR-ADM-13 (UC-ADM-03).
 - **UML Relationships:**
@@ -52,6 +52,7 @@
 ## Effort Estimation
 - **Estimated effort without AI:** 6 hours
 - **Estimated effort with AI (Copilot):** 2.5 hours
+- **Estimated effort with AI + 25% safety margin:** 3.13 hours
 
 ---
 

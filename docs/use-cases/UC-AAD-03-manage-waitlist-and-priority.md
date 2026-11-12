@@ -1,4 +1,4 @@
-# UC-AAD-03 – Manage Waitlist and Priority (Admissions v0.4.0)
+# UC-AAD-03 – Manage Waitlist and Priority (sescam-admissions v0.5.0)
 
 ## Use Case
 - **UC:** `UC-AAD-03`
@@ -6,7 +6,7 @@
 - **Phase:** Construction
 - **Iteration:** 3
 - **Priority:** Medium
-- **Module:** `AAD` (v0.4.0)
+- **Module:** `sescam-admissions` (v0.5.0)
 - **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
 - **GitHub Issue:** [#86](https://github.com/paticama/ISO26-ISO2-A1.01/issues/86)
 - **Actor:** Admissions Staff
@@ -64,6 +64,7 @@
 ## Effort Estimation
 - **Estimated effort without AI:** 10 hours
 - **Estimated effort with AI (Copilot):** 5 hours
+- **Estimated effort with AI + 25% safety margin:** 6.25 hours
 
 ---
 

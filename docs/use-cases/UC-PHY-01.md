@@ -1,11 +1,11 @@
-# UC-PHY-01 – Order and Prescribe Diagnostic Procedure (Physicians v0.1.0)
+# UC-PHY-01 – Order and Prescribe Diagnostic Procedure (sescam-orders v0.1.0)
 
 ## Use Case
 - **UC:** `UC-PHY-01`
 - **RF:** `FR-PHY-01`, `FR-PHY-02`, `FR-PHY-03`
 - **Phase:** Elaboration
 - **Iteration:** 2
-- **Module:** `sescam-order-entry` (v0.1.0)
+- **Module:** `sescam-orders` (v0.1.0)
 - **Priority:** High (ISO/IEC/IEEE 29148:2018)
 - **UML Relationships:**
   - `<<include>>` Verify Patient Safety Constraints & Contrast Allergies
@@ -57,6 +57,7 @@
 ## Effort Estimation
 - **Estimated effort without AI:** 8 hours
 - **Estimated effort with AI (Copilot):** 3 hours
+- **Estimated effort with AI + 25% safety margin:** 3.75 hours
 
 ---
 

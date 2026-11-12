@@ -1,11 +1,11 @@
-# UC-PAT-05 – Submit Incident Report (Patient v0.4.0)
+# UC-PAT-05 – Submit Incident Report (sescam-communication v0.2.0)
 
 ## Use Case
 - **UC:** `UC-PAT-05`
 - **RF:** `FR-PAT-14`
 - **Phase:** Construction
-- **Iteration:** 4
-- **Module:** `sescam-patient-portal` (v0.4.0)
+- **Iteration:** 3
+- **Module:** `sescam-communication` (v0.2.0)
 - **Priority:** Medium (ISO/IEC/IEEE 29148:2018 / Inherited from FR-PAT-14)
 - **UML Relationships:**
   - Related Use Cases: UC-PHY-05 records clinical and operational incidents from the physician side using the same incident categories; UC-PAT-01 and UC-PAT-02 provide the appointments and procedures an incident can refer to.
@@ -60,6 +60,7 @@
 ## Effort Estimation
 - **Estimated effort without AI:** 5 hours
 - **Estimated effort with AI (Copilot):** 3 hours
+- **Estimated effort with AI + 25% safety margin:** 3.75 hours
 
 ---
 

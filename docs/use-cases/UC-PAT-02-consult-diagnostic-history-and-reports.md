@@ -1,11 +1,11 @@
-# UC-PAT-02 – Consult My Diagnostic History and Reports (Patient v0.2.0)
+# UC-PAT-02 – Consult My Diagnostic History and Reports (sescam-diagnostics v0.3.0)
 
 ## Use Case
 - **UC:** `UC-PAT-02`
 - **RF:** `FR-PAT-11`, `FR-PAT-12`, `FR-PAT-13`
 - **Phase:** Construction
 - **Iteration:** 3
-- **Module:** `sescam-patient-portal` (v0.2.0)
+- **Module:** `sescam-diagnostics` (v0.3.0)
 - **Priority:** Medium by team decision; FR-PAT-11 to FR-PAT-13 were aligned to Medium so the use case matches the rule that a use case takes the highest priority among its functional requirements.
 - **UML Relationships:**
   - Related Use Cases: UC-PHY-05 registers the executed procedures listed here; UC-PHY-04 produces the signed reports and addenda; UC-PAT-03 sends the report-availability notice that links to this use case.
@@ -63,6 +63,7 @@
 ## Effort Estimation
 - **Estimated effort without AI:** 8 hours
 - **Estimated effort with AI (Copilot):** 4.5 hours
+- **Estimated effort with AI + 25% safety margin:** 5.63 hours
 
 ---
 

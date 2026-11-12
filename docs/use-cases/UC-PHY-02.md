@@ -1,11 +1,11 @@
-# UC-PHY-02 – Order Periodic Follow-up Surveillance Procedure (Physicians v0.3.0)
+# UC-PHY-02 – Order Periodic Follow-up Surveillance Procedure (sescam-orders v0.3.0)
 
 ## Use Case
 - **UC:** `UC-PHY-02`
 - **RF:** `FR-PHY-04`, `FR-PHY-05`
 - **Phase:** Construction
-- **Iteration:** 4
-- **Module:** `sescam-order-entry` (v0.3.0)
+- **Iteration:** 3
+- **Module:** `sescam-orders` (v0.3.0)
 - **Priority:** Medium (ISO/IEC/IEEE 29148:2018)
 - **UML Relationships:**
   - `<<include>>` Verify Patient Safety Constraints & Contrast Allergies
@@ -53,6 +53,7 @@
 ## Effort Estimation
 - **Estimated effort without AI:** 6 hours
 - **Estimated effort with AI (Copilot):** 2.5 hours
+- **Estimated effort with AI + 25% safety margin:** 3.13 hours
 
 ---
 

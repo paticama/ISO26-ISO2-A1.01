@@ -1,11 +1,11 @@
-# UC-PHY-05 – Log Procedure Execution Details and Clinical/Operational Incidents (Physicians v0.1.0)
+# UC-PHY-05 – Log Procedure Execution Details and Clinical/Operational Incidents (sescam-diagnostics v0.1.0)
 
 ## Use Case
 - **UC:** `UC-PHY-05`
 - **RF:** `FR-PHY-09`, `FR-PHY-10`, `FR-PHY-11`, `FR-PHY-17`
 - **Phase:** Elaboration
 - **Iteration:** 2
-- **Module:** `sescam-execution-reporting` (v0.1.0)
+- **Module:** `sescam-diagnostics` (v0.1.0)
 - **Priority:** High (ISO/IEC/IEEE 29148:2018)
 - **Dependencies:** FR-PHY-09 depends on FR-PHY-01 (UC-PHY-01) and FR-AAD-12 (UC-AAD-05).
 - **UML Relationships:**
@@ -52,6 +52,7 @@
 ## Effort Estimation
 - **Estimated effort without AI:** 5 hours
 - **Estimated effort with AI (Copilot):** 2 hours
+- **Estimated effort with AI + 25% safety margin:** 2.5 hours
 
 ---
 

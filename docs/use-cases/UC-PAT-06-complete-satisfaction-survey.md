@@ -1,11 +1,11 @@
-# UC-PAT-06 – Complete Satisfaction Survey (Patient v0.6.0)
+# UC-PAT-06 – Complete Satisfaction Survey (sescam-communication v0.3.0)
 
 ## Use Case
 - **UC:** `UC-PAT-06`
 - **RF:** `FR-PAT-15`
 - **Phase:** Late Construction
-- **Iteration:** 5
-- **Module:** `sescam-patient-portal` (v0.6.0)
+- **Iteration:** 4
+- **Module:** `sescam-communication` (v0.3.0)
 - **Priority:** Low (ISO/IEC/IEEE 29148:2018 / Inherited from FR-PAT-15)
 - **UML Relationships:**
   - Related Use Cases: UC-PHY-05 marks the procedure as executed, which makes the survey available; UC-AAD-06 and UC-ADM-05 consume the aggregated results.
@@ -61,6 +61,7 @@
 ## Effort Estimation
 - **Estimated effort without AI:** 6 hours
 - **Estimated effort with AI (Copilot):** 3.5 hours
+- **Estimated effort with AI + 25% safety margin:** 4.38 hours
 
 ---
 

@@ -1,11 +1,11 @@
-# UC-PHY-04 – Author, Edit, and Review Diagnostic Reports and Medical Images (Physicians v0.2.0)
+# UC-PHY-04 – Author, Edit, and Review Diagnostic Reports and Medical Images (sescam-diagnostics v0.2.0)
 
 ## Use Case
 - **UC:** `UC-PHY-04`
 - **RF:** `FR-PHY-12`, `FR-PHY-13`, `FR-PHY-14`, `FR-PHY-15`, `FR-PHY-16`
 - **Phase:** Elaboration
 - **Iteration:** 2
-- **Module:** `sescam-execution-reporting` (v0.2.0)
+- **Module:** `sescam-diagnostics` (v0.2.0)
 - **Priority:** High (ISO/IEC/IEEE 29148:2018)
 - **Dependencies:** FR-PHY-16 depends on FR-PHY-15 and FR-ADM-13 (UC-ADM-03).
 - **UML Relationships:**
@@ -59,6 +59,7 @@
 ## Effort Estimation
 - **Estimated effort without AI:** 10 hours
 - **Estimated effort with AI (Copilot):** 4 hours
+- **Estimated effort with AI + 25% safety margin:** 5 hours
 
 ---
 

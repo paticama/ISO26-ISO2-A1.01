@@ -1,4 +1,4 @@
-# UC-AAD-02 – Manage Schedules (Admissions v0.2.0)
+# UC-AAD-02 – Manage Schedules (sescam-admissions v0.2.0)
 
 ## Use Case
 - **UC:** `UC-AAD-02`
@@ -6,7 +6,7 @@
 - **Phase:** Elaboration
 - **Iteration:** 2
 - **Priority:** High
-- **Module:** `AAD` (v0.2.0)
+- **Module:** `sescam-admissions` (v0.2.0)
 - **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
 - **GitHub Issue:** [#85](https://github.com/paticama/ISO26-ISO2-A1.01/issues/85)
 - **Actor:** Admissions Staff
@@ -65,6 +65,7 @@
 ## Effort Estimation
 - **Estimated effort without AI:** 12 hours
 - **Estimated effort with AI (Copilot):** 6 hours
+- **Estimated effort with AI + 25% safety margin:** 7.5 hours
 
 ---
 
