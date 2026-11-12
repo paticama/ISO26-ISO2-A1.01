@@ -25,7 +25,7 @@
   4. **[Server]** The system persists the execution record and updates the procedure status to `Executed / Pending Report`.
   5. **[Client]** Confirms execution recording.
 - **Alternative / Exception Flows:**
-  - **2a. Document clinical or operational incident [Client -> Server]:** If an anomaly occurs (e.g., adverse contrast reaction, patient non-compliance, equipment malfunction), the physician logs an incident, specifying type, severity, and narrative. The server stores the incident audit record.
+  - **2a. Document clinical incident or adverse contrast reaction [Client -> Server]:** If an anomaly occurs (e.g., adverse contrast reaction, anaphylactoid event, equipment malfunction), the physician logs an incident, specifying type, severity, and narrative. The server stores the incident audit record.
   - **2b. Procedure aborted due to incident [Server]:** If the incident prevents examination completion, the server marks the procedure as `Incomplete / Incident` and notifies Admissions for rescheduling.
 
 ## RADIT Disciplines
@@ -36,7 +36,7 @@
 - [ ] Testing: Tests for aborted procedures and rescheduling alerts.
 
 ## Contracts and Interfaces
-- `es.uclm.esi.sescam.reporting.api.ProcedureExecutionService`
+- `es.uclm.esi.sescam.diagnostics.api.ProcedureExecutionService`
 - `ExecutionLogDTO`, `IncidentDTO`
 
 ## Acceptance Criteria

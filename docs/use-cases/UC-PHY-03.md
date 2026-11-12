@@ -17,7 +17,7 @@
   1. The physician is authenticated in the system via SSO.
 - **Postconditions:**
   1. The physician consults updated order statuses and calendar schedule availability.
-  2. If requested, an unexecuted pending order is updated or cancelled.
+  2. If requested, an unexecuted pending order is updated or cancelled with an auditable justification.
 - **Main Success Scenario (Client–Server Interaction Flow):**
   1. **[Client]** The physician accesses the order tracking and schedule consultation view.
   2. **[Server]** The system retrieves and returns all diagnostic orders prescribed by the physician, indicating current statuses (`Ordered`, `Scheduled`, `Completed`, `Reported`, `Cancelled`).
@@ -26,7 +26,7 @@
   5. **[Server]** The system queries and returns calendar schedule availability across imaging modalities and technical examination rooms.
   6. **[Client]** Renders the schedule matrix and room availability calendars.
 - **Alternative / Exception Flows:**
-  - **3a. Modify or cancel pending order [Client -> Server]:** If a procedure has not yet been executed, the physician modifies its priority/clinical details or cancels the order. The server updates the record and alerts Admissions to free the scheduled slot.
+  - **3a. Modify or cancel pending order [Client -> Server]:** If a procedure has not yet been executed, the physician modifies its priority/clinical details or cancels the order, submitting an explicit cancellation rationale. The server writes an immutable audit record and frees the allocated slot in Admissions.
 
 ## RADIT Disciplines
 - [x] Requirements: Specify order status tracking, modality schedule queries, and order modification/cancellation.
@@ -36,12 +36,12 @@
 - [ ] Testing: Test unexecuted order cancellation and status transitions.
 
 ## Contracts and Interfaces
-- `es.uclm.esi.sescam.orderentry.api.OrderTrackingService`
+- `es.uclm.esi.sescam.schedules.api.OrderTrackingService`
 - `OrderFilterDTO`, `ExecutionScheduleDTO`
 
 ## Acceptance Criteria
 - [ ] Executed orders cannot be cancelled or modified.
-- [ ] Cancellation releases scheduled appointment slots in Admissions.
+- [ ] Cancellation releases scheduled appointment slots and logs audit trail.
 
 ## Decisions (DECISIONS.md)
 - Complies with **ADR-003** and **ADR-006**.
