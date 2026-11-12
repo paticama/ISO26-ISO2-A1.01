@@ -1,17 +1,15 @@
-# UC-PHY-05 — Log Procedure Execution Details and Clinical/Operational Incidents (Physicians v0.2.0)
+# UC-PHY-05 – Log Procedure Execution Details and Clinical/Operational Incidents (Physicians v0.2.0)
 
 ## Use Case
 - **UC:** `UC-PHY-05`
-- **FR:** `FR-PHY-09`, `FR-PHY-10`, `FR-PHY-11`, `FR-PHY-17`
+- **RF:** `FR-PHY-09`, `FR-PHY-10`, `FR-PHY-11`, `FR-PHY-17`
 - **Phase:** Construction
-- **Module:** `sescam-execution-reporting` (v0.2.0)
-- **Priority:** Medium (ISO/IEC/IEEE 29148:2018)
-- **UML Relationships:**
-  - Extended by: Record Adverse Contrast Reaction & Clinical Complications [Extension Point: ClinicalComplication]
+- **Module:** Diagnostics module (`sescam-diagnostics` v0.2.0)
 - **Minutes:** [Meeting #3 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
 - **GitHub Issue:** [#23](https://github.com/paticama/ISO26-ISO2-A1.01/issues/23)
-- **Actor:** Physician / Radiology Specialist (Generalization: Inherits from base Patient User)
-- **Secondary Actors:** Departmental RIS/PACS, Administrative / Admissions System
+- **Actor:** Physician User (Generalization: Inherits from base Patient User)
+- **Secondary Actors:** Departmental RIS/PACS, Patient Admission System
+- **UML Relationships:** — (None. Adverse contrast reaction and complications are an alternative flow 2a)
 - **Description:** Allows the physician to record radiological procedure execution details and document clinical or operational incidents occurring during the examination.
 - **Preconditions:**
   1. The physician is authenticated via SSO and selects an active scheduled procedure from the daily clinical worklist.
@@ -25,7 +23,7 @@
   4. **[Server]** The system persists the execution record and updates the procedure status to `Executed / Pending Report`.
   5. **[Client]** Confirms execution recording.
 - **Alternative / Exception Flows:**
-  - **2a. Document clinical or operational incident [Client -> Server]:** If an anomaly occurs (e.g., adverse contrast reaction, patient non-compliance, equipment malfunction), the physician logs an incident, specifying type, severity, and narrative. The server stores the incident audit record.
+  - **2a. Document clinical incident or adverse contrast reaction [Client -> Server]:** If an anomaly occurs (e.g., adverse contrast reaction, anaphylactoid event, equipment malfunction), the physician logs an incident, specifying type, severity, and narrative. The server stores the incident audit record.
   - **2b. Procedure aborted due to incident [Server]:** If the incident prevents examination completion, the server marks the procedure as `Incomplete / Incident` and notifies Admissions for rescheduling.
 
 ## RADIT Disciplines
@@ -36,7 +34,7 @@
 - [ ] Testing: Tests for aborted procedures and rescheduling alerts.
 
 ## Contracts and Interfaces
-- `es.uclm.esi.sescam.reporting.api.ProcedureExecutionService`
+- `es.uclm.esi.sescam.diagnostics.api.ProcedureExecutionService`
 - `ExecutionLogDTO`, `IncidentDTO`
 
 ## Acceptance Criteria
