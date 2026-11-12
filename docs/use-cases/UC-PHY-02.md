@@ -3,13 +3,16 @@
 ## Use Case
 - **UC:** `UC-PHY-02`
 - **RF:** `FR-PHY-04`, `FR-PHY-05`
-- **Phase:** Construction
-- **Module:** Schedules and appointments module (`sescam-schedules-appointments` v0.2.0)
-- **Minutes:** [Meeting #3 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
+- **Phase:** Late Construction
+- **Module:** `sescam-order-entry` (v0.2.0)
+- **Priority:** Low (ISO/IEC/IEEE 29148:2018)
+- **UML Relationships:**
+  - `<<include>>` Verify Patient Safety Constraints & Contrast Allergies
+  - `<<extend>>` UC-PHY-04 (Diagnostic Reporting) [Extension Point: FollowUpRecommendation]
+- **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
 - **GitHub Issue:** [#20](https://github.com/paticama/ISO26-ISO2-A1.01/issues/20)
-- **Actor:** Physician User (Generalization: Inherits from base Patient User)
-- **Secondary Actors:** Patient Admission System
-- **UML Relationships:** `<<include>>` Verify Patient Safety Constraints & Contrast Allergies; `<<extend>>` UC-PHY-04 Author, Edit, and Review Diagnostic Reports and Medical Images (extension point: `FollowUpRecommendation`)
+- **Actor:** Physician
+- **Secondary Actors:** Administrative / Admissions System
 - **Description:** Enables a physician to prescribe recurring follow-up diagnostic procedures with defined recurrence intervals, automatically generating future scheduling requirements.
 - **Preconditions:**
   1. The physician is authenticated via SSO and has selected an active patient.

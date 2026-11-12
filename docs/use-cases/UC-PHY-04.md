@@ -3,13 +3,17 @@
 ## Use Case
 - **UC:** `UC-PHY-04`
 - **RF:** `FR-PHY-12`, `FR-PHY-13`, `FR-PHY-14`, `FR-PHY-15`, `FR-PHY-16`
-- **Phase:** Construction
-- **Module:** Diagnostics module (`sescam-diagnostics` v0.1.0)
-- **Minutes:** [Meeting #3 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
+- **Phase:** Elaboration
+- **Module:** `sescam-execution-reporting` (v0.1.0)
+- **Priority:** High (ISO/IEC/IEEE 29148:2018)
+- **UML Relationships:**
+  - `<<include>>` View Medical Image Series in DICOM/PACS Viewer
+  - Extended by: Issue Diagnostic Report Addendum [Extension Point: PostSignatureRevision]
+  - Extended by: UC-PHY-02 (Order Periodic Follow-up) [Extension Point: FollowUpRecommendation]
+- **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
 - **GitHub Issue:** [#22](https://github.com/paticama/ISO26-ISO2-A1.01/issues/22)
-- **Actor:** Physician User (Generalization: Inherits from base Patient User)
-- **Secondary Actors:** Departmental RIS/PACS Platform, Hospital EHR (HCE)
-- **UML Relationships:** Extended by `UC-PHY-02 Order Periodic Follow-up Surveillance Procedure` (extension point: `FollowUpRecommendation`). Viewing DICOM images is an internal step; report addenda are an alternative flow.
+- **Actor:** Physician
+- **Secondary Actors:** Departmental RIS/PACS Platform, Hospital EHR (HCE), Patient User (Notification)
 - **Description:** Enables the physician to review acquired medical images using a DICOM-compliant viewer and author, edit, review, and digitally sign the corresponding diagnostic report.
 - **Preconditions:**
   1. The physician is authenticated via SSO.

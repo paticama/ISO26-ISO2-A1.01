@@ -2,14 +2,16 @@
 
 ## Use Case
 - **UC:** `UC-PHY-01`
-- **RF:** `FR-PHY-01`, `FR-PHY-02`, `FR-PHY-03`, `FR-PHY-04`, `FR-PHY-05`
+- **RF:** `FR-PHY-01`, `FR-PHY-02`, `FR-PHY-03`
 - **Phase:** Elaboration
-- **Module:** Diagnostics module (`sescam-diagnostics` v0.1.0)
-- **Minutes:** [Meeting #3 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
+- **Module:** `sescam-order-entry` (v0.1.0)
+- **Priority:** High (ISO/IEC/IEEE 29148:2018)
+- **UML Relationships:**
+  - `<<include>>` Verify Patient Safety Constraints & Contrast Allergies
+- **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
 - **GitHub Issue:** [#19](https://github.com/paticama/ISO26-ISO2-A1.01/issues/19)
-- **Actor:** Physician User (Generalization: Inherits from base Patient User)
-- **Secondary Actors:** Hospital EHR (HCE), Patient Admission System
-- **UML Relationships:** `<<include>>` Verify Patient Safety Constraints & Contrast Allergies
+- **Actor:** Physician
+- **Secondary Actors:** Electronic Health Record (EHR / HCE), Administrative / Admissions System
 - **Description:** Enables a physician to prescribe a radiological examination for an assigned patient from the system's catalogue of procedure types.
 - **Preconditions:**
   1. The physician is authenticated in the system via corporate Single Sign-On (SSO).

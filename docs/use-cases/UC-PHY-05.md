@@ -4,12 +4,14 @@
 - **UC:** `UC-PHY-05`
 - **RF:** `FR-PHY-09`, `FR-PHY-10`, `FR-PHY-11`, `FR-PHY-17`
 - **Phase:** Construction
-- **Module:** Diagnostics module (`sescam-diagnostics` v0.2.0)
-- **Minutes:** [Meeting #3 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings)
+- **Module:** `sescam-execution-reporting` (v0.2.0)
+- **Priority:** Medium (ISO/IEC/IEEE 29148:2018)
+- **UML Relationships:**
+  - Extended by: Record Adverse Contrast Reaction & Clinical Complications [Extension Point: ClinicalComplication]
+- **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
 - **GitHub Issue:** [#23](https://github.com/paticama/ISO26-ISO2-A1.01/issues/23)
-- **Actor:** Physician User (Generalization: Inherits from base Patient User)
-- **Secondary Actors:** Departmental RIS/PACS, Patient Admission System
-- **UML Relationships:** — (None. Adverse contrast reaction and complications are an alternative flow 2a)
+- **Actor:** Physician
+- **Secondary Actors:** Departmental RIS/PACS, Administrative / Admissions System
 - **Description:** Allows the physician to record radiological procedure execution details and document clinical or operational incidents occurring during the examination.
 - **Preconditions:**
   1. The physician is authenticated via SSO and selects an active scheduled procedure from the daily clinical worklist.
