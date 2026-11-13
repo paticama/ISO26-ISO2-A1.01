@@ -1,10 +1,11 @@
-# UC-PAT-01 – Manage My Appointments (Patient v0.1.0)
+# UC-PAT-01 – Manage My Appointments (sescam-admissions v0.4.0)
 
 ## Use Case
 - **UC:** `UC-PAT-01`
 - **RF:** `FR-PAT-01`, `FR-PAT-02`, `FR-PAT-03`, `FR-PAT-04`, `FR-PAT-05`, `FR-PAT-10`
 - **Phase:** Elaboration
-- **Module:** `sescam-patient-portal` (v0.1.0)
+- **Iteration:** 2
+- **Module:** `sescam-admissions` (v0.4.0)
 - **Priority:** High (ISO/IEC/IEEE 29148:2018 / Inherited from FR-PAT-01 and FR-PAT-02)
 - **UML Relationships:**
   - Related Use Cases: UC-AAD-05 creates the bookings shown here and processes the rescheduling and cancellation requests raised here (not `<<extend>>`); UC-PAT-03 notifies the patient of every change; UC-ADM-01 provides the preparation guidelines and the booking policy (confirmation and cancellation windows).
@@ -74,6 +75,7 @@
 ## Effort Estimation
 - **Estimated effort without AI:** 14 hours
 - **Estimated effort with AI (Copilot):** 8 hours
+- **Estimated effort with AI + 25% safety margin:** 10 hours
 
 ---
 

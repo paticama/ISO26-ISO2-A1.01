@@ -1,10 +1,11 @@
-# UC-ADM-05 – Generate Statistics & Usage Analytics (Administrators v0.5.0)
+# UC-ADM-05 – Generate Statistics & Usage Analytics (sescam-analytics v0.3.0)
 
 ## Use Case
 - **UC:** `UC-ADM-05`
 - **RF:** `FR-ADM-22`, `FR-ADM-23`, `FR-ADM-24`, `FR-ADM-25`, `FR-ADM-26`
 - **Phase:** Late Construction
-- **Module:** `sescam-system-admin` (v0.5.0)
+- **Iteration:** 4
+- **Module:** `sescam-analytics` (v0.3.0)
 - **Priority:** Low
 - **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
 - **GitHub Issue:** [#65](https://github.com/paticama/ISO26-ISO2-A1.01/issues/65)
@@ -36,7 +37,7 @@
 - [ ] Testing
 
 ## Contracts and Interfaces
-- **System:** Administrator Server.
+- **System:** sescam-analytics.
 - **Inputs:** Report or metric selection, time range, supported filters and grouping options, and authenticated administrator identity.
 - **Outputs:** Global statistics and usage results, data-coverage or freshness information, and explicit validation, empty-result, authorization, and error messages.
 
@@ -54,6 +55,7 @@
 ## Effort Estimation
 - **Estimated effort without AI:** 10 hours
 - **Estimated effort with AI (Copilot):** 5 hours
+- **Estimated effort with AI + 25% safety margin:** 6.25 hours
 
 ---
 

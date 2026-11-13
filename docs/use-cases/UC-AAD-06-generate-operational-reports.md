@@ -1,11 +1,12 @@
-# UC-AAD-06 – Generate Operational Reports (Admissions v0.6.0)
+# UC-AAD-06 – Generate Operational Reports (sescam-analytics v0.2.0)
 
 ## Use Case
 - **UC:** `UC-AAD-06`
 - **RF:** `FR-AAD-09`
 - **Phase:** Late Construction
+- **Iteration:** 4
 - **Priority:** Low
-- **Module:** `AAD` (v0.6.0)
+- **Module:** `sescam-analytics` (v0.2.0)
 - **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
 - **GitHub Issue:** [#89](https://github.com/paticama/ISO26-ISO2-A1.01/issues/89)
 - **Actor:** Admissions Staff
@@ -63,6 +64,7 @@
 ## Effort Estimation
 - **Estimated effort without AI:** 10 hours
 - **Estimated effort with AI (Copilot):** 5 hours
+- **Estimated effort with AI + 25% safety margin:** 6.25 hours
 
 ---
 

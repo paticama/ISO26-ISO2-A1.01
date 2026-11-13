@@ -1,11 +1,13 @@
-# UC-PHY-05 – Log Procedure Execution Details and Clinical/Operational Incidents (Physicians v0.2.0)
+# UC-PHY-05 – Log Procedure Execution Details and Clinical/Operational Incidents (sescam-diagnostics v0.1.0)
 
 ## Use Case
 - **UC:** `UC-PHY-05`
 - **RF:** `FR-PHY-09`, `FR-PHY-10`, `FR-PHY-11`, `FR-PHY-17`
-- **Phase:** Construction
-- **Module:** `sescam-execution-reporting` (v0.2.0)
-- **Priority:** Medium (ISO/IEC/IEEE 29148:2018)
+- **Phase:** Elaboration
+- **Iteration:** 2
+- **Module:** `sescam-diagnostics` (v0.1.0)
+- **Priority:** High (ISO/IEC/IEEE 29148:2018)
+- **Dependencies:** FR-PHY-09 depends on FR-PHY-01 (UC-PHY-01) and FR-AAD-12 (UC-AAD-05).
 - **UML Relationships:**
   - Extended by: Record Adverse Contrast Reaction & Clinical Complications [Extension Point: ClinicalComplication]
 - **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
@@ -14,7 +16,8 @@
 - **Secondary Actors:** Departmental RIS/PACS, Administrative / Admissions System
 - **Description:** Allows the physician to record radiological procedure execution details and document clinical or operational incidents occurring during the examination.
 - **Preconditions:**
-  1. The physician is authenticated via SSO and selects an active scheduled procedure from the daily clinical worklist.
+  1. The physician is authenticated via SSO.
+  2. The diagnostic procedure has been booked into a slot via UC-AAD-05 (FR-AAD-12).
 - **Postconditions:**
   1. Procedure execution details and technical resource utilization logs are persisted in the system.
   2. Any documented clinical or operational incidents are registered for clinical auditing or rescheduling.
@@ -49,6 +52,7 @@
 ## Effort Estimation
 - **Estimated effort without AI:** 5 hours
 - **Estimated effort with AI (Copilot):** 2 hours
+- **Estimated effort with AI + 25% safety margin:** 2.5 hours
 
 ---
 

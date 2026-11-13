@@ -1,11 +1,13 @@
-# UC-PHY-04 – Author, Edit, and Review Diagnostic Reports and Medical Images (Physicians v0.1.0)
+# UC-PHY-04 – Author, Edit, and Review Diagnostic Reports and Medical Images (sescam-diagnostics v0.2.0)
 
 ## Use Case
 - **UC:** `UC-PHY-04`
 - **RF:** `FR-PHY-12`, `FR-PHY-13`, `FR-PHY-14`, `FR-PHY-15`, `FR-PHY-16`
 - **Phase:** Elaboration
-- **Module:** `sescam-execution-reporting` (v0.1.0)
+- **Iteration:** 2
+- **Module:** `sescam-diagnostics` (v0.2.0)
 - **Priority:** High (ISO/IEC/IEEE 29148:2018)
+- **Dependencies:** FR-PHY-16 depends on FR-PHY-15 and FR-ADM-13 (UC-ADM-03).
 - **UML Relationships:**
   - `<<include>>` View Medical Image Series in DICOM/PACS Viewer
   - Extended by: Issue Diagnostic Report Addendum [Extension Point: PostSignatureRevision]
@@ -17,7 +19,8 @@
 - **Description:** Enables the physician to review acquired medical images using a DICOM-compliant viewer and author, edit, review, and digitally sign the corresponding diagnostic report.
 - **Preconditions:**
   1. The physician is authenticated via SSO.
-  2. The diagnostic procedure has been executed, and its medical images are archived in the departmental RIS/PACS.
+  2. The diagnostic procedure has already been executed, and its execution data is recorded in UC-PHY-05 (FR-PHY-09), which precedes UC-PHY-04 within Iteration 2; its medical images are archived in the departmental RIS/PACS.
+  3. The audit service in UC-ADM-03 (FR-ADM-13) is available for report-revision history.
 - **Postconditions:**
   1. The finalized diagnostic report is persisted, linked to the DICOM study, and synchronized with the patient's EHR via HL7/FHIR.
   2. The patient receives an automated notification regarding diagnostic report availability.
@@ -56,6 +59,7 @@
 ## Effort Estimation
 - **Estimated effort without AI:** 10 hours
 - **Estimated effort with AI (Copilot):** 4 hours
+- **Estimated effort with AI + 25% safety margin:** 5 hours
 
 ---
 

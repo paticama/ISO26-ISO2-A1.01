@@ -1,11 +1,12 @@
-# UC-ADM-03 – Audit & Compliance Management (Administrators v0.3.0)
+# UC-ADM-03 – Audit & Compliance Management (sescam-security v0.2.0)
 
 ## Use Case
 - **UC:** `UC-ADM-03`
 - **RF:** `FR-ADM-11`, `FR-ADM-12`, `FR-ADM-13`, `FR-ADM-14`, `FR-ADM-15`
-- **Phase:** Late Construction
-- **Module:** `sescam-system-admin` (v0.3.0)
-- **Priority:** Low
+- **Phase:** Elaboration
+- **Iteration:** 1
+- **Module:** `sescam-security` (v0.2.0)
+- **Priority:** High
 - **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
 - **GitHub Issue:** [#54](https://github.com/paticama/ISO26-ISO2-A1.01/issues/54)
 - **Actor:** System administrator or authorized compliance reviewer
@@ -35,7 +36,7 @@
 - [ ] Testing
 
 ## Contracts and Interfaces
-- **System:** Administrator Server.
+- **System:** sescam-security.
 - **Inputs:** Time range, supported audit filters, and authenticated actor identity.
 - **Outputs:** Matching audit events and details, or explicit empty, validation, authorization, and query-error results.
 
@@ -52,6 +53,7 @@
 ## Effort Estimation
 - **Estimated effort without AI:** 10 hours
 - **Estimated effort with AI (Copilot):** 5 hours
+- **Estimated effort with AI + 25% safety margin:** 6.25 hours
 
 ---
 

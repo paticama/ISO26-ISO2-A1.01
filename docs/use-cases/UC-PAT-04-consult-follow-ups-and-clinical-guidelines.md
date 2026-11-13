@@ -1,13 +1,15 @@
-# UC-PAT-04 – Consult My Follow-ups and Clinical Guidelines (Patient v0.4.0)
+# UC-PAT-04 – Consult My Follow-ups and Clinical Guidelines (sescam-orders v0.4.0)
 
 ## Use Case
 - **UC:** `UC-PAT-04`
 - **RF:** `FR-PAT-16`, `FR-PAT-17`, `FR-PAT-18`, `FR-PAT-19`
-- **Phase:** Construction
-- **Module:** `sescam-patient-portal` (v0.4.0)
-- **Priority:** Medium (ISO/IEC/IEEE 29148:2018 / Inherited from FR-PAT-16 and FR-PAT-17)
+- **Phase:** Late Construction
+- **Iteration:** 4
+- **Module:** `sescam-orders` (v0.4.0)
+- **Priority:** Low (ISO/IEC/IEEE 29148:2018 / Inherited from FR-PAT-16 and FR-PAT-17)
 - **UML Relationships:**
   - Related Use Cases: UC-PHY-02 creates the periodic surveillance plans shown here; UC-ADM-01 maintains the clinical protocols and guidelines; once a follow-up is booked (UC-AAD-05) it is also shown in UC-PAT-01.
+- **Dependencies:** FR-PAT-16 depends on FR-PAT-01 (UC-PAT-01) and FR-PHY-05 (UC-PHY-02).
 - **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
 - **GitHub Issue:** [#101](https://github.com/paticama/ISO26-ISO2-A1.01/issues/101)
 - **Actor:** Patient
@@ -16,6 +18,7 @@
 - **Preconditions:**
   1. The patient is authenticated via corporate Single Sign-On (SSO).
   2. The patient is registered in the system (UC-AAD-01).
+  3. Periodic surveillance plans and future scheduling requests are available from UC-PHY-02 (FR-PHY-05).
 - **Postconditions:**
   1. The patient has consulted only their own follow-ups and the guidelines linked to them.
 - **Main Success Scenario (Client–Server Interaction Flow):**
@@ -62,6 +65,7 @@
 ## Effort Estimation
 - **Estimated effort without AI:** 6 hours
 - **Estimated effort with AI (Copilot):** 3.5 hours
+- **Estimated effort with AI + 25% safety margin:** 4.38 hours
 
 ---
 

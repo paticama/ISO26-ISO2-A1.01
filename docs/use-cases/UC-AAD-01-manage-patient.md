@@ -1,11 +1,12 @@
-# UC-AAD-01 – Manage Patient (Admissions v0.1.0)
+# UC-AAD-01 – Manage Patient (sescam-admissions v0.1.0)
 
 ## Use Case
 - **UC:** `UC-AAD-01`
 - **RF:** `FR-AAD-01`, `FR-AAD-02`, `FR-AAD-03`
 - **Phase:** Elaboration
+- **Iteration:** 1
 - **Priority:** High
-- **Module:** `AAD` (v0.1.0)
+- **Module:** `sescam-admissions` (v0.1.0)
 - **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
 - **GitHub Issue:** [#84](https://github.com/paticama/ISO26-ISO2-A1.01/issues/84)
 - **Actor:** Admissions Staff
@@ -62,6 +63,7 @@
 ## Effort Estimation
 - **Estimated effort without AI:** 8 hours
 - **Estimated effort with AI (Copilot):** 4 hours
+- **Estimated effort with AI + 25% safety margin:** 5 hours
 
 ---
 
