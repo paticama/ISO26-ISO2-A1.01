@@ -60,7 +60,7 @@
 - [ ] Delivery failures are retried and visible; the notification is always available in the portal inbox.
 
 ## Decisions (DECISIONS.md)
-- See [DECISIONS.md](../../feature/CU00-initial-structure/DECISIONS.md).
+- See [DECISIONS.md](../../DECISIONS.md).
 - Operational assumption: external messages carry only availability notices and appointment logistics; clinical content stays inside the authenticated portal.
 
 ## Effort Estimation

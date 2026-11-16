@@ -124,20 +124,23 @@ The €2,000 Transition cost is fixed by the assignment statement, not derived f
 
 ## Release and version plan
 
-Follow SemVer 2.0.0. During initial development, increment a module's minor version once per delivered use case; increment the patch for fixes that do not change interfaces. Tags are repository-wide and use `<module>-vX.Y.Z` (for example, `sescam-security-v0.2.0`). At each iteration release, merge `develop` into `main` through a reviewed PR and create the version tags shown in the table on `main`; tags are created only at these iteration releases. The final product target is `1.0.0` for `sescam-parent`, the version of the whole build, tagged `sescam-parent-v1.0.0`.
+Follow SemVer 2.0.0. For domain modules, increment a module's minor version once per delivered use case; increment the patch for fixes that do not change interfaces. `sescam-common`'s minor version increases when its interfaces change, at most once per iteration. `sescam-parent`, `sescam-server-app`, and `sescam-client-app` carry the overall build version. Tags are repository-wide and use `<module>-vX.Y.Z` (for example, `sescam-security-v0.2.0`). At each iteration release and the Transition release, merge `develop` into `main` through a reviewed PR and create the version tags shown in the table on `main`; tags are created only at these releases. The final product target is `1.0.0` for `sescam-parent`, the version of the whole build, tagged `sescam-parent-v1.0.0`.
 
-| Module | Iteration 1 (20/11) | Iteration 2 (27/11) | Iteration 3 (04/12) | Iteration 4 (11/12) |
-|---|---|---|---|---|
-| `sescam-security` | `sescam-security-v0.2.0` (UC-ADM-02, UC-ADM-03) | — | — | — |
-| `sescam-catalogue` | `sescam-catalogue-v0.1.0` (UC-ADM-01) | — | — | — |
-| `sescam-integration` | `sescam-integration-v0.1.0` (UC-ADM-04) | — | — | — |
-| `sescam-admissions` | `sescam-admissions-v0.1.0` (UC-AAD-01) | `sescam-admissions-v0.4.0` (UC-AAD-02, UC-AAD-05, UC-PAT-01) | `sescam-admissions-v0.6.0` (UC-AAD-03, UC-AAD-04) | — |
-| `sescam-orders` | — | `sescam-orders-v0.1.0` (UC-PHY-01) | `sescam-orders-v0.3.0` (UC-PHY-03, UC-PHY-02) | `sescam-orders-v0.4.0` (UC-PAT-04) |
-| `sescam-diagnostics` | — | `sescam-diagnostics-v0.2.0` (UC-PHY-05, UC-PHY-04) | `sescam-diagnostics-v0.3.0` (UC-PAT-02) | — |
-| `sescam-communication` | — | — | `sescam-communication-v0.2.0` (UC-PAT-03, UC-PAT-05) | `sescam-communication-v0.3.0` (UC-PAT-06) |
-| `sescam-analytics` | — | — | — | `sescam-analytics-v0.3.0` (UC-PHY-06, UC-AAD-06, UC-ADM-05) |
+| Module | Iteration 1 (20/11) | Iteration 2 (27/11) | Iteration 3 (04/12) | Iteration 4 (11/12) | Transition (14/12) |
+|---|---|---|---|---|---|
+| `sescam-parent` | `sescam-parent-v0.1.0` (build version) | `sescam-parent-v0.2.0` (build version) | `sescam-parent-v0.3.0` (build version) | `sescam-parent-v0.4.0` (build version) | `sescam-parent-v1.0.0` (build version) |
+| `sescam-server-app` | `sescam-server-app-v0.1.0` (build version) | `sescam-server-app-v0.2.0` (build version) | `sescam-server-app-v0.3.0` (build version) | `sescam-server-app-v0.4.0` (build version) | `sescam-server-app-v1.0.0` (build version) |
+| `sescam-client-app` | `sescam-client-app-v0.1.0` (build version) | `sescam-client-app-v0.2.0` (build version) | `sescam-client-app-v0.3.0` (build version) | `sescam-client-app-v0.4.0` (build version) | `sescam-client-app-v1.0.0` (build version) |
+| `sescam-security` | `sescam-security-v0.2.0` (UC-ADM-02, UC-ADM-03) | — | — | — | — |
+| `sescam-catalogue` | `sescam-catalogue-v0.1.0` (UC-ADM-01) | — | — | — | — |
+| `sescam-integration` | `sescam-integration-v0.1.0` (UC-ADM-04) | — | — | — | — |
+| `sescam-admissions` | `sescam-admissions-v0.1.0` (UC-AAD-01) | `sescam-admissions-v0.4.0` (UC-AAD-02, UC-AAD-05, UC-PAT-01) | `sescam-admissions-v0.6.0` (UC-AAD-03, UC-AAD-04) | — | — |
+| `sescam-orders` | — | `sescam-orders-v0.1.0` (UC-PHY-01) | `sescam-orders-v0.3.0` (UC-PHY-03, UC-PHY-02) | `sescam-orders-v0.4.0` (UC-PAT-04) | — |
+| `sescam-diagnostics` | — | `sescam-diagnostics-v0.2.0` (UC-PHY-05, UC-PHY-04) | `sescam-diagnostics-v0.3.0` (UC-PAT-02) | — | — |
+| `sescam-communication` | — | — | `sescam-communication-v0.2.0` (UC-PAT-03, UC-PAT-05) | `sescam-communication-v0.3.0` (UC-PAT-06) | — |
+| `sescam-analytics` | — | — | — | `sescam-analytics-v0.3.0` (UC-PHY-06, UC-AAD-06, UC-ADM-05) | — |
 
-The table shows each module's version at the end of each iteration; the version reached by each individual use case is stated in its specification in [`docs/use-cases/`](docs/use-cases/).
+The table shows each module's version at the end of each iteration; the version reached by each individual use case is stated in its specification in [`docs/use-cases/`](docs/use-cases/). `sescam-common` is tagged `sescam-common-vX.Y.Z` at an iteration release only when its interfaces changed in that iteration; its versions are not planned in advance.
 
 ## Team responsibilities
 
@@ -158,7 +161,7 @@ Subsystem leads own their modules, interfaces, and releases. The coordinator mai
 - Use Git Flow (`main`, `develop`, feature, and hotfix branches); protect `main` and `develop`. Do not commit directly to `main`; integrate through peer-reviewed pull requests.
 - Create one branch per use case from `develop`, named `feature/UC-<ACTOR>-<NN>-<short-name>`; create hotfix branches from `main`, named `hotfix/<short-name>`.
 - Feature PRs target `develop`; hotfix PRs target `main` and are then merged back into `develop`. PRs reference the issue (for example, `Closes #N`).
-- At each iteration release, merge `develop` into `main` through a reviewed PR and create the version tags shown in the Release and version plan on `main`; tags are created only at these iteration releases.
+- At each iteration release and the Transition release, merge `develop` into `main` through a reviewed PR and create the version tags shown in the Release and version plan on `main`; tags are created only at these releases.
 - Build the executable system with Maven. Use Semantic Versioning and tags as specified above.
 - Raise each use case as a GitHub issue using the project template and track it on the Kanban board. Keep requirements, issues, specifications, decisions, and meeting minutes traceable.
 - Propose and review requirement or use-case changes at weekly team meetings; approve them there and record the decision in the minutes.
@@ -175,7 +178,7 @@ Subsystem leads own their modules, interfaces, and releases. The coordinator mai
 | 27/11 | Iteration 2 release of admissions, orders, and diagnostics; approve architectural baseline (root POM, `sescam-common` interfaces, Elaboration use cases); audit and SCM-plan review |
 | 04/12 | Iteration 3 release of admissions, orders, diagnostics, and communication; configuration audit |
 | 11/12 | Iteration 4 release of orders, communication, and analytics; configuration audit and SCM-plan review |
-| 12/12–14/12 | Final integration and build of all modules under `sescam-parent`; final configuration audit and delivery on 14/12 |
+| 12/12–14/12 | Transition release: final integration and build of all modules under `sescam-parent`; merge `develop` into `main` through a reviewed PR, create the Transition version tags, perform the final configuration audit, and deliver on 14/12 |
 
 ## Quality assurance and acceptance targets
 
@@ -219,5 +222,6 @@ All PRs receive human peer review. Review use cases before team approval. Before
 - Run `mvn verify` and check JaCoCo coverage is at least 80% before opening a PR.
 - Do not change `sescam-common` interfaces without approval from the affected subsystem leads.
 - Never commit to `main` or `develop`.
+- Create version tags on `main` only at the iteration and Transition releases shown in the Release and version plan.
 - External notifications must not contain clinical content.
 - AI cannot approve PRs.

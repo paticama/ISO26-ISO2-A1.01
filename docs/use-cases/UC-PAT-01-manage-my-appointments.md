@@ -69,7 +69,7 @@
 - [ ] Actions outside the policy window, or on executed or cancelled appointments, are rejected.
 
 ## Decisions (DECISIONS.md)
-- See [DECISIONS.md](../../feature/CU00-initial-structure/DECISIONS.md).
+- See [DECISIONS.md](../../DECISIONS.md).
 - Operational assumption: confirmation and cancellation windows are configurable booking-policy parameters (UC-ADM-01).
 
 ## Effort Estimation

@@ -57,7 +57,7 @@
 - [ ] System Administrator configuration remains separate from daily operational actions.
 
 ## Decisions (DECISIONS.md)
-- See [DECISIONS.md](../../feature/CU00-initial-structure/DECISIONS.md).
+- See [DECISIONS.md](../../DECISIONS.md).
 - Requirements meeting minutes remain neutral until a confirmed link is available.
 
 ## Effort Estimation

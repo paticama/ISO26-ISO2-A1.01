@@ -64,7 +64,7 @@
 - [ ] A failed operation does not create a partial booking.
 
 ## Decisions (DECISIONS.md)
-- See [DECISIONS.md](../../feature/CU00-initial-structure/DECISIONS.md).
+- See [DECISIONS.md](../../DECISIONS.md).
 - Requirements meeting minutes remain neutral until a confirmed link is available.
 
 ## Effort Estimation

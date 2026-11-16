@@ -58,7 +58,7 @@
 - [ ] System Administrator report configuration remains separate from operational report generation.
 
 ## Decisions (DECISIONS.md)
-- See [DECISIONS.md](../../feature/CU00-initial-structure/DECISIONS.md).
+- See [DECISIONS.md](../../DECISIONS.md).
 - Requirements meeting minutes remain neutral until a confirmed link is available.
 
 ## Effort Estimation
