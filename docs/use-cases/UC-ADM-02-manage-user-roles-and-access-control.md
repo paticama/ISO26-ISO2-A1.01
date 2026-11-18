@@ -1,11 +1,11 @@
-# UC-ADM-02 – Manage User Roles & Access Control (sescam-security v0.1.0)
+# UC-ADM-02 – Manage User Roles & Access Control (C1 v1.0.0)
 
 ## Use Case
 - **UC:** `UC-ADM-02`
 - **RF:** `FR-ADM-07`, `FR-ADM-08`, `FR-ADM-09`, `FR-ADM-10`
 - **Phase:** Elaboration
 - **Iteration:** 1
-- **Module:** `sescam-security` (v0.1.0)
+- **Module:** `sescam-security` (C1, v1.0.0)
 - **Priority:** High
 - **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
 - **GitHub Issue:** [#50](https://github.com/paticama/ISO26-ISO2-A1.01/issues/50)
@@ -49,8 +49,8 @@
 - [ ] Sensitive changes receive the applicable safeguards.
 - [ ] Successful role changes are confirmed, attributable, and available for audit.
 
-## Decisions
-- See the [Decisions wiki](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Decisions).
+## Decisions (DECISIONS.md)
+- See [DECISIONS.md](../../DECISIONS.md).
 
 ## Effort Estimation
 - **Estimated effort without AI:** 10 hours

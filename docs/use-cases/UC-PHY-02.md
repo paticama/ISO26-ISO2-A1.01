@@ -1,11 +1,11 @@
-# UC-PHY-02 – Order Periodic Follow-up Surveillance Procedure (sescam-orders v0.3.0)
+# UC-PHY-02 – Order Periodic Follow-up Surveillance Procedure (C4 v1.1.0)
 
 ## Use Case
 - **UC:** `UC-PHY-02`
 - **RF:** `FR-PHY-04`, `FR-PHY-05`
 - **Phase:** Construction
 - **Iteration:** 3
-- **Module:** `sescam-orders` (v0.3.0)
+- **Module:** `sescam-orders` (C4, v1.1.0)
 - **Priority:** Medium (ISO/IEC/IEEE 29148:2018)
 - **UML Relationships:**
   - `<<include>>` Verify Patient Safety Constraints & Contrast Allergies
@@ -35,13 +35,13 @@
 
 ## RADIT Disciplines
 - [x] Requirements: Specify surveillance recurrence intervals (3, 6, 12 months) and eligibility filtering.
-- [ ] Architecture: Model surveillance protocol entity relationships.
+- [ ] Analysis: Model surveillance protocol entity relationships.
 - [ ] Design: Define recurrence calculation contracts and DTOs.
 - [ ] Implementation: Service logic generating automated scheduling tickets.
 - [ ] Testing: Tests for recurrence date calculation and ineligible procedure validation.
 
 ## Contracts and Interfaces
-- `es.uclm.esi.sescam.schedules.api.SurveillanceService`
+- `es.uclm.esi.sescam.orders.api.SurveillanceService`
 - `PeriodicOrderDTO`, `SurveillancePlanDTO`
 
 ## Acceptance Criteria

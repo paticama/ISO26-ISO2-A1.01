@@ -1,11 +1,11 @@
-# UC-PHY-06 – Consult Operational Metrics on Orders (sescam-analytics v0.1.0)
+# UC-PHY-06 – Consult Operational Metrics on Orders (C10 v1.2.0)
 
 ## Use Case
 - **UC:** `UC-PHY-06`
 - **RF:** `FR-PHY-18`, `FR-PHY-19`, `FR-PHY-20`
 - **Phase:** Late Construction
 - **Iteration:** 4
-- **Module:** `sescam-analytics` (v0.1.0)
+- **Module:** `sescam-analytics` (C10, v1.2.0)
 - **Priority:** Low (ISO/IEC/IEEE 29148:2018)
 - **UML Relationships:**
   - None
@@ -31,7 +31,7 @@
 
 ## RADIT Disciplines
 - [x] Requirements: Specify metrics computation (waiting times, utilization, surveillance adherence).
-- [ ] Architecture: Aggregation and query service architecture.
+- [ ] Analysis: Aggregation and query service architecture.
 - [ ] Design: Analytics interfaces and DTOs.
 - [ ] Implementation: Analytics service and summary cards.
 - [ ] Testing: Calculation accuracy verification tests.

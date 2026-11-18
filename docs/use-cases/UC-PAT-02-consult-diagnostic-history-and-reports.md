@@ -1,11 +1,11 @@
-# UC-PAT-02 – Consult My Diagnostic History and Reports (sescam-diagnostics v0.3.0)
+# UC-PAT-02 – Consult My Diagnostic History and Reports (C7 v1.2.0)
 
 ## Use Case
 - **UC:** `UC-PAT-02`
 - **RF:** `FR-PAT-11`, `FR-PAT-12`, `FR-PAT-13`
 - **Phase:** Construction
 - **Iteration:** 3
-- **Module:** `sescam-diagnostics` (v0.3.0)
+- **Module:** `sescam-diagnostics` (C7, v1.2.0)
 - **Priority:** Medium by team decision; FR-PAT-11 to FR-PAT-13 were aligned to Medium so the use case matches the rule that a use case takes the highest priority among its functional requirements.
 - **UML Relationships:**
   - Related Use Cases: UC-PHY-05 registers the executed procedures listed here; UC-PHY-04 produces the signed reports and addenda; UC-PAT-03 sends the report-availability notice that links to this use case.
@@ -36,14 +36,14 @@
 
 ## RADIT Disciplines
 - [x] Requirements: Specify history consultation, report-status checking, and finalized-report display.
-- [ ] Architecture: Define read access from the patient portal to the reporting module and the EHR adapter.
+- [ ] Analysis: Define read access from the patient views to `sescam-diagnostics` and the EHR adapter.
 - [ ] Design: Define history and report DTOs and read-only query interfaces.
 - [ ] Implementation: Implement the patient history service and portal views.
 - [ ] Testing: Tests for ownership, draft-report concealment, addenda display, and audit of consultations.
 
 ## Contracts and Interfaces
 - `Client:` Patient portal (web and mobile) for history list, filters, and report view.
-- `Server:` Patient diagnostic-history service.
+- `Server:` Diagnostic-history service in `sescam-diagnostics`, REST endpoint in `sescam-server-app`.
 - `Reporting interface:` Read-only access to finalized reports and addenda produced in UC-PHY-04.
 - `EHR interface:` Read-only retrieval of synchronized reports.
 - `Audit interface:` Records every consultation of clinical data.

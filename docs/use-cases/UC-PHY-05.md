@@ -1,11 +1,11 @@
-# UC-PHY-05 – Log Procedure Execution Details and Clinical/Operational Incidents (sescam-diagnostics v0.1.0)
+# UC-PHY-05 – Log Procedure Execution Details and Clinical/Operational Incidents (C7 v1.0.0)
 
 ## Use Case
 - **UC:** `UC-PHY-05`
 - **RF:** `FR-PHY-09`, `FR-PHY-10`, `FR-PHY-11`, `FR-PHY-17`
 - **Phase:** Elaboration
 - **Iteration:** 2
-- **Module:** `sescam-diagnostics` (v0.1.0)
+- **Module:** `sescam-diagnostics` (C7, v1.0.0)
 - **Priority:** High (ISO/IEC/IEEE 29148:2018)
 - **Dependencies:** FR-PHY-09 depends on FR-PHY-01 (UC-PHY-01) and FR-AAD-12 (UC-AAD-05).
 - **UML Relationships:**
@@ -33,7 +33,7 @@
 
 ## RADIT Disciplines
 - [x] Requirements: Specify execution logs (contrast lot, equipment, consent) and incident tracking.
-- [ ] Architecture: Incident logging audit model.
+- [ ] Analysis: Incident logging audit model.
 - [ ] Design: Execution service contracts.
 - [ ] Implementation: Incident logging endpoints and rescheduling event dispatch.
 - [ ] Testing: Tests for aborted procedures and rescheduling alerts.

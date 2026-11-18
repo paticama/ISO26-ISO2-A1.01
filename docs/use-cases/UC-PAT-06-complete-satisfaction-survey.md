@@ -1,11 +1,11 @@
-# UC-PAT-06 – Complete Satisfaction Survey (sescam-communication v0.3.0)
+# UC-PAT-06 – Complete Satisfaction Survey (C8 v1.2.0)
 
 ## Use Case
 - **UC:** `UC-PAT-06`
 - **RF:** `FR-PAT-15`
 - **Phase:** Late Construction
 - **Iteration:** 4
-- **Module:** `sescam-communication` (v0.3.0)
+- **Module:** `sescam-communication` (C8, v1.2.0)
 - **Priority:** Low (ISO/IEC/IEEE 29148:2018 / Inherited from FR-PAT-15)
 - **UML Relationships:**
   - Related Use Cases: UC-PHY-05 marks the procedure as executed, which makes the survey available; UC-AAD-06 and UC-ADM-05 consume the aggregated results.
@@ -36,14 +36,14 @@
 
 ## RADIT Disciplines
 - [x] Requirements: Specify survey availability, questionnaire, validation, and single submission.
-- [ ] Architecture: Define the boundary between survey storage and the analytics modules.
+- [ ] Analysis: Define the boundary between survey storage and the analytics modules.
 - [ ] Design: Define questionnaire and answer DTOs and the aggregation contract.
 - [ ] Implementation: Implement the patient survey service and portal views.
 - [ ] Testing: Tests for availability window, required answers, duplicate prevention, and aggregated-only access.
 
 ## Contracts and Interfaces
 - `Client:` Patient portal (web and mobile) for survey list and questionnaire.
-- `Server:` Patient survey service.
+- `Server:` Survey service in `sescam-communication`, REST endpoint in `sescam-server-app`.
 - `Procedure interface:` Reads executed procedures (UC-PHY-05).
 - `Analytics interface:` Exposes aggregated results to UC-AAD-06 and UC-ADM-05.
 - `Errors:` `SURVEY_NOT_AVAILABLE`, `SURVEY_ALREADY_SUBMITTED`, and `INVALID_SURVEY_ANSWERS` are returned explicitly; no error is treated as success.

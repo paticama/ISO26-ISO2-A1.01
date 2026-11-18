@@ -1,4 +1,4 @@
-# UC-AAD-03 – Manage Waitlist and Priority (sescam-admissions v0.5.0)
+# UC-AAD-03 – Manage Waitlist and Priority (C5 v1.2.0)
 
 ## Use Case
 - **UC:** `UC-AAD-03`
@@ -6,7 +6,7 @@
 - **Phase:** Construction
 - **Iteration:** 3
 - **Priority:** Medium
-- **Module:** `sescam-admissions` (v0.5.0)
+- **Module:** `sescam-admissions` (C5, v1.2.0)
 - **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
 - **GitHub Issue:** [#86](https://github.com/paticama/ISO26-ISO2-A1.01/issues/86)
 - **Actor:** Admissions Staff
@@ -37,14 +37,14 @@
 
 ## RADIT Disciplines
 - [x] Requirements: Specify waitlist intake, ordering, correction, and promotion.
-- [ ] Architecture: Define request, waitlist, and priority-policy boundaries.
+- [ ] Analysis: Define request, waitlist, and priority-policy boundaries.
 - [ ] Design: Define queue-ordering and audit interfaces.
 - [ ] Implementation: Implement waitlist and priority management services.
 - [ ] Testing: Test duplicate prevention, ordering, corrections, removals, and promotion.
 
 ## Contracts and Interfaces
 - `Client:` Admissions UI for waitlist review, priority correction, removal, and promotion.
-- `Server:` AAD waitlist and priority service.
+- `Server:` Waitlist and priority service in `sescam-admissions`, REST endpoint in `sescam-server-app`.
 - `Waitlist interface:` Pending-request intake, queue ordering, correction, removal, and promotion contract.
 - `Booking interface:` Transfers an eligible request to the examination-booking service.
 - `Errors:` `DUPLICATE_WAITLIST_ENTRY`, `MISSING_PRIORITY`, `INVALID_REQUEST_STATE`, `CAPACITY_UNAVAILABLE`, and `UNAUTHORIZED_OPERATION` are returned explicitly; no request is silently promoted or removed.

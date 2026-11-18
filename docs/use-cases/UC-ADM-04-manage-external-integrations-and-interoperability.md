@@ -1,11 +1,11 @@
-# UC-ADM-04 – Manage External Integrations & Interoperability (sescam-integration v0.1.0)
+# UC-ADM-04 – Manage External Integrations & Interoperability (C9 v1.0.0)
 
 ## Use Case
 - **UC:** `UC-ADM-04`
 - **RF:** `FR-ADM-16`, `FR-ADM-17`, `FR-ADM-18`, `FR-ADM-19`, `FR-ADM-20`, `FR-ADM-21`
 - **Phase:** Elaboration
 - **Iteration:** 1
-- **Module:** `sescam-integration` (v0.1.0)
+- **Module:** `sescam-integration` (C9, v1.0.0)
 - **Priority:** High (Raised by team decision: SSO, EHR and RIS/PACS integration is the highest technical risk and a dependency of every High use case, Criteria 1 and 3)
 - **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
 - **GitHub Issue:** [#59](https://github.com/paticama/ISO26-ISO2-A1.01/issues/59)
@@ -51,8 +51,8 @@
 - [ ] Connection failures are visible and distinguishable from successful operation.
 - [ ] Successful changes are confirmed and attributable for audit.
 
-## Decisions
-- See the [Decisions wiki](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Decisions).
+## Decisions (DECISIONS.md)
+- See [DECISIONS.md](../../DECISIONS.md).
 
 ## Effort Estimation
 - **Estimated effort without AI:** 12 hours

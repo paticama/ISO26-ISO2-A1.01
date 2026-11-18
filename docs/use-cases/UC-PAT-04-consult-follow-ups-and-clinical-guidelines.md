@@ -1,11 +1,11 @@
-# UC-PAT-04 – Consult My Follow-ups and Clinical Guidelines (sescam-orders v0.4.0)
+# UC-PAT-04 – Consult My Follow-ups and Clinical Guidelines (C4 v1.3.0)
 
 ## Use Case
 - **UC:** `UC-PAT-04`
 - **RF:** `FR-PAT-16`, `FR-PAT-17`, `FR-PAT-18`, `FR-PAT-19`
 - **Phase:** Late Construction
 - **Iteration:** 4
-- **Module:** `sescam-orders` (v0.4.0)
+- **Module:** `sescam-orders` (C4, v1.3.0)
 - **Priority:** Low (ISO/IEC/IEEE 29148:2018 / Inherited from FR-PAT-16 and FR-PAT-17)
 - **UML Relationships:**
   - Related Use Cases: UC-PHY-02 creates the periodic surveillance plans shown here; UC-ADM-01 maintains the clinical protocols and guidelines; once a follow-up is booked (UC-AAD-05) it is also shown in UC-PAT-01.
@@ -40,14 +40,14 @@
 
 ## RADIT Disciplines
 - [x] Requirements: Specify follow-up consultation and guideline display.
-- [ ] Architecture: Define read access from the patient portal to the order-entry module and the protocol catalogue.
+- [ ] Analysis: Define read access from the patient views to `sescam-orders` and `sescam-catalogue`.
 - [ ] Design: Define follow-up and guideline DTOs and read-only query interfaces.
 - [ ] Implementation: Implement the patient follow-up service and portal views.
 - [ ] Testing: Tests for ownership, status display, booked-follow-up linking, and guideline versioning.
 
 ## Contracts and Interfaces
 - `Client:` Patient portal (web and mobile) for follow-up list, details, and guidelines.
-- `Server:` Patient follow-up service.
+- `Server:` Follow-up service in `sescam-orders`, REST endpoint in `sescam-server-app`.
 - `Surveillance interface:` Read-only access to surveillance plans created in UC-PHY-02.
 - `Protocol catalogue interface:` Read-only access to published guidelines (UC-ADM-01).
 - `Errors:` `FOLLOW_UP_NOT_FOUND`, `GUIDELINE_NOT_FOUND`, and `ACCESS_DENIED` are returned explicitly; no error is treated as success.

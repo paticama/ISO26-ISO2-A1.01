@@ -1,5 +1,7 @@
 # SESCAM Radiodiagnostics Project Plan
 
+> **Update of 18/11/2026:** the team approved changes to this plan (10 domain modules C1–C10, work assigned by use case instead of by actor, module owners, new versions and branch names, delivery dates). They are in [`PLAN18-11.md`](PLAN18-11.md), which prevails where the two disagree.
+
 ## Purpose and source
 
 This document is the working plan for agents and team members contributing to the SESCAM Radiodiagnostics project for Software Engineering II. It consolidates the project-planning, requirements, architecture, configuration-management, and quality-assurance decisions in **Theoretical, Assignment Iteration 0**. The module structure approved on 13/11 replaces the per-actor modules (`sescam-patient-portal`, `sescam-order-entry`, `sescam-execution-reporting`, `sescam-administrative`, `sescam-system-admin`) still found in the source document, the Wiki, and some issues; if they conflict, this plan prevails. Dates and effort estimates below are the approved planning baseline from that document, except where this plan states otherwise; update this plan through the change-control process when the team approves a change.

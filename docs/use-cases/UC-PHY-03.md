@@ -1,11 +1,11 @@
-# UC-PHY-03 – Manage Orders and Consult Clinical Execution Schedules (sescam-orders v0.2.0)
+# UC-PHY-03 – Manage Orders and Consult Clinical Execution Schedules (C4 v1.2.0)
 
 ## Use Case
 - **UC:** `UC-PHY-03`
 - **RF:** `FR-PHY-06`, `FR-PHY-07`, `FR-PHY-08`
 - **Phase:** Construction
 - **Iteration:** 3
-- **Module:** `sescam-orders` (v0.2.0)
+- **Module:** `sescam-orders` (C4, v1.2.0)
 - **Priority:** Medium (ISO/IEC/IEEE 29148:2018)
 - **Dependencies:** FR-PHY-08 depends on FR-PHY-07 and FR-ADM-13 (UC-ADM-03).
 - **UML Relationships:**
@@ -33,13 +33,13 @@
 
 ## RADIT Disciplines
 - [x] Requirements: Specify order status tracking, modality schedule queries, and order modification/cancellation.
-- [ ] Architecture: Sequence diagram for status synchronization.
+- [ ] Analysis: Sequence diagram for status synchronization.
 - [ ] Design: Query interfaces and DTOs for schedule calendars.
 - [ ] Implementation: Filtering and cancellation service endpoints.
 - [ ] Testing: Test unexecuted order cancellation and status transitions.
 
 ## Contracts and Interfaces
-- `es.uclm.esi.sescam.schedules.api.OrderTrackingService`
+- `es.uclm.esi.sescam.orders.api.OrderTrackingService`
 - `OrderFilterDTO`, `ExecutionScheduleDTO`
 
 ## Acceptance Criteria

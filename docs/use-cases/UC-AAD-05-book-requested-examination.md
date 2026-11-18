@@ -1,4 +1,4 @@
-# UC-AAD-05 – Book Requested Examination (sescam-admissions v0.3.0)
+# UC-AAD-05 – Book Requested Examination (C5 v1.0.0)
 
 ## Use Case
 - **UC:** `UC-AAD-05`
@@ -6,7 +6,7 @@
 - **Phase:** Elaboration
 - **Iteration:** 2
 - **Priority:** High
-- **Module:** `sescam-admissions` (v0.3.0)
+- **Module:** `sescam-admissions` (C5, v1.0.0)
 - **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
 - **GitHub Issue:** [#88](https://github.com/paticama/ISO26-ISO2-A1.01/issues/88)
 - **Actor:** Admissions Staff
@@ -40,14 +40,14 @@
 
 ## RADIT Disciplines
 - [x] Requirements: Specify examination booking, notification, and worklist integration.
-- [ ] Architecture: Define booking transaction and notification boundaries.
+- [ ] Analysis: Define booking transaction and notification boundaries.
 - [ ] Design: Define booking DTOs, state transitions, and slot-validation contracts.
 - [ ] Implementation: Implement booking, notification, and worklist update services.
 - [ ] Testing: Test occupied slots, priority, state transitions, cancellation, rescheduling, and concurrency.
 
 ## Contracts and Interfaces
 - `Client:` Admissions UI for slot selection and booking confirmation.
-- `Server:` AAD examination-booking service.
+- `Server:` Examination-booking service in `sescam-admissions`, REST endpoint in `sescam-server-app`.
 - `Schedule interface:` Retrieves and atomically reserves compatible capacity.
 - `Waitlist interface:` Reads priority and promotes eligible requests.
 - `Booking interface:` Creates booking and manages `Pending`, `Booked`, `Rescheduled`, and `Cancelled` states.

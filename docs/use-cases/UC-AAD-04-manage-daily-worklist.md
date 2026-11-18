@@ -1,4 +1,4 @@
-# UC-AAD-04 – Manage Daily Worklist (sescam-admissions v0.6.0)
+# UC-AAD-04 – Manage Daily Worklist (C5 v1.3.0)
 
 ## Use Case
 - **UC:** `UC-AAD-04`
@@ -6,7 +6,7 @@
 - **Phase:** Construction
 - **Iteration:** 3
 - **Priority:** Medium
-- **Module:** `sescam-admissions` (v0.6.0)
+- **Module:** `sescam-admissions` (C5, v1.3.0)
 - **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
 - **GitHub Issue:** [#87](https://github.com/paticama/ISO26-ISO2-A1.01/issues/87)
 - **Actor:** Admissions Staff
@@ -36,14 +36,14 @@
 
 ## RADIT Disciplines
 - [x] Requirements: Specify daily worklist generation and operational status handling.
-- [ ] Architecture: Define worklist composition and synchronization boundaries.
+- [ ] Analysis: Define worklist composition and synchronization boundaries.
 - [ ] Design: Define worklist views, filters, and status-transition contracts.
 - [ ] Implementation: Implement daily worklist generation and update services.
 - [ ] Testing: Test generation, filtering, cancellation, rescheduling, and authorization.
 
 ## Contracts and Interfaces
 - `Client:` Admissions UI and Medical Staff worklist view.
-- `Server:` AAD daily-worklist service.
+- `Server:` Daily-worklist service in `sescam-admissions`, REST endpoint in `sescam-server-app`.
 - `Worklist interface:` Builds and filters entries from confirmed bookings.
 - `Booking interface:` Reads booking, cancellation, and rescheduling events.
 - `Errors:` `STALE_WORKLIST_DATA`, `INVALID_STATUS_TRANSITION`, `APPOINTMENT_NOT_FOUND`, and `UNAUTHORIZED_SCOPE` are returned explicitly; stale data is never presented as current.

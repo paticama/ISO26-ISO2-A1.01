@@ -1,4 +1,4 @@
-# UC-AAD-02 – Manage Schedules (sescam-admissions v0.2.0)
+# UC-AAD-02 – Manage Schedules (C3 v1.0.0)
 
 ## Use Case
 - **UC:** `UC-AAD-02`
@@ -6,7 +6,7 @@
 - **Phase:** Elaboration
 - **Iteration:** 2
 - **Priority:** High
-- **Module:** `sescam-admissions` (v0.2.0)
+- **Module:** `sescam-schedules` (C3, v1.0.0)
 - **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
 - **GitHub Issue:** [#85](https://github.com/paticama/ISO26-ISO2-A1.01/issues/85)
 - **Actor:** Admissions Staff
@@ -38,14 +38,14 @@
 
 ## RADIT Disciplines
 - [x] Requirements: Specify schedule lifecycle and appointment impact handling.
-- [ ] Architecture: Define schedule, resource, and booking boundaries.
+- [ ] Analysis: Define schedule, resource, and booking boundaries.
 - [ ] Design: Define schedule DTOs, conflict rules, and rescheduling contracts.
 - [ ] Implementation: Implement schedule management and availability services.
 - [ ] Testing: Test overlap, capacity, closing, reopening, and affected appointments.
 
 ## Contracts and Interfaces
 - `Client:` Admissions UI for schedule search, creation, update, closing, and reopening.
-- `Server:` AAD schedule and availability service.
+- `Server:` Schedule and availability service in `sescam-schedules`, REST endpoint in `sescam-server-app`.
 - `Schedule interface:` Schedule, resource, capacity, and conflict-validation contract.
 - `Booking interface:` Affected-appointment lookup and rescheduling hand-off.
 - `Errors:` `SCHEDULE_OVERLAP`, `CAPACITY_EXCEEDED`, `INVALID_SCHEDULE`, `APPOINTMENTS_AFFECTED`, and `UNAUTHORIZED_OPERATION` are returned explicitly; no schedule change is silently committed.
