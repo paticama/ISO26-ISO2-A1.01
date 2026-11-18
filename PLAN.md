@@ -1,6 +1,6 @@
 # SESCAM Radiodiagnostics Project Plan
 
-> **Update of 18/11/2026:** the team approved changes to this plan (10 domain modules C1–C10, work assigned by use case instead of by actor, module owners, new versions and branch names, delivery dates). They are in [`PLAN18-11.md`](PLAN18-11.md), which prevails where the two disagree.
+> **Update of 18/11/2026:** the team approved changes to this plan (10 domain modules C1–C10, work assigned by use case instead of by actor, module owners, new versions and branch names, delivery dates). They are in [`PLAN18-11.md`](PLAN18-11.md), which prevails where the two disagree. The parts of this document replaced on 18/11 are marked **[DEPRECATED 18/11]** below, with the reason.
 
 ## Purpose and source
 
@@ -60,8 +60,8 @@ Dates use day/month format. Iterations are planned as one-week increments, excep
 | UC-PHY-04 | Author, Edit, and Review Diagnostic Reports and Medical Images | `sescam-diagnostics` | High | 2 |
 | UC-PHY-05 | Log Procedure Execution Details and Clinical/Operational Incidents | `sescam-diagnostics` | High | 2 |
 | UC-PHY-06 | Consult Operational Metrics on Orders | `sescam-analytics` | Low | 4 |
-| UC-AAD-01 | Manage Patient | `sescam-admissions` | High | 1 |
-| UC-AAD-02 | Manage Schedules | `sescam-admissions` | High | 2 |
+| UC-AAD-01 | Manage Patient | ~~`sescam-admissions`~~ **[DEPRECATED 18/11]** `sescam-patients` (ADR-014) | High | 1 |
+| UC-AAD-02 | Manage Schedules | ~~`sescam-admissions`~~ **[DEPRECATED 18/11]** `sescam-schedules` (ADR-014) | High | 2 |
 | UC-AAD-03 | Manage Waitlist and Priority | `sescam-admissions` | Medium | 3 |
 | UC-AAD-04 | Manage Daily Worklist | `sescam-admissions` | Medium | 3 |
 | UC-AAD-05 | Book Requested Examination | `sescam-admissions` | High | 2 |
@@ -85,13 +85,15 @@ Dates use day/month format. Iterations are planned as one-week increments, excep
 
 The system is a client-server application. Each component is a Maven submodule; server-side domain modules collaborate through explicit team-designed interfaces. Keep modules cohesive and loosely coupled, and place shared interfaces, DTOs and exceptions in `sescam-common`.
 
+> **[DEPRECATED 18/11] The `sescam-catalogue` and `sescam-admissions` rows below.** *Reason:* patients and schedules inside admissions created a dependency cycle between orders and admissions and about a third of all hours in one module. Since 18/11 there are ten domain modules (C1–C10), with new `sescam-schedules` (C3) and `sescam-patients` (C6). The table in force is in [`PLAN18-11.md`](PLAN18-11.md) §3 (ADR-014).
+
 | Layer | Module | Responsibility |
 |---|---|---|
 | Build | `sescam-parent` | Root aggregator POM; its version is the version of the whole build |
 | Contracts | `sescam-common` | Interfaces, DTOs and exceptions shared by client and server |
 | Domain (server) | `sescam-security` | Login, users, roles, permissions, and audit log |
-| Domain (server) | `sescam-catalogue` | Examination types, protocols, guidelines, policies, triage, parameters, and room schedules |
-| Domain (server) | `sescam-admissions` | Patients, schedules and slots, waitlist, bookings, daily worklist, and patient appointments |
+| Domain (server) | `sescam-catalogue` | Examination types, protocols, guidelines, policies, triage, parameters~~, and room schedules~~ **[DEPRECATED 18/11: room schedules → `sescam-schedules`]** |
+| ~~Domain (server)~~ | ~~`sescam-admissions`~~ | ~~Patients, schedules and slots, waitlist, bookings, daily worklist, and patient appointments~~ **[DEPRECATED 18/11: patients → `sescam-patients`, schedules and slots → `sescam-schedules`; admissions keeps bookings, waitlist and daily worklist]** |
 | Domain (server) | `sescam-orders` | Prescriptions, periodic follow-ups, and order status |
 | Domain (server) | `sescam-diagnostics` | Procedure execution, clinical incidents, reports, and images |
 | Domain (server) | `sescam-communication` | Notifications, reminders, patient incidents, and surveys |
@@ -126,7 +128,9 @@ The €2,000 Transition cost is fixed by the assignment statement, not derived f
 
 ## Release and version plan
 
-Follow SemVer 2.0.0. For domain modules, increment a module's minor version once per delivered use case; increment the patch for fixes that do not change interfaces. `sescam-common`'s minor version increases when its interfaces change, at most once per iteration. `sescam-parent`, `sescam-server-app`, and `sescam-client-app` carry the overall build version. Tags are repository-wide and use `<module>-vX.Y.Z` (for example, `sescam-security-v0.2.0`). At each iteration release and the Transition release, merge `develop` into `main` through a reviewed PR and create the version tags shown in the table on `main`; tags are created only at these releases. The final product target is `1.0.0` for `sescam-parent`, the version of the whole build, tagged `sescam-parent-v1.0.0`.
+Follow SemVer 2.0.0. For domain modules, increment a module's minor version once per delivered use case; increment the patch for fixes that do not change interfaces. ~~`sescam-common`'s minor version increases when its interfaces change, at most once per iteration. `sescam-parent`, `sescam-server-app`, and `sescam-client-app` carry the overall build version.~~ **[DEPRECATED 18/11]** *Reason:* a domain module now gets `1.0.0` with its first use case and one minor version per later use case, and `sescam-common` goes up once per iteration together with `sescam-parent` and the apps, so its versions can be planned (ADR-016; versions in force in [`PLAN18-11.md`](PLAN18-11.md) §5). Tags are repository-wide and use `<module>-vX.Y.Z` (for example, `sescam-security-v0.2.0`). At each iteration release and the Transition release, merge `develop` into `main` through a reviewed PR and create the version tags shown in the table on `main`; tags are created only at these releases. The final product target is `1.0.0` for `sescam-parent`, the version of the whole build, tagged `sescam-parent-v1.0.0`.
+
+> **[DEPRECATED 18/11] The version table below and the paragraph after it.** *Reason:* they use the 0.x scheme and the 8-module structure. Since 18/11 domain modules start at `1.0.0` with their first use case, `sescam-patients` and `sescam-schedules` are new modules, and `sescam-common` goes up once per iteration. The table in force is "Module versions at the end of each iteration" in [`PLAN18-11.md`](PLAN18-11.md) §5 (ADR-014, ADR-016).
 
 | Module | Iteration 1 (20/11) | Iteration 2 (27/11) | Iteration 3 (04/12) | Iteration 4 (11/12) | Transition (14/12) |
 |---|---|---|---|---|---|
@@ -150,18 +154,20 @@ The table shows each module's version at the end of each iteration; the version 
 |---|---|
 | Coordinator; planning and repository administration | Patricia Camacho Rivallo |
 | Secretary; decisions and meeting minutes | Åsta Emilie Bergum |
-| System Administrator subsystem lead | Antonio Natán Fechete Carpea |
-| Patient subsystem lead | Alba de la Mata Domínguez |
-| Physician subsystem and Wiki lead | Victoria Rodríguez Álamo |
-| Administrative subsystem lead | Rafael Camilo Rubio Quintero |
+| ~~System Administrator subsystem lead~~ **[DEPRECATED 18/11]** Module owner of security, catalogue, integration | Antonio Natán Fechete Carpea |
+| ~~Patient subsystem lead~~ **[DEPRECATED 18/11]** Module owner of communication, analytics | Alba de la Mata Domínguez |
+| ~~Physician subsystem and~~ Wiki lead **[DEPRECATED 18/11: physician subsystem lead]** · Module owner of orders, diagnostics | Victoria Rodríguez Álamo |
+| ~~Administrative subsystem lead~~ **[DEPRECATED 18/11]** Module owner of admissions | Rafael Camilo Rubio Quintero |
 
-Subsystem leads own their modules, interfaces, and releases. The coordinator maintains this plan. The secretary records decisions and meeting minutes. A PR must be approved by a team member other than its author; AI cannot approve PRs.
+> **[DEPRECATED 18/11] Subsystem leads (one person per actor).** *Reason:* at the 18/11 review the professor rejected organising the work by actor: one business entity is used by several actors, so per-actor ownership scatters it across people and modules, and each student must show analysis, design, implementation and testing. Work is now assigned by use case, with full RADIT ownership, and each module has a module owner who reviews its PRs, checks `sescam-common` changes and tags its releases. Patricia also owns `sescam-common` and the apps, and Åsta owns `sescam-schedules` and `sescam-patients`. Allocation of use cases and owners is in [`PLAN18-11.md`](PLAN18-11.md) §3 and §5 (ADR-013).
+
+~~Subsystem leads own their modules, interfaces, and releases.~~ **[DEPRECATED 18/11, see above]** The coordinator maintains this plan. The secretary records decisions and meeting minutes. A PR must be approved by a team member other than its author; AI cannot approve PRs.
 
 ## Configuration management and change control
 
 - Track requirements, use-case specifications, code, POMs, meeting minutes, `DECISIONS.md`, Wiki pages, and AI configuration as configuration items.
 - Use Git Flow (`main`, `develop`, feature, and hotfix branches); protect `main` and `develop`. Do not commit directly to `main`; integrate through peer-reviewed pull requests.
-- Create one branch per use case from `develop`, named `feature/UC-<ACTOR>-<NN>-<short-name>`; create hotfix branches from `main`, named `hotfix/<short-name>`.
+- ~~Create one branch per use case from `develop`, named `feature/UC-<ACTOR>-<NN>-<short-name>`;~~ **[DEPRECATED 18/11]** *Reason:* the course asks for module and version in the branch name, and separate server and client PRs are smaller and easier to review. Create one branch per use-case slice from `develop`, named `feature/<module>-<version>-<UC>-server|client`, and one `release/itN` branch per iteration (ADR-017). Create hotfix branches from `main`, named `hotfix/<short-name>`.
 - Feature PRs target `develop`; hotfix PRs target `main` and are then merged back into `develop`. PRs reference the issue (for example, `Closes #N`).
 - At each iteration release and the Transition release, merge `develop` into `main` through a reviewed PR and create the version tags shown in the Release and version plan on `main`; tags are created only at these releases.
 - Build the executable system with Maven. Use Semantic Versioning and tags as specified above.
@@ -176,8 +182,8 @@ Subsystem leads own their modules, interfaces, and releases. The coordinator mai
 |---|---|
 | 13/11 | Iteration 0 ends; approve 77-FR/23-use-case requirements baseline and SCM/SQA plans |
 | Every week | Review and approve change requests at the team meeting; record decisions in minutes |
-| 20/11 | Iteration 1 release of security, catalogue, integration, and admissions; configuration audit |
-| 27/11 | Iteration 2 release of admissions, orders, and diagnostics; approve architectural baseline (root POM, `sescam-common` interfaces, Elaboration use cases); audit and SCM-plan review |
+| 20/11 | Iteration 1 release of security, catalogue, integration, and ~~admissions~~ patients **[DEPRECATED 18/11: UC-AAD-01 moved to `sescam-patients`, ADR-014]**; configuration audit |
+| 27/11 | Iteration 2 release of schedules **[added 18/11: UC-AAD-02 moved to `sescam-schedules`, ADR-014]**, admissions, orders, and diagnostics; approve architectural baseline (root POM, `sescam-common` interfaces, Elaboration use cases); audit and SCM-plan review |
 | 04/12 | Iteration 3 release of admissions, orders, diagnostics, and communication; configuration audit |
 | 11/12 | Iteration 4 release of orders, communication, and analytics; configuration audit and SCM-plan review |
 | 12/12–14/12 | Transition release: final integration and build of all modules under `sescam-parent`; merge `develop` into `main` through a reviewed PR, create the Transition version tags, perform the final configuration audit, and deliver on 14/12 |
@@ -196,7 +202,7 @@ Apply Quality by Design: define quality through the requirements from the start,
 | Maintainability | Unit-test line coverage, measured with JaCoCo (Maven plugin) | ≥80% |
 | Flexibility | Supported client device categories (desktop, mobile, web) via one responsive client | 3 out of 3 |
 
-All PRs receive human peer review. Review use cases before team approval. Before release, the module owner verifies acceptance criteria, passing tests, and reviewed code. Evaluate at the end of each UP stage except Inception using the ISO/IEC 25040 sequence: establish requirements, specify and design the evaluation, execute it, and conclude it. Use the PDCA cycle (Plan, Do, Check, Act) for improvement. The coordinator maintains the SQA plan; subsystem leads are responsible for module quality; all human members review and approve PRs.
+All PRs receive human peer review. Review use cases before team approval. Before release, the module owner verifies acceptance criteria, passing tests, and reviewed code. Evaluate at the end of each UP stage except Inception using the ISO/IEC 25040 sequence: establish requirements, specify and design the evaluation, execute it, and conclude it. Use the PDCA cycle (Plan, Do, Check, Act) for improvement. The coordinator maintains the SQA plan; ~~subsystem leads~~ module owners **[DEPRECATED 18/11: subsystem leads, ADR-013]** are responsible for module quality; all human members review and approve PRs.
 
 ### Product constraints to preserve
 
@@ -219,10 +225,10 @@ All PRs receive human peer review. Review use cases before team approval. Before
 
 ## Working rules for contributors and agents
 
-- Create one feature branch per use case from `develop`, using `feature/UC-<ACTOR>-<NN>-<short-name>`.
+- ~~Create one feature branch per use case from `develop`, using `feature/UC-<ACTOR>-<NN>-<short-name>`.~~ **[DEPRECATED 18/11]** Create one branch per use-case slice from `develop`: `feature/<module>-<version>-<UC>-server|client` (ADR-017; module and version in the name, smaller PRs).
 - Link the use-case issue in the PR (for example, `Closes #N`).
 - Run `mvn verify` and check JaCoCo coverage is at least 80% before opening a PR.
-- Do not change `sescam-common` interfaces without approval from the affected subsystem leads.
+- Do not change `sescam-common` interfaces without approval from the affected ~~subsystem leads~~ module owners **[DEPRECATED 18/11: subsystem leads, ADR-013]**.
 - Never commit to `main` or `develop`.
 - Create version tags on `main` only at the iteration and Transition releases shown in the Release and version plan.
 - External notifications must not contain clinical content.
