@@ -59,7 +59,7 @@
 - [ ] Only published guidelines associated with the follow-up's protocol are shown, in their current version.
 
 ## Decisions (DECISIONS.md)
-- See [DECISIONS.md](../../feature/CU00-initial-structure/DECISIONS.md).
+- See [DECISIONS.md](../../DECISIONS.md).
 - Operational assumption: patient-facing guidelines are informational content approved by the service; they do not replace clinical advice.
 
 ## Effort Estimation

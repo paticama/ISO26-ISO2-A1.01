@@ -59,7 +59,7 @@
 - [ ] System Administrator configuration remains distinct from Admissions Staff operations.
 
 ## Decisions (DECISIONS.md)
-- See [DECISIONS.md](../../feature/CU00-initial-structure/DECISIONS.md).
+- See [DECISIONS.md](../../DECISIONS.md).
 - Requirements meeting minutes remain neutral until a confirmed link is available.
 
 ## Effort Estimation

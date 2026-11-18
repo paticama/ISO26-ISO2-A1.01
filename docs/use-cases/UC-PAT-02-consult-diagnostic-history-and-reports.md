@@ -57,7 +57,7 @@
 - [ ] Every consultation of a report is recorded in the audit log.
 
 ## Decisions (DECISIONS.md)
-- See [DECISIONS.md](../../feature/CU00-initial-structure/DECISIONS.md).
+- See [DECISIONS.md](../../DECISIONS.md).
 - Operational assumption: only reports signed in UC-PHY-04 are released to the patient.
 
 ## Effort Estimation

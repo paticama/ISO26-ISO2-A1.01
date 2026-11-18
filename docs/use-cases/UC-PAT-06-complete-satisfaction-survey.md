@@ -55,7 +55,7 @@
 - [ ] Statistics use cases receive only aggregated results, without identifying the patient.
 
 ## Decisions (DECISIONS.md)
-- See [DECISIONS.md](../../feature/CU00-initial-structure/DECISIONS.md).
+- See [DECISIONS.md](../../DECISIONS.md).
 - Operational assumption: the questionnaire and the answer window are configurable parameters (UC-ADM-01).
 
 ## Effort Estimation

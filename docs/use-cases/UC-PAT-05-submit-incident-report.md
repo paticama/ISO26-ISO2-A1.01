@@ -54,7 +54,7 @@
 - [ ] Every submitted incident is attributed to the authenticated patient and audited.
 
 ## Decisions (DECISIONS.md)
-- See [DECISIONS.md](../../feature/CU00-initial-structure/DECISIONS.md).
+- See [DECISIONS.md](../../DECISIONS.md).
 - Operational assumption (pending ratification): patient incidents are reviewed by Admissions Staff, who forward clinical concerns to the responsible physician.
 
 ## Effort Estimation
