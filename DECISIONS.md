@@ -1,6 +1,6 @@
 # DECISIONS.md
 
-> **Update of 18/11/2026:** ADR-013 to ADR-018 (work by use case instead of by actor, module owners, 10 domain modules C1–C10, RADIT ownership, new versions, branches and delivery dates) are in [`DECISIONS18-11.md`](DECISIONS18-11.md), which prevails where the two disagree.
+> **Update of 18/11/2026:** ADR-013 to ADR-018 (work by use case instead of by actor, module owners, 10 domain modules C1–C10, RADIT ownership, new versions, branches and delivery dates) are in [`DECISIONS18-11.md`](DECISIONS18-11.md), which prevails where the two disagree. The parts of this document replaced on 18/11 are marked **[DEPRECATED 18/11]** below, with the reason.
 
 This is the project's consolidated Architecture Decision Log. It summarizes the development and design decisions in **Theoretical, Assignment Iteration 0**, with current module names aligned to the approved structure recorded in [`PLAN.md`](PLAN.md). The source document is not stored in the repository. Use-case-specific flows and acceptance criteria remain in [`docs/use-cases/`](docs/use-cases/); the project schedule, estimates, and release plan are in `PLAN.md`.
 
@@ -30,19 +30,21 @@ Prioritize using architectural significance and technical risk, clinical/stakeho
 
 **Rationale:** Explicit contracts allow modules and client/server components to evolve independently while preserving integration boundaries.
 
-**Consequences:** Domain modules depend on shared contracts rather than one another's implementation details. Changes to `sescam-common` interfaces require approval from the affected subsystem leads.
+**Consequences:** Domain modules depend on shared contracts rather than one another's implementation details. ~~Changes to `sescam-common` interfaces require approval from the affected subsystem leads.~~ **[DEPRECATED 18/11]** *Reason:* per-actor subsystem leads no longer exist; the professor rejected splitting the work by actor. Changes to `sescam-common` interfaces are now approved by the module owner of each affected module (ADR-013 in [`DECISIONS18-11.md`](DECISIONS18-11.md)).
 
 ## ADR-004: Client-server and Maven module boundaries
 
 **Decision:** Build a multi-tier client-server system as a Maven multi-module project. Use the approved domain-oriented module structure; it supersedes the older per-actor module names still present in the source document, Wiki, or issues. See ADR-012 for the structure decision and rationale.
+
+> **[DEPRECATED 18/11] The `sescam-catalogue` and `sescam-admissions` rows below.** *Reason:* patient records and schedules had made `sescam-admissions` carry about a third of all hours and created a dependency cycle between orders and admissions. Since 18/11 there are ten domain modules (C1–C10): patients moved to `sescam-patients` (C6), and schedules and room schedules moved to `sescam-schedules` (C3). See ADR-014 in [`DECISIONS18-11.md`](DECISIONS18-11.md). The other rows are still valid.
 
 | Layer | Module | Responsibility |
 |---|---|---|
 | Build | `sescam-parent` | Root aggregator POM; its version is the version of the whole build |
 | Contracts | `sescam-common` | Shared interfaces, DTOs, and exceptions |
 | Domain (server) | `sescam-security` | Login, users, roles, permissions, and audit log |
-| Domain (server) | `sescam-catalogue` | Examination types, protocols, guidelines, policies, triage, parameters, and room schedules |
-| Domain (server) | `sescam-admissions` | Patients, schedules and slots, waitlist, bookings, daily worklist, and patient appointments |
+| Domain (server) | `sescam-catalogue` | Examination types, protocols, guidelines, policies, triage, parameters~~, and room schedules~~ **[DEPRECATED 18/11: room schedules → `sescam-schedules`]** |
+| ~~Domain (server)~~ | ~~`sescam-admissions`~~ | ~~Patients, schedules and slots, waitlist, bookings, daily worklist, and patient appointments~~ **[DEPRECATED 18/11: patients → `sescam-patients`, schedules and slots → `sescam-schedules`; admissions keeps bookings, waitlist and daily worklist]** |
 | Domain (server) | `sescam-orders` | Prescriptions, periodic follow-ups, and order status |
 | Domain (server) | `sescam-diagnostics` | Procedure execution, clinical incidents, reports, and images |
 | Domain (server) | `sescam-communication` | Notifications and reminders, patient incidents, and surveys |
@@ -50,6 +52,8 @@ Prioritize using architectural significance and technical risk, clinical/stakeho
 | Domain (server) | `sescam-analytics` | Read-only statistics and reports |
 | Application | `sescam-server-app` | Server startup, API, configuration, and database |
 | Application | `sescam-client-app` | Single client application with role-specific views |
+
+The complete module table in force is in ADR-014 of [`DECISIONS18-11.md`](DECISIONS18-11.md).
 
 A component is created with its first use case, not before; until then, other components use a no-op implementation of its `sescam-common` interface.
 
@@ -111,9 +115,9 @@ Use one client application with views appropriate to each role. A single respons
 
 ## ADR-010: Configuration, releases, and human/AI responsibilities
 
-**Decision:** Use Git Flow with protected `main` and `develop` branches. Create one feature branch per use case from `develop`, named `feature/UC-<ACTOR>-<NN>-<short-name>`; create hotfix branches from `main`, named `hotfix/<short-name>`. Feature PRs target `develop`; hotfix PRs target `main` and are merged back into `develop`. At each iteration release, merge `develop` into `main` through a reviewed PR.
+**Decision:** Use Git Flow with protected `main` and `develop` branches. ~~Create one feature branch per use case from `develop`, named `feature/UC-<ACTOR>-<NN>-<short-name>`;~~ **[DEPRECATED 18/11]** *Reason:* the course asks for module and version in the branch name, and smaller server and client PRs are easier to review. Now there is one branch per use-case slice, `feature/<module>-<version>-<UC>-server|client`, plus one `release/itN` branch per iteration (ADR-017 in [`DECISIONS18-11.md`](DECISIONS18-11.md)). Create hotfix branches from `main`, named `hotfix/<short-name>`. Feature PRs target `develop`; hotfix PRs target `main` and are merged back into `develop`. At each iteration release, merge `develop` into `main` through a reviewed PR.
 
-Follow SemVer 2.0.0: increment a module's minor version once per delivered use case and its patch for fixes that do not change interfaces. Use repository-wide unique tags in the format `<module>-vX.Y.Z`; create the release-table version tags on `main` only at iteration releases. `sescam-common`'s minor version increases when its interfaces change, at most once per iteration. `sescam-parent`, `sescam-server-app`, and `sescam-client-app` carry the overall build version: `0.1.0`, `0.2.0`, `0.3.0`, and `0.4.0` after Iterations 1 to 4, and `1.0.0` in Iteration N. `sescam-parent` carries the version of the whole build, with a final target and tag of `1.0.0` and `sescam-parent-v1.0.0`.
+Follow SemVer 2.0.0: increment a module's minor version once per delivered use case and its patch for fixes that do not change interfaces. Use repository-wide unique tags in the format `<module>-vX.Y.Z`; create the release-table version tags on `main` only at iteration releases. ~~`sescam-common`'s minor version increases when its interfaces change, at most once per iteration. `sescam-parent`, `sescam-server-app`, and `sescam-client-app` carry the overall build version~~ **[DEPRECATED 18/11]** *Reason:* a domain module now gets `1.0.0` with its first use case (a use case delivered with its tests is a complete, usable piece of the module), and `sescam-common` goes up once per iteration with the applications, so its versions can be planned. `sescam-parent`, `sescam-common`, `sescam-server-app`, and `sescam-client-app` carry the overall build version (ADR-016 in [`DECISIONS18-11.md`](DECISIONS18-11.md)): `0.1.0`, `0.2.0`, `0.3.0`, and `0.4.0` after Iterations 1 to 4, and `1.0.0` in Iteration N. `sescam-parent` carries the version of the whole build, with a final target and tag of `1.0.0` and `sescam-parent-v1.0.0`.
 
 Use GitHub issues and the Kanban board to track use cases. Reference the issue in its PR and record approved requirement/use-case changes and other decisions in meeting minutes. Configuration items include code, POMs, requirements, use-case specifications, meeting minutes, this decision log, Wiki pages, and AI configuration. Conduct configuration audits at iteration releases; review the SCM plan at the end of UP phases and after Iterations 2 and 4.
 
@@ -136,7 +140,7 @@ Use GitHub issues and the Kanban board to track use cases. Reference the issue i
 
 **Decision:** Replace the per-actor modules (`sescam-patient-portal`, `sescam-order-entry`, `sescam-execution-reporting`, `sescam-administrative`, `sescam-system-admin`) with the domain-oriented structure in ADR-004; `sescam-analytics` keeps its name.
 
-**Rationale:** The domain components follow the core processes named in the course specification: order entry, appointment scheduling, procedure execution and diagnostic reporting, plus analytics. They are supported by catalogue, security, communication, and integration components. Patient management belongs to `sescam-admissions` because hospital Admission, Discharge, Transfer owns patient registration and discharge; schedules, waitlist, bookings, and worklist are part of the same workflow. `sescam-integration` isolates the highest-risk external protocols (DICOM, HL7, FHIR) and lets the rest of the system be tested against simulated external systems. `sescam-common` holds all interfaces in one place: “The Engineer designs the Interfaces; the AI implements the Contracts.”
+**Rationale:** The domain components follow the core processes named in the course specification: order entry, appointment scheduling, procedure execution and diagnostic reporting, plus analytics. They are supported by catalogue, security, communication, and integration components. ~~Patient management belongs to `sescam-admissions` because hospital Admission, Discharge, Transfer owns patient registration and discharge; schedules, waitlist, bookings, and worklist are part of the same workflow.~~ **[DEPRECATED 18/11]** *Reason:* keeping patients and schedules in admissions created a dependency cycle (orders needs patients, admissions needs orders) and concentrated about a third of the hours in one module. They now have their own modules, `sescam-patients` and `sescam-schedules` (ADR-014 in [`DECISIONS18-11.md`](DECISIONS18-11.md)). `sescam-integration` isolates the highest-risk external protocols (DICOM, HL7, FHIR) and lets the rest of the system be tested against simulated external systems. `sescam-common` holds all interfaces in one place: “The Engineer designs the Interfaces; the AI implements the Contracts.”
 
 **Consequences:** The use-case to module mapping and versions in `PLAN.md` follow this structure; old module names in the source document, Wiki, or issues are obsolete.
 
@@ -147,5 +151,5 @@ Use GitHub issues and the Kanban board to track use cases. Reference the issue i
 - Use-case effort estimates are tentative; AI-assisted estimates include human review. Iterations 1–4 total 204 hours without AI and 101.5 hours with AI, or 126.88 hours with the 25% AI contingency. Cost comparisons and the Transition cost fixed by the assignment are maintained in `PLAN.md`.
 - The team has academic GitHub Copilot access; the plan estimates a comparable licence at €10 per user per month.
 - The client is SESCAM. The team does not depend on another team's work.
-- Each subsystem lead is responsible for their module, interfaces, and releases; the coordinator maintains the project and quality plans; the secretary records decisions and meeting minutes.
+- ~~Each subsystem lead is responsible for their module, interfaces, and releases;~~ **[DEPRECATED 18/11]** *Reason:* the professor rejected organising the work by actor. Work is now assigned by use case (each person owns the full RADIT cycle) and each module has a module owner (ADR-013 in [`DECISIONS18-11.md`](DECISIONS18-11.md)). The coordinator maintains the project and quality plans; the secretary records decisions and meeting minutes.
 - The requirements baseline contains 77 FRs and 23 use cases. Their complete scope, priorities, schedule, module allocations, versions, and acceptance criteria are maintained in `PLAN.md` and the individual specifications under `docs/use-cases/`.
