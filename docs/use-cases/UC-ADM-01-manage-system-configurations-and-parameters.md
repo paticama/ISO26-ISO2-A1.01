@@ -1,11 +1,11 @@
-# UC-ADM-01 – Manage System Configurations & Parameters (sescam-catalogue v0.1.0)
+# UC-ADM-01 – Manage System Configurations & Parameters (C2 v1.0.0)
 
 ## Use Case
 - **UC:** `UC-ADM-01`
 - **RF:** `FR-ADM-01`, `FR-ADM-02`, `FR-ADM-03`, `FR-ADM-04`, `FR-ADM-05`, `FR-ADM-06`
 - **Phase:** Elaboration
 - **Iteration:** 1
-- **Module:** `sescam-catalogue` (v0.1.0)
+- **Module:** `sescam-catalogue` (C2, v1.0.0)
 - **Priority:** High
 - **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
 - **GitHub Issue:** [#44](https://github.com/paticama/ISO26-ISO2-A1.01/issues/44)
@@ -49,8 +49,8 @@
 - [ ] Concurrent changes are not silently overwritten.
 - [ ] Changes are attributable to the administrator and available for audit.
 
-## Decisions
-- See the [Decisions wiki](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Decisions).
+## Decisions (DECISIONS.md)
+- See [DECISIONS.md](../../DECISIONS.md).
 
 ## Effort Estimation
 - **Estimated effort without AI:** 8 hours

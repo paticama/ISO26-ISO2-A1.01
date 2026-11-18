@@ -1,11 +1,11 @@
-# UC-PHY-04 – Author, Edit, and Review Diagnostic Reports and Medical Images (sescam-diagnostics v0.2.0)
+# UC-PHY-04 – Author, Edit, and Review Diagnostic Reports and Medical Images (C7 v1.1.0)
 
 ## Use Case
 - **UC:** `UC-PHY-04`
 - **RF:** `FR-PHY-12`, `FR-PHY-13`, `FR-PHY-14`, `FR-PHY-15`, `FR-PHY-16`
 - **Phase:** Elaboration
 - **Iteration:** 2
-- **Module:** `sescam-diagnostics` (v0.2.0)
+- **Module:** `sescam-diagnostics` (C7, v1.1.0)
 - **Priority:** High (ISO/IEC/IEEE 29148:2018)
 - **Dependencies:** FR-PHY-16 depends on FR-PHY-15 and FR-ADM-13 (UC-ADM-03).
 - **UML Relationships:**
@@ -44,7 +44,7 @@
 
 ## RADIT Disciplines
 - [x] Requirements: Specify DICOM study retrieval, viewer rendering, reporting editor, HL7/FHIR sync, and patient notification.
-- [ ] Architecture: Hexagonal adapters for DICOM and HL7/FHIR integration.
+- [ ] Analysis: Hexagonal adapters for DICOM and HL7/FHIR integration.
 - [ ] Design: Diagnostic reporting service interfaces and DTOs.
 - [ ] Implementation: Draft saving, report signing, and FHIR resource builder.
 - [ ] Testing: Tests for report lifecycle (Draft -> Finalized) and notification triggering.

@@ -1,11 +1,11 @@
-# UC-ADM-05 – Generate Statistics & Usage Analytics (sescam-analytics v0.3.0)
+# UC-ADM-05 – Generate Statistics & Usage Analytics (C10 v1.1.0)
 
 ## Use Case
 - **UC:** `UC-ADM-05`
 - **RF:** `FR-ADM-22`, `FR-ADM-23`, `FR-ADM-24`, `FR-ADM-25`, `FR-ADM-26`
 - **Phase:** Late Construction
 - **Iteration:** 4
-- **Module:** `sescam-analytics` (v0.3.0)
+- **Module:** `sescam-analytics` (C10, v1.1.0)
 - **Priority:** Low
 - **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
 - **GitHub Issue:** [#65](https://github.com/paticama/ISO26-ISO2-A1.01/issues/65)
@@ -49,8 +49,8 @@
 - [ ] Unauthorized users cannot access global reporting data.
 - [ ] Export follows access-control and data-protection requirements.
 
-## Decisions
-- See the [Decisions wiki](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Decisions).
+## Decisions (DECISIONS.md)
+- See [DECISIONS.md](../../DECISIONS.md).
 
 ## Effort Estimation
 - **Estimated effort without AI:** 10 hours

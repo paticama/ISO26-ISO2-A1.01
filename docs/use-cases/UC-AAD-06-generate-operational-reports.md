@@ -1,4 +1,4 @@
-# UC-AAD-06 – Generate Operational Reports (sescam-analytics v0.2.0)
+# UC-AAD-06 – Generate Operational Reports (C10 v1.0.0)
 
 ## Use Case
 - **UC:** `UC-AAD-06`
@@ -6,7 +6,7 @@
 - **Phase:** Late Construction
 - **Iteration:** 4
 - **Priority:** Low
-- **Module:** `sescam-analytics` (v0.2.0)
+- **Module:** `sescam-analytics` (C10, v1.0.0)
 - **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
 - **GitHub Issue:** [#89](https://github.com/paticama/ISO26-ISO2-A1.01/issues/89)
 - **Actor:** Admissions Staff
@@ -36,14 +36,14 @@
 
 ## RADIT Disciplines
 - [x] Requirements: Specify occupancy, waiting-time, cancellation, capacity, and booking reporting.
-- [ ] Architecture: Define reporting data-access and authorization boundaries.
+- [ ] Analysis: Define reporting data-access and authorization boundaries.
 - [ ] Design: Define report filters, metric calculations, and export contracts.
 - [ ] Implementation: Implement operational report generation and export.
 - [ ] Testing: Test metrics, filters, permissions, empty data, and export failures.
 
 ## Contracts and Interfaces
 - `Client:` Admissions UI for report type, period, filters, display, and export.
-- `Server:` AAD operational-reporting service.
+- `Server:` Operational-reporting service in `sescam-analytics`, REST endpoint in `sescam-server-app`.
 - `Reporting interface:` Calculates workload, occupancy, waiting-time, cancellation, capacity, and booking metrics.
 - `Schedule/Booking interface:` Reads schedule capacity and appointment states.
 - `Waitlist/Worklist interface:` Reads queue and operational status data.

@@ -1,11 +1,11 @@
-# UC-PAT-03 – Notify Patient (sescam-communication v0.1.0)
+# UC-PAT-03 – Notify Patient (C8 v1.0.0)
 
 ## Use Case
 - **UC:** `UC-PAT-03`
 - **RF:** `FR-PAT-06`, `FR-PAT-07`, `FR-PAT-08`, `FR-PAT-09`
 - **Phase:** Construction
 - **Iteration:** 3
-- **Module:** `sescam-communication` (v0.1.0)
+- **Module:** `sescam-communication` (C8, v1.0.0)
 - **Priority:** Medium (ISO/IEC/IEEE 29148:2018 / Inherited from FR-PAT-06 to FR-PAT-09)
 - **UML Relationships:**
   - Related Use Cases: UC-AAD-05 (booking, rescheduling, cancellation) and UC-PHY-04 (report signature) publish the events that trigger notifications; UC-PAT-01 publishes patient-side changes; UC-ADM-01 configures reminder offsets, templates, and channels; notifications link to UC-PAT-01 and UC-PAT-02.
@@ -37,14 +37,14 @@
 
 ## RADIT Disciplines
 - [x] Requirements: Specify notification triggers, reminder offsets, message content, channels, and delivery tracking.
-- [ ] Architecture: Define event publication between modules and the messaging gateway adapter.
+- [ ] Analysis: Define event publication between modules and the messaging gateway adapter.
 - [ ] Design: Define notification events, templates, scheduling, and idempotency contracts.
 - [ ] Implementation: Implement the notification scheduler, event consumers, and gateway adapter.
 - [ ] Testing: Tests for reminder timing, suppression after cancellation, idempotency, retries, and absence of clinical content in external messages.
 
 ## Contracts and Interfaces
 - `Client:` Patient portal inbox (web) and push notifications (mobile).
-- `Server:` Patient notification service with scheduler.
+- `Server:` Notification service with scheduler in `sescam-communication`, REST endpoint in `sescam-server-app`.
 - `Event interface:` Consumes appointment events (UC-AAD-05, UC-PAT-01) and report events (UC-PHY-04).
 - `Catalogue interface:` Reads preparation instructions for the examination type (UC-ADM-01).
 - `Messaging gateway interface:` Sends e-mail, SMS, and push messages and returns the delivery status.

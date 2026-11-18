@@ -1,5 +1,7 @@
 # DECISIONS.md
 
+> **Update of 18/11/2026:** ADR-013 to ADR-018 (work by use case instead of by actor, module owners, 10 domain modules C1–C10, RADIT ownership, new versions, branches and delivery dates) are in [`DECISIONS18-11.md`](DECISIONS18-11.md), which prevails where the two disagree.
+
 This is the project's consolidated Architecture Decision Log. It summarizes the development and design decisions in **Theoretical, Assignment Iteration 0**, with current module names aligned to the approved structure recorded in [`PLAN.md`](PLAN.md). The source document is not stored in the repository. Use-case-specific flows and acceptance criteria remain in [`docs/use-cases/`](docs/use-cases/); the project schedule, estimates, and release plan are in `PLAN.md`.
 
 Some use-case specifications reference the ADR numbers below. A change to these decisions must be proposed and approved at a weekly team meeting, then recorded in the meeting minutes and this log.

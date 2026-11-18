@@ -1,11 +1,11 @@
-# UC-PAT-05 – Submit Incident Report (sescam-communication v0.2.0)
+# UC-PAT-05 – Submit Incident Report (C8 v1.1.0)
 
 ## Use Case
 - **UC:** `UC-PAT-05`
 - **RF:** `FR-PAT-14`
 - **Phase:** Construction
 - **Iteration:** 3
-- **Module:** `sescam-communication` (v0.2.0)
+- **Module:** `sescam-communication` (C8, v1.1.0)
 - **Priority:** Medium (ISO/IEC/IEEE 29148:2018 / Inherited from FR-PAT-14)
 - **UML Relationships:**
   - Related Use Cases: UC-PHY-05 records clinical and operational incidents from the physician side using the same incident categories; UC-PAT-01 and UC-PAT-02 provide the appointments and procedures an incident can refer to.
@@ -34,14 +34,14 @@
 
 ## RADIT Disciplines
 - [x] Requirements: Specify incident submission, categories, linking, and status tracking.
-- [ ] Architecture: Define the shared incident registry between the patient portal and the execution-reporting module.
+- [ ] Analysis: Define the shared incident registry between `sescam-communication` (patient incidents) and `sescam-diagnostics` (clinical incidents).
 - [ ] Design: Define incident DTOs, categories, and states.
 - [ ] Implementation: Implement the patient incident service and portal views.
 - [ ] Testing: Tests for validation, ownership of linked items, emergency warning, and status tracking.
 
 ## Contracts and Interfaces
 - `Client:` Patient portal (web and mobile) for incident form and incident list.
-- `Server:` Patient incident service.
+- `Server:` Incident service in `sescam-communication`, REST endpoint in `sescam-server-app`.
 - `Incident registry interface:` Stores incidents shared with UC-PHY-05 categories.
 - `Audit interface:` Records author, timestamp, and outcome.
 - `Errors:` `INVALID_INCIDENT_DATA` and `ACCESS_DENIED` are returned explicitly; no error is treated as success.

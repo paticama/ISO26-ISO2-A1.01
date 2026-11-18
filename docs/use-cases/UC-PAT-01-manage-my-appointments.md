@@ -1,11 +1,11 @@
-# UC-PAT-01 – Manage My Appointments (sescam-admissions v0.4.0)
+# UC-PAT-01 – Manage My Appointments (C5 v1.1.0)
 
 ## Use Case
 - **UC:** `UC-PAT-01`
 - **RF:** `FR-PAT-01`, `FR-PAT-02`, `FR-PAT-03`, `FR-PAT-04`, `FR-PAT-05`, `FR-PAT-10`
 - **Phase:** Elaboration
 - **Iteration:** 2
-- **Module:** `sescam-admissions` (v0.4.0)
+- **Module:** `sescam-admissions` (C5, v1.1.0)
 - **Priority:** High (ISO/IEC/IEEE 29148:2018 / Inherited from FR-PAT-01 and FR-PAT-02)
 - **UML Relationships:**
   - Related Use Cases: UC-AAD-05 creates the bookings shown here and processes the rescheduling and cancellation requests raised here (not `<<extend>>`); UC-PAT-03 notifies the patient of every change; UC-ADM-01 provides the preparation guidelines and the booking policy (confirmation and cancellation windows).
@@ -45,14 +45,14 @@
 
 ## RADIT Disciplines
 - [x] Requirements: Specify appointment consultation, preparation instructions, confirmation, rescheduling request, and cancellation workflow.
-- [ ] Architecture: Define the boundary between the patient portal and the admissions booking service.
+- [ ] Analysis: Define the boundary between the patient views and `sescam-admissions` (bookings).
 - [ ] Design: Define appointment DTOs, request state machine (`Pending Review`, `Accepted`, `Rejected`), and service interfaces.
 - [ ] Implementation: Implement the patient appointment service and portal views.
 - [ ] Testing: Unit and integration tests for ownership, policy windows, state transitions, and request routing.
 
 ## Contracts and Interfaces
 - `Client:` Patient portal (web and mobile) for appointment list, details, instructions, and actions.
-- `Server:` Patient appointment service.
+- `Server:` Appointment service in `sescam-admissions`, REST endpoint in `sescam-server-app`.
 - `Appointment interface:` Reads the patient's appointments and applies `Confirmed` and `Cancelled` transitions.
 - `Catalogue interface:` Reads preparation instructions for the examination type (UC-ADM-01).
 - `Admissions request interface:` Sends rescheduling and cancellation requests to UC-AAD-05.

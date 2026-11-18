@@ -1,4 +1,4 @@
-# UC-AAD-01 – Manage Patient (sescam-admissions v0.1.0)
+# UC-AAD-01 – Manage Patient (C6 v1.0.0)
 
 ## Use Case
 - **UC:** `UC-AAD-01`
@@ -6,7 +6,7 @@
 - **Phase:** Elaboration
 - **Iteration:** 1
 - **Priority:** High
-- **Module:** `sescam-admissions` (v0.1.0)
+- **Module:** `sescam-patients` (C6, v1.0.0)
 - **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
 - **GitHub Issue:** [#84](https://github.com/paticama/ISO26-ISO2-A1.01/issues/84)
 - **Actor:** Admissions Staff
@@ -37,14 +37,14 @@
 
 ## RADIT Disciplines
 - [x] Requirements: Specify registration, consultation, update, and discharge workflow.
-- [ ] Architecture: Define the patient-record and EHR integration boundaries.
+- [ ] Analysis: Define the patient-record and EHR integration boundaries.
 - [ ] Design: Define patient DTOs, validation rules, and service interfaces.
-- [ ] Implementation: Implement the AAD patient-management service and integration adapter.
+- [ ] Implementation: Implement the patient-management service in `sescam-patients` and integration adapter.
 - [ ] Testing: Unit and integration tests for validation, audit, synchronization, and authorization.
 
 ## Contracts and Interfaces
 - `Client:` Admissions UI for search, registration, consultation, update, and discharge.
-- `Server:` AAD patient-management service.
+- `Server:` Patient-management service in `sescam-patients`, REST endpoint in `sescam-server-app`.
 - `Patient/EHR interface:` Patient record and EHR synchronization adapter.
 - `Audit interface:` Records actor, timestamp, operation, and outcome.
 - `Errors:` `PATIENT_NOT_FOUND`, `DUPLICATE_PATIENT`, `INVALID_PATIENT_DATA`, `UNAUTHORIZED_OPERATION`, `EHR_SYNC_FAILED`, and `CONCURRENT_UPDATE` are returned explicitly; no error is treated as success.
