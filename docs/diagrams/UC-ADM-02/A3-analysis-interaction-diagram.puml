@@ -1,0 +1,37 @@
+@startuml A3-analysis-interaction-diagram
+title UC-ADM-02 – Analysis interaction diagram (boundary / control / entity)
+actor "System administrator" as Admin
+boundary "Role management view" as View
+control "Role administration" as Ctrl
+entity User
+entity Role
+entity Permission
+entity AuditEvent
+
+== Main flow ==
+Admin -> View : 1. locate user account
+View -> Ctrl : find user
+Ctrl -> Permission : 0. check requester holds "manage roles and permissions"
+Ctrl -> User : read assignments and status
+Ctrl --> View : 2. current role assignments, account status
+Admin -> View : 3. select or change role assignment
+View -> Ctrl : request change
+Ctrl -> Role : 4. validate against available roles and rules\n(user must keep at least one role)
+Ctrl --> View : validation result
+Admin -> View : 5. review and confirm
+View -> Ctrl : confirm change
+Ctrl -> User : 6. save assignment
+Ctrl -> AuditEvent : record change (attributable)
+Ctrl --> View : confirmation of effective result
+
+== Alternative flows ==
+alt A1 requester lacks the permission (any role not granting it)
+  Ctrl --> View : rejected, assignment unchanged
+else A2 invalid role or access rule
+  Ctrl --> View : explanation, assignment unchanged
+else A4 sensitive assignment
+  Ctrl --> View : safeguards required before saving
+else A3 save failure
+  Ctrl --> View : failure reported, access not changed
+end
+@enduml

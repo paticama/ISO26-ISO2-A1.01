@@ -1,0 +1,40 @@
+@startuml A2-analysis-activity-diagram
+title UC-ADM-02 – Activity diagram (main flow + A1-A4)
+start
+note right
+  The System administrator role always includes the permission to
+  manage roles and permissions. A1 therefore applies to any other
+  requester, or to an account whose role does not grant it.
+end note
+:1. Administrator locates a user account;
+if (Requester holds the permission to\nmanage roles and permissions\n(granted through its role)?) then (no)
+  :A1. Reject request;
+  :Assignment unchanged;
+  stop
+else (yes)
+endif
+:2. System shows current role assignments\nand account status;
+:3. Administrator selects or changes a role assignment;
+:4. System validates the change against available\nroles and access-control rules\n(the user must keep at least one role);
+if (Valid?) then (no)
+  :A2. Explain the issue;
+  :Assignment unchanged;
+  stop
+else (yes)
+endif
+if (Own privileges or\ndesignated sensitive assignment?) then (yes)
+  :A4. Apply the applicable safeguards;
+else (no)
+endif
+:5. Administrator reviews and confirms the change;
+if (Saved?) then (no)
+  :A3. Report the failure;
+  :Do not claim access changed;
+  :Assignment unchanged;
+  stop
+else (yes)
+endif
+:6. System saves the assignment and\nconfirms the effective result;
+:Change is attributable and available for audit;
+stop
+@enduml
