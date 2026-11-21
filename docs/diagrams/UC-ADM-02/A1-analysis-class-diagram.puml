@@ -1,0 +1,54 @@
+@startuml A1-analysis-class-diagram
+title UC-ADM-02 – Analysis class diagram (C1 sescam-security)
+' Source: PLAN18-11.md §3 (C1 owns User, Role, Permission, AuditEvent),
+' UC-ADM-02 spec, UC-ADM-03 spec (audit event content), DECISIONS ADR-008.
+skinparam classAttributeIconSize 0
+
+class User {
+  - accountStatus : String
+}
+
+class Role {
+  - name : String
+}
+
+class Permission {
+  - name : String
+}
+
+class AuditEvent {
+  - actor : String
+  - action : String
+  - timestamp : DateTime
+  - target : String
+  - outcome : String
+}
+
+User "0..*" -- "1..*" Role : has assigned >
+Role "0..*" -- "1..*" Permission : grants >
+AuditEvent "0..*" --> "1" User : actor
+AuditEvent "0..*" --> "0..1" User : target
+
+note bottom of User
+  Spec: "current role assignments and relevant account status".
+  Every user has at least one role: without a role the user would
+  have no access at all, and the use case only assigns or changes
+  roles (it never leaves a user without one).
+  Attribute names are a starting point for the analysis workshop.
+end note
+
+note bottom of Role
+  A Role is a named set of permissions; a Permission is one
+  capability (e.g. to manage roles) that several roles can share.
+  Keeping them apart lets permissions be reused and lets a role
+  change which capabilities it grants without redefining roles.
+  A role grants at least one permission (a role with none grants
+  nothing).
+end note
+
+note bottom of AuditEvent
+  Every successful role change is "attributable and available
+  for audit" (UC-ADM-02). Records are never modified or deleted
+  (ADR-008). Owned by C1, queried in UC-ADM-03.
+end note
+@enduml

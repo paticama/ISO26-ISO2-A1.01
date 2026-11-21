@@ -1,0 +1,77 @@
+@startuml uc-adm-01-class-design
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 6
+
+title UC-ADM-01 - Design Class Diagram (C2 sescam-catalogue v1.0.0)
+
+package "sescam-common (0.1.0-SNAPSHOT)" {
+    interface CatalogueService {
+        + getAllParameters(adminId, role): List<ConfigurationParameterDTO>
+        + getParameter(key, adminId, role): ConfigurationParameterDTO
+        + validateParameterUpdate(key, value, adminId, role): ValidationResultDTO
+        + updateParameter(request: UpdateParameterRequestDTO): UpdateParameterResponseDTO
+    }
+    interface PolicyService {
+        + getPolicyValue(key): Optional<String>
+        + getIntPolicy(key, defaultValue): int
+    }
+    interface AccessControlService {
+        + canManageConfiguration(actorId, role): boolean
+    }
+    interface AuditService {
+        + recordEvent(event: AuditEventDTO): void
+    }
+    class ConfigurationParameterDTO <<record>>
+    class UpdateParameterRequestDTO <<record>>
+    class UpdateParameterResponseDTO <<record>>
+    class ValidationResultDTO <<record>>
+    class AuditEventDTO <<record>>
+}
+
+package "sescam-catalogue (C2 v1.0.0)" {
+    class ConfigurationParameter {
+        - key: String
+        - currentValue: String
+        - valueType: ParameterValueType
+        - activationMode: ActivationMode
+        - version: long
+        + validateProposedValue(value): ValidationResultDTO
+        + withUpdatedValue(newValue, adminId, timestamp): ConfigurationParameter
+        + resolveActivationStatus(): ActivationStatus
+    }
+    interface ConfigurationParameterRepository {
+        + findAll(): List<ConfigurationParameter>
+        + findByKey(key): Optional<ConfigurationParameter>
+        + save(param): ConfigurationParameter
+    }
+    class InMemoryConfigurationParameterRepository
+    class CatalogueServiceImpl
+    class PolicyServiceImpl
+    class DefaultAccessControlService
+    class NoOpAuditService
+}
+
+package "sescam-server-app (0.1.0-SNAPSHOT)" {
+    class ConfigurationRestController {
+        + listParameters()
+        + getParameter(key)
+        + validateParameter(key, payload)
+        + updateParameter(key, payload)
+    }
+    class ConfigurationExceptionHandler
+}
+
+CatalogueService <|.. CatalogueServiceImpl
+PolicyService <|.. PolicyServiceImpl
+AccessControlService <|.. DefaultAccessControlService
+AuditService <|.. NoOpAuditService
+ConfigurationParameterRepository <|.. InMemoryConfigurationParameterRepository
+
+ConfigurationRestController --> CatalogueService
+CatalogueServiceImpl --> ConfigurationParameterRepository
+CatalogueServiceImpl --> AccessControlService
+CatalogueServiceImpl --> AuditService
+CatalogueServiceImpl ..> ConfigurationParameter
+PolicyServiceImpl --> ConfigurationParameterRepository
+@enduml

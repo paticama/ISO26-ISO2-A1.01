@@ -14,8 +14,10 @@ import org.springframework.context.annotation.Primary;
 import java.time.Clock;
 
 /**
- * Wires the C1 audit services (UC-ADM-03). {@code securityAuditService} is {@link Primary} so that it
- * replaces the no-op {@code AuditService} beans other modules register while C1 was not built.
+ * Wires the C1 audit services (UC-ADM-03). {@code securityAuditService} implements both audit contracts
+ * ({@code com.sescam...AuditService} and {@code es.uclm...AuditService}) and is {@link Primary}, so it
+ * replaces the no-op audit beans other modules registered while UC-ADM-03 was not built.
+ * Also imported by the UC-ADM-02 {@code SecurityBeansConfig}.
  */
 @Configuration
 public class SecurityAuditWiringConfig {
@@ -32,7 +34,7 @@ public class SecurityAuditWiringConfig {
 
     @Bean
     @Primary
-    public AuditService securityAuditService(AuditEventRepository auditEventRepository, Clock auditClock) {
+    public AuditServiceImpl securityAuditService(AuditEventRepository auditEventRepository, Clock auditClock) {
         return new AuditServiceImpl(auditEventRepository, auditClock);
     }
 

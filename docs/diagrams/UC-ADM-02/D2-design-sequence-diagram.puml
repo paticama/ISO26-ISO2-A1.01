@@ -1,0 +1,49 @@
+@startuml D2-design-sequence-diagram
+title UC-ADM-02 – Design sequence diagram (main flow + A1-A4)
+actor Administrator
+participant "RoleManagementView\n(client-app)" as View
+participant "RoleRestClient\n(client-app)" as Client
+participant "RoleAdministrationController\n(server-app)" as Ctrl
+participant "AccessControlServiceImpl\n(sescam-security)" as Svc
+participant "AuditService\n(UC-ADM-03, no-op at first)" as Audit
+
+== Steps 1-2: current assignments ==
+Administrator -> View : locate user
+View -> Client : getRoleAssignments(administratorId, targetUserId)
+Client -> Ctrl : request
+Ctrl -> Svc : getRoleAssignments(administratorId, targetUserId)
+alt A1 requester lacks the permission to manage roles
+  Svc --> Ctrl : AccessDeniedException
+  Ctrl --> View : rejected, nothing changed
+else authorized
+  Svc --> View : RoleAssignmentDTO (roles, account status)
+end
+
+== Steps 3-4: validate ==
+Administrator -> View : select / change role
+View -> View : checkForm()
+View -> Client : validateRoleChange(request)
+Client -> Ctrl : request
+Ctrl -> Svc : validateRoleChange(request)
+alt A2 invalid role or access rule (e.g. user left without a role)
+  Svc --> View : RoleChangeResultDTO(INVALID, message)
+else A4 sensitive assignment
+  Svc --> View : RoleChangeResultDTO(SAFEGUARD_REQUIRED, message)
+else valid
+  Svc --> View : RoleChangeResultDTO(VALID, effectivePermissions)
+end
+
+== Steps 5-6: confirm and save ==
+Administrator -> View : review and confirm
+View -> Client : confirmRoleChange(request)
+Client -> Ctrl : request
+Ctrl -> Svc : confirmRoleChange(request)
+Svc -> Svc : save assignment
+alt A3 save failure
+  Svc --> View : RoleChangeResultDTO(SAVE_FAILED, message)
+else saved
+  Svc -> Audit : record(AuditEventDTO)
+  Svc --> View : RoleChangeResultDTO(CONFIRMED, roles, effectivePermissions)
+  View --> Administrator : confirmation of effective result
+end
+@enduml
