@@ -1,0 +1,30 @@
+@startuml uc-adm-03-comm-normal
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+
+title UC-ADM-03: Audit & Compliance Management\nCommunication Diagram - Main Success Scenario (Normal Flow)
+
+actor ":SystemAdministrator" as admin
+boundary ":AuditView" as ui
+control ":AuditRestController" as ctrl
+control ":AuditQueryServiceImpl" as srv
+control ":AuditAccessPolicy" as policy
+database ":AuditEventRepository" as repo
+entity ":AuditEvent" as event
+control ":AuditService" as audit
+
+admin -- ui : 1: openAuditArea()\n2: selectTimeRangeAndFilters(from, to, filters) >\n< 10: displayTimeOrderedEvents(events)\n11: inspectEvent(eventId)\n12: exportCsv() [optional]
+
+ui -- ctrl : 3: GET /api/v1/audit/events?from&to&filters >\n< 9: HTTP 200 (AuditSearchResultDTO, MATCHES_FOUND)
+
+ctrl -- srv : 3.1: searchEvents(criteria, actorId, role) >\n< 8: AuditSearchResultDTO
+
+srv -- policy : 4: canViewAuditRecords(actorId, role) >
+
+srv -- repo : 5: findMatching(criteria) >\n< 5.2: events ordered by timestamp
+
+repo -- event : 5.1: matches(criteria) >\n6: toRecord() >
+
+srv -- audit : 7: recordEvent(AUDIT_RECORDS_QUERIED) >
+@enduml

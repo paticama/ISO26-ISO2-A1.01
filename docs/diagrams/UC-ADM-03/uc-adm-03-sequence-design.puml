@@ -1,0 +1,52 @@
+@startuml uc-adm-03-sequence-design
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+
+title UC-ADM-03: Audit & Compliance Management\nDesign Sequence Diagram - searchEvents
+
+actor "Administrator /\nCompliance reviewer" as actor
+boundary "AuditView\n(client-app)" as ui
+participant "AuditRestController" as ctrl
+participant "AuditQueryServiceImpl" as srv
+participant "AuditAccessPolicy" as policy
+database "AuditEventRepository" as repo
+participant "AuditService" as audit
+
+actor -> ui : select time range and filters
+ui -> ui : validate form (from, to, from <= to)
+ui -> ctrl : GET /api/v1/audit/events?from&to&filters\nX-Actor-Id, X-Actor-Role
+ctrl -> srv : searchEvents(criteria, actorId, role)
+srv -> policy : canViewAuditRecords(actorId, role)
+alt A1: not authorized
+  srv -> audit : recordEvent(AUDIT_ACCESS_DENIED)
+  srv --> ctrl : UnauthorizedAuditAccessException
+  ctrl --> ui : 403 FORBIDDEN
+else authorized
+  srv -> srv : validate(criteria)
+  alt A3: missing / inverted range
+    srv --> ctrl : InvalidAuditQueryException
+    ctrl --> ui : 400 INVALID_QUERY
+  else A3: range > 31 days
+    srv --> ctrl : AuditQueryTooBroadException
+    ctrl --> ui : 422 QUERY_TOO_BROAD
+  else valid
+    srv -> repo : findMatching(criteria)
+    alt A3: store failure
+      repo --> srv : RuntimeException
+      srv --> ctrl : AuditQueryFailedException
+      ctrl --> ui : 503 QUERY_FAILED
+    else results
+      repo --> srv : events (timestamp, sequence order)
+      opt matches > 500
+        srv --> ctrl : AuditQueryTooBroadException
+        ctrl --> ui : 422 QUERY_TOO_BROAD
+      end
+      srv -> audit : recordEvent(AUDIT_RECORDS_QUERIED, matches=n)
+      srv --> ctrl : AuditSearchResultDTO(status, events)
+      ctrl --> ui : 200 OK
+      ui --> actor : time-ordered table,\nor "no matches" (A2: NO_MATCHES)
+    end
+  end
+end
+@enduml
