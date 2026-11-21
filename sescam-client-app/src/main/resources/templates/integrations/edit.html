@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Configure integration - SESCAM</title>
+    <style>
+        :root { --border: #d0d7de; --muted: #57606a; --error: #b42318; --ok: #1a7f37; --warn: #9a6700; --bg: #f6f8fa; }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: system-ui, sans-serif; color: #1f2328; background: #fff; }
+        header { padding: 16px; border-bottom: 1px solid var(--border); background: var(--bg); }
+        header h1 { margin: 0; font-size: 1.25rem; }
+        main { padding: 16px; max-width: 800px; margin: 0 auto; }
+        form { display: grid; gap: 12px; }
+        label { display: flex; flex-direction: column; gap: 4px; font-size: .9rem; }
+        input { padding: 8px; border: 1px solid var(--border); border-radius: 6px; font: inherit; }
+        .field-error { color: var(--error); font-size: .8rem; }
+        .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        button { padding: 8px 14px; border-radius: 6px; border: 1px solid var(--border); background: #fff; font: inherit; cursor: pointer; }
+        button.primary { background: #0969da; color: #fff; border-color: #0969da; }
+        .message { margin: 16px 0; padding: 12px; border-radius: 6px; border: 1px solid var(--border); }
+        .message.error { border-color: var(--error); color: var(--error); }
+        .message.ok { border-color: var(--ok); color: var(--ok); }
+        .message.warn { border-color: var(--warn); color: var(--warn); }
+        .status { font-weight: 600; }
+        .hint { color: var(--muted); font-size: .8rem; }
+        dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 0; }
+        dt { color: var(--muted); }
+        dd { margin: 0; }
+        a { color: #0969da; }
+    </style>
+</head>
+<body>
+<header>
+    <h1 th:text="${integration != null ? integration.displayName() : 'Integration'}">Integration</h1>
+    <a th:href="@{/integrations}">&larr; All integrations</a>
+</header>
+<main>
+    <div th:if="${failure != null}" class="message error" id="failure" role="alert">
+        <strong th:text="${failure.message}"></strong>
+        <ul th:if="${!failure.errors.isEmpty()}">
+            <li th:each="e : ${failure.errors}" th:text="${e}"></li>
+        </ul>
+        <div th:if="${failure.mustFixSettings()}">The previous working configuration was kept. Correct the settings and try again.</div>
+        <div th:if="${failure.canRetry()}">The previous working configuration was kept. You can retry.</div>
+    </div>
+
+    <div th:if="${saved != null}" class="message ok" id="saved" role="status">
+        <strong>Settings saved.</strong>
+        <span th:text="${saved.message()}"></span>
+        <span class="hint" th:text="|Version ${saved.newVersion()}, status ${saved.status()}|"></span>
+    </div>
+
+    <div th:if="${result != null}" th:class="${result.status().failure} ? 'message error' : 'message ok'" id="check-result" role="status">
+        <strong th:text="${result.status()}"></strong>
+        <span th:text="${result.message()}"></span>
+    </div>
+
+    <div th:if="${check != null and !check.valid()}" class="message error" id="check-invalid" role="alert">
+        <strong>The settings are not valid.</strong>
+        <ul><li th:each="e : ${check.errors()}" th:text="${e}"></li></ul>
+    </div>
+    <div th:if="${check != null and check.valid()}" th:class="${check.canSave()} ? 'message ok' : 'message error'" id="check-valid" role="status">
+        <strong th:text="${check.connection().status()}"></strong>
+        <span th:text="${check.connection().message()}"></span>
+        <div th:if="${check.canSave()}" class="hint">Review the settings and press Save to confirm. Type the credential again if you changed it.</div>
+        <div th:unless="${check.canSave()}" class="hint">These settings would not replace the working configuration.</div>
+    </div>
+
+    <section th:if="${integration != null}">
+        <h2>Current configuration</h2>
+        <dl>
+            <dt>Status</dt>
+            <dd><span class="status" th:text="${integration.status()}"></span>
+                <span class="hint" th:text="${integration.statusMessage()}"></span></dd>
+            <dt>Endpoint</dt><dd th:text="${integration.endpointUrl() ?: '-'}"></dd>
+            <dt>User name</dt><dd th:text="${integration.username() ?: '-'}"></dd>
+            <dt>Credential</dt><dd th:text="${integration.credentialConfigured() ? 'Stored (hidden)' : 'Not set'}"></dd>
+            <dt>Version</dt><dd th:text="${integration.version()}"></dd>
+            <dt>Last change</dt><dd th:text="|${integration.lastModifiedBy() ?: '-'} at ${integration.lastModifiedAt() ?: '-'}|"></dd>
+        </dl>
+    </section>
+
+    <section th:if="${integration != null}">
+        <h2>Settings</h2>
+        <form id="integration-form" method="post" th:object="${form}">
+            <input type="hidden" name="expectedVersion" th:value="*{expectedVersion}">
+            <label>Endpoint URL (https)
+                <input type="url" name="endpointUrl" required maxlength="2048" th:value="*{endpointUrl}" placeholder="https://host.example/path">
+                <span class="field-error" th:if="${errors != null and errors['endpointUrl'] != null}" th:text="${errors['endpointUrl']}"></span>
+            </label>
+            <label>User name (optional)
+                <input type="text" name="username" maxlength="100" th:value="*{username}" autocomplete="off">
+                <span class="field-error" th:if="${errors != null and errors['username'] != null}" th:text="${errors['username']}"></span>
+            </label>
+            <label>Credential
+                <input type="password" name="secret" maxlength="256" autocomplete="new-password"
+                       th:placeholder="${integration.credentialConfigured() ? 'Leave empty to keep the stored credential' : 'Required'}">
+                <span class="field-error" th:if="${errors != null and errors['secret'] != null}" th:text="${errors['secret']}"></span>
+                <span class="hint">The credential is never displayed again. After a check, type it again before saving if you changed it.</span>
+            </label>
+            <div class="actions">
+                <button type="submit" th:formaction="@{/integrations/{id}/validate(id=${integration.id()})}">Check settings</button>
+                <button type="submit" class="primary" th:formaction="@{/integrations/{id}/save(id=${integration.id()})}">Save</button>
+                <button type="submit" th:if="${integration.endpointUrl() != null}"
+                        th:formaction="@{/integrations/{id}/check(id=${integration.id()})}" formnovalidate>Retry connection check</button>
+            </div>
+        </form>
+    </section>
+</main>
+</body>
+</html>
