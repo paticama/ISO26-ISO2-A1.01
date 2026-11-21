@@ -1,0 +1,58 @@
+@startuml uc-adm-04-class-analysis
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam classAttributeIconSize 0
+
+title UC-ADM-04: Manage External Integrations & Interoperability\nAnalysis Class Diagram (module C9 sescam-integration)
+
+actor "System administrator" as Admin
+
+package "Boundary" {
+  class IntegrationsView <<boundary>>
+  class IntegrationForm <<boundary>>
+}
+
+package "Control" {
+  class IntegrationManager <<control>>
+}
+
+package "Entity (C9 owns)" {
+  class Integration <<entity>> {
+    id
+    type : SSO | EHR | RIS_PACS | MESSAGING
+    endpointUrl
+    username
+    status
+    lastCheckedAt
+    version
+  }
+  class Credential <<entity>> {
+    secret (write only)
+  }
+}
+
+package "Other modules (through interfaces in sescam-common)" {
+  class AccessControl <<C1 security>>
+  class AuditTrail <<C1 security>>
+}
+
+class ExternalSystem <<external>> {
+  SSO, EHR, RIS/PACS, messaging
+}
+
+Admin --> IntegrationsView
+Admin --> IntegrationForm
+IntegrationsView --> IntegrationManager
+IntegrationForm --> IntegrationManager
+IntegrationManager --> Integration : reads and updates
+Integration "1" *-- "0..1" Credential
+IntegrationManager ..> AccessControl : <<include>> check permission (A1)
+IntegrationManager ..> AuditTrail : <<include>> Record Audit Event
+IntegrationManager ..> ExternalSystem : <<extend>> Check Integration Connection
+
+note bottom of Credential
+  Never shown, never logged,
+  never in error messages (A4)
+end note
+@enduml

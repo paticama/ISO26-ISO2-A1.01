@@ -1,0 +1,28 @@
+@startuml uc-adm-04-comm-normal
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+
+title UC-ADM-04: Communication Diagram – Main flow
+
+actor "System administrator" as Admin
+object ":IntegrationsView" as V
+object ":IntegrationForm" as F
+object ":IntegrationManager" as M
+object ":Integration" as I
+object ":AccessControl (C1)" as AC
+object ":ExternalSystem" as X
+object ":AuditTrail (C1)" as AU
+
+Admin -> V : 1: open integrations area
+V -> M : 2: listIntegrations()
+M -> AC : 2.1: canManageIntegrations()
+M -> I : 2.2: read status
+Admin -> F : 3: select integration
+F -> M : 4: validateSettings(settings)
+M -> X : 5: check connection (where supported)
+Admin -> F : 6: confirm the change
+F -> M : 7: updateIntegration(settings, expectedVersion)
+M -> I : 7.1: save settings and status
+M -> AU : 7.2: record INTEGRATION_CONFIGURATION_UPDATED
+M --> F : 7.3: confirmation and status
+@enduml
