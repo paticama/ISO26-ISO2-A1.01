@@ -1,0 +1,30 @@
+@startuml uc-adm-01-comm-normal
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+
+title UC-ADM-01: Manage System Configurations & Parameters\nCommunication Diagram - Main Success Scenario (Normal Flow)
+
+actor ":SystemAdministrator" as admin
+boundary ":ConfigAdminUI" as ui
+control ":ConfigurationRestController" as ctrl
+control ":CatalogueServiceImpl" as srv
+control ":AccessControlService" as auth
+entity ":ConfigurationParameter" as param
+database ":ConfigurationParameterRepository" as repo
+control ":AuditService" as audit
+
+admin -- ui : 1: openConfigArea()\n3: selectParamAndEnterValue(key, newValue)\n5: confirmUpdate() >\n< 11: displaySavedAndActivationStatus(ACTIVE / PENDING)
+
+ui -- ctrl : 2: GET /api/v1/configurations >\n4: POST /validate >\n6: PUT /api/v1/configurations/{key} >\n< 10: HTTP 200 (UpdateParameterResponseDTO)
+
+ctrl -- srv : 6.1: updateParameter(requestDTO) >\n< 9: returnResponse(UpdateParameterResponseDTO)
+
+srv -- auth : 6.2: canManageConfiguration(adminId, role) >
+
+srv -- repo : 6.3: findByKey(key) >\n8: save(updatedParam) >
+
+srv -- param : 7: validateProposedValue(newValue)\n7.1: withUpdatedValue(newValue, adminId, now)\n7.2: resolveActivationStatus() >
+
+srv -- audit : 8.1: recordEvent("CONFIGURATION_PARAMETER_UPDATED", ...) >
+@enduml

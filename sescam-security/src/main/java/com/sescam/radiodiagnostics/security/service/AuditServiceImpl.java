@@ -9,10 +9,13 @@ import java.time.Clock;
 import java.util.Objects;
 
 /**
- * C1 implementation of {@link AuditService}: every module records its auditable events here (NFR-11).
- * It replaces the no-op audit services the other modules use while C1 is not built.
+ * C1 implementation of the audit contracts: every module records its auditable events here (NFR-11).
+ * It implements both {@link AuditService} (used by catalogue, UC-ADM-01) and
+ * {@link es.uclm.esi.sescam.security.api.AuditService} (used by role administration, UC-ADM-02),
+ * so all events end up in the same append-only trail that UC-ADM-03 searches.
+ * It replaces the no-op audit services the other modules used while UC-ADM-03 was not built.
  */
-public class AuditServiceImpl implements AuditService {
+public class AuditServiceImpl implements AuditService, es.uclm.esi.sescam.security.api.AuditService {
 
     private final AuditEventRepository repository;
     private final Clock clock;
@@ -25,5 +28,17 @@ public class AuditServiceImpl implements AuditService {
     @Override
     public void recordEvent(AuditEventDTO event) {
         repository.append(AuditEvent.from(event, repository.nextSequenceNumber(), clock.instant()));
+    }
+
+    /**
+     * UC-ADM-02 events: {@code target} is stored as the affected resource and {@code outcome} as the details.
+     */
+    @Override
+    public void record(es.uclm.esi.sescam.security.api.AuditEventDTO event) {
+        if (event == null) {
+            throw new IllegalArgumentException("Audit event must not be null");
+        }
+        recordEvent(new AuditEventDTO(event.action(), event.actor(), event.target(), null, null,
+                event.outcome(), event.timestamp()));
     }
 }
