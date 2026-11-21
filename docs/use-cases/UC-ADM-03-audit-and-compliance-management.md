@@ -32,14 +32,15 @@
 - [x] Requirements
 - [x] Analysis
 - [x] Design
-- [ ] Implementation
-- [ ] Testing
+- [x] Implementation
+- [x] Testing
 
 ## Contracts and Interfaces
 - **System:** sescam-security.
 - **Interfaces (`sescam-common`, `com.sescam.radiodiagnostics.common.security`):** `AuditQueryService` (new, read only: `searchEvents`, `exportEventsAsCsv`) and `AuditService` (`recordEvent`, used by every module to write audit events).
 - **DTOs:** `AuditSearchCriteriaDTO`, `AuditSearchResultDTO`, `AuditRecordDTO`, `AuditResultStatus`, `AuditEventDTO`.
 - **Errors:** `UnauthorizedAuditAccessException` (A1, HTTP 403), `InvalidAuditQueryException` (A3, 400), `AuditQueryTooBroadException` (A3, 422: range > 31 days or > 500 matches), `AuditQueryFailedException` (A3, 503).
+- **Client view (`sescam-client-app`):** `/security/audit` (form, time-ordered table, details, CSV export), REST client `AuditApiClient`, form validations in `AuditFilterForm` (range required, from ≤ to, ≤ 31 days, safe text filters).
 - **REST (`sescam-server-app`):** `GET /api/v1/audit/events?from&to&performedBy&action&resourceKey` and `GET /api/v1/audit/events/export` (CSV), headers `X-Actor-Id`, `X-Actor-Role`. No write endpoints.
 - **Inputs:** Time range, supported audit filters, and authenticated actor identity.
 - **Outputs:** Matching audit events and details, or explicit empty, validation, authorization, and query-error results.
