@@ -1,0 +1,61 @@
+@startuml comm-phy-05-alt2b
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+skinparam actor {
+    BackgroundColor #E1F5FE
+    BorderColor #0288D1
+}
+
+skinparam boundary {
+    BackgroundColor #FFF9C4
+    BorderColor #FBC02D
+}
+
+skinparam control {
+    BackgroundColor #E8F5E9
+    BorderColor #388E3C
+}
+
+skinparam entity {
+    BackgroundColor #EDE7F6
+    BorderColor #512DA8
+}
+
+skinparam database {
+    BackgroundColor #FBE9E7
+    BorderColor #D84315
+}
+
+title UC-PHY-05: Log Procedure Execution Details and Clinical/Operational Incidents\nCommunication Diagram - Alternative Flow 2b: Procedure Aborted Due to Incident
+
+actor ":Physician / Radiologist / Technician" as phy
+boundary ":ExecutionLoggingUI" as ui
+control ":ExecutionController" as ctrl
+control ":ProcedureExecutionService" as srv
+entity ":ClinicalIncident" as inc
+entity ":DiagnosticOrder" as ord
+database ":IncidentRepository" as incRepo
+database ":OrderRepository" as orderRepo
+control ":AdmissionsNotificationService" as admNotif
+
+phy -- ui : 1: markProcedureAsAborted(reason)\n2: submitAbortNotice() >\n< 9: displayProcedureAbortedNotice("Procedure aborted. Admissions notified for urgent rescheduling.")
+
+ui -- ctrl : 3: postAbortIncident(AbortIncidentDTO) >\n< 8: returnResponse(HTTP_200)
+
+ctrl -- srv : 4: abortProcedure(dto) >\n< 7.4: returnSuccess()
+
+srv -- inc : 4.1: createSevereIncident(procId, reason, aborted=true) >
+
+srv -- incRepo : 4.2: save(incident) >
+
+srv -- ord : 5: updateStatus(ABORTED_INCIDENT) >
+
+srv -- orderRepo : 5.1: save(order) >
+
+srv -- admNotif : 6: publishExaminationAbortedEvent(orderId, patientId, reason) >
+
+@enduml

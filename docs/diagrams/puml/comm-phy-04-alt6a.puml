@@ -1,0 +1,61 @@
+@startuml comm-phy-04-alt6a
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+skinparam actor {
+    BackgroundColor #E1F5FE
+    BorderColor #0288D1
+}
+
+skinparam boundary {
+    BackgroundColor #FFF9C4
+    BorderColor #FBC02D
+}
+
+skinparam control {
+    BackgroundColor #E8F5E9
+    BorderColor #388E3C
+}
+
+skinparam entity {
+    BackgroundColor #EDE7F6
+    BorderColor #512DA8
+}
+
+skinparam database {
+    BackgroundColor #FBE9E7
+    BorderColor #D84315
+}
+
+title UC-PHY-04: Author, Edit, and Review Diagnostic Reports and Medical Images\nCommunication Diagram - Alternative Flow 6a: Issue Diagnostic Report Addendum
+
+actor ":Physician / Radiologist" as phy
+boundary ":ReportingWorklistUI" as ui
+control ":ReportController" as ctrl
+control ":DiagnosticReportingService" as srv
+entity ":ReportAddendum" as add
+entity ":DiagnosticReport" as rep
+database ":ReportRepository" as repo
+control ":FhirGateway" as fhir
+control ":AuditService" as audit
+
+phy -- ui : 1: selectSignedReport(reportId)\n2: submitAddendum(amendmentText, digitalSignature) >\n< 10: displayAddendumAppendedConfirmation()
+
+ui -- ctrl : 3: postReportAddendum(AddendumDTO) >\n< 9: returnStatus(HTTP_200)
+
+ctrl -- srv : 4: appendAddendum(addendumDTO) >\n< 8.3: returnUpdatedReport()
+
+srv -- rep : 5: getSignedReport(reportId) >
+
+srv -- add : 6: createAddendum(originalReportId, text, signature) >
+
+srv -- repo : 7: saveAddendum(addendum) >
+
+srv -- fhir : 8: syncFhirReportAddendum(reportId, addendum) >
+
+srv -- audit : 8.1: logSecurityAudit("REPORT_ADDENDUM_AMENDED", reportId, authorId) >
+
+@enduml

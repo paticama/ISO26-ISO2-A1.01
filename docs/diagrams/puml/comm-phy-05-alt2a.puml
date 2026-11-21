@@ -1,0 +1,55 @@
+@startuml comm-phy-05-alt2a
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+skinparam actor {
+    BackgroundColor #E1F5FE
+    BorderColor #0288D1
+}
+
+skinparam boundary {
+    BackgroundColor #FFF9C4
+    BorderColor #FBC02D
+}
+
+skinparam control {
+    BackgroundColor #E8F5E9
+    BorderColor #388E3C
+}
+
+skinparam entity {
+    BackgroundColor #EDE7F6
+    BorderColor #512DA8
+}
+
+skinparam database {
+    BackgroundColor #FBE9E7
+    BorderColor #D84315
+}
+
+title UC-PHY-05: Log Procedure Execution Details and Clinical/Operational Incidents\nCommunication Diagram - Alternative Flow 2a: Document Clinical Incident or Adverse Reaction
+
+actor ":Physician / Radiologist / Technician" as phy
+boundary ":ExecutionLoggingUI" as ui
+control ":ExecutionController" as ctrl
+control ":ProcedureExecutionService" as srv
+entity ":ClinicalIncident" as inc
+database ":IncidentRepository" as incRepo
+control ":AuditService" as audit
+
+phy -- ui : 1: selectAdverseReactionOrIncident()\n2: enterIncidentDetails(severity, description, treatmentGiven)\n3: submitIncidentReport() >\n< 8: displayIncidentRecordedConfirmation()
+
+ui -- ctrl : 4: postClinicalIncident(IncidentDTO) >\n< 7: returnResponse(HTTP_201)
+
+ctrl -- srv : 5: registerIncident(dto) >\n< 6.3: returnSuccess()
+
+srv -- inc : 5.1: create(procId, severity, description, timestamp) >
+
+srv -- incRepo : 5.2: save(incident) >
+
+srv -- audit : 6: logClinicalSafetyIncident("ADVERSE_REACTION_LOGGED", incidentId) >
+
+@enduml

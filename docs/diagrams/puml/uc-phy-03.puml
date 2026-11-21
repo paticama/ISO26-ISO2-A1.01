@@ -1,0 +1,33 @@
+@startuml uc-phy-03
+left to right direction
+skinparam shadowing false
+skinparam usecase {
+  BackgroundColor #FFF4C2
+  BorderColor #A67C1A
+  ArrowColor #5A4A1E
+}
+skinparam actor {
+  BackgroundColor #FFF4C2
+  BorderColor #A67C1A
+}
+skinparam rectangle {
+  BackgroundColor white
+  BorderColor #A67C1A
+}
+skinparam ArrowFontSize 11
+skinparam defaultFontName DejaVu Sans
+
+title UC-PHY-03 - Manage Orders and Consult Clinical Execution Schedules: use case diagram
+
+actor "Patient User" as PAT
+actor "Physician User" as PHY
+PHY -up-|> PAT : <<generalizes>>
+
+rectangle "System: SESCAM Radiodiagnostics - module PHY (Physicians)" {
+  usecase "**UC-PHY-03**\nManage Orders and Consult Clinical Execution Schedules" as PHY03
+}
+actor "Administrative / Admissions System" as AAD <<system>>
+
+PHY -- PHY03
+PHY03 -- AAD
+@enduml

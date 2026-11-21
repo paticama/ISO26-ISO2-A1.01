@@ -1,0 +1,64 @@
+@startuml comm-phy-01-alt6a
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+skinparam actor {
+    BackgroundColor #E1F5FE
+    BorderColor #0288D1
+}
+
+skinparam boundary {
+    BackgroundColor #FFF9C4
+    BorderColor #FBC02D
+}
+
+skinparam control {
+    BackgroundColor #E8F5E9
+    BorderColor #388E3C
+}
+
+skinparam entity {
+    BackgroundColor #EDE7F6
+    BorderColor #512DA8
+}
+
+skinparam database {
+    BackgroundColor #FBE9E7
+    BorderColor #D84315
+}
+
+title UC-PHY-01: Order and Prescribe Diagnostic Procedure\nCommunication Diagram - Alternative Flow 6a: Contrast Medium & Informed Consent Required
+
+actor ":Physician" as phy
+boundary ":OrderEntryUI" as ui
+control ":OrderController" as ctrl
+control ":OrderEntryService" as srv
+control ":CatalogueService" as cat
+control ":ConsentAndPrepEngine" as prep
+control ":SafetyVerificationService" as safe
+entity ":DiagnosticOrder" as ord
+database ":OrderRepository" as repo
+control ":AuditService" as audit
+
+phy -- ui : 1: submitPrescription(contrastProcedureDTO) >\n< 11: displaySuccessWithConsentAttached("Informed consent document and preparation guidelines generated")
+
+ui -- ctrl : 2: postOrder(CreateOrderDTO) >\n< 10: returnResponse(orderDTO, consentAttached=true)
+
+ctrl -- srv : 3: createDiagnosticOrder(dto) >\n< 9: returnResult(order)
+
+srv -- cat : 3.1: getExamDetails(examId) >\n< 3.2: examDetails(requiresContrast=true, requiresConsent=true)
+
+srv -- safe : 3.3: verifyRenalFunctionAndContrastAllergies(patientId) >\n< 3.4: safetyCleared()
+
+srv -- prep : 3.5: generateInformedConsentAndPrepGuide(examId, patientId) >\n< 3.6: returnConsentDocument(templateUid, fastingGuide)
+
+srv -- ord : 3.7: createWithConsentAttached(orderData, consentUid) >
+
+srv -- repo : 3.8: save(order) >
+
+srv -- audit : 3.9: logEvent("ORDER_CREATED_CONTRAST_CONSENT_REQUIRED", orderId) >
+
+@enduml

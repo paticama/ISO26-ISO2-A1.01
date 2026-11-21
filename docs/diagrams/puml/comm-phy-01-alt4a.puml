@@ -1,0 +1,41 @@
+@startuml comm-phy-01-alt4a
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+skinparam actor {
+    BackgroundColor #E1F5FE
+    BorderColor #0288D1
+}
+
+skinparam boundary {
+    BackgroundColor #FFF9C4
+    BorderColor #FBC02D
+}
+
+skinparam control {
+    BackgroundColor #E8F5E9
+    BorderColor #388E3C
+}
+
+skinparam entity {
+    BackgroundColor #EDE7F6
+    BorderColor #512DA8
+}
+
+title UC-PHY-01: Order and Prescribe Diagnostic Procedure\nCommunication Diagram - Alternative Flow 4a: Missing Mandatory Clinical Data
+
+actor ":Physician" as phy
+boundary ":OrderEntryUI" as ui
+control ":ClientFormValidator" as val
+control ":OrderController" as ctrl
+
+phy -- ui : 1: selectPatientAndExam()\n2: leaveJustificationOrPriorityEmpty()\n3: submitPrescription() >\n< 6: displayValidationErrors("Clinical justification and priority are mandatory")
+
+ui -- val : 4: validateForm(patientId, examId, indication, justification, priority) >\n< 5: validationResult(FAILED, [MISSING_JUSTIFICATION, MISSING_PRIORITY])
+
+ui .. ctrl : [Submission Blocked at Client Boundary]\n(No network request dispatched)
+
+@enduml

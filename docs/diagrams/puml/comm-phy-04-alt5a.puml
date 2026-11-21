@@ -1,0 +1,52 @@
+@startuml comm-phy-04-alt5a
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+skinparam actor {
+    BackgroundColor #E1F5FE
+    BorderColor #0288D1
+}
+
+skinparam boundary {
+    BackgroundColor #FFF9C4
+    BorderColor #FBC02D
+}
+
+skinparam control {
+    BackgroundColor #E8F5E9
+    BorderColor #388E3C
+}
+
+skinparam entity {
+    BackgroundColor #EDE7F6
+    BorderColor #512DA8
+}
+
+skinparam database {
+    BackgroundColor #FBE9E7
+    BorderColor #D84315
+}
+
+title UC-PHY-04: Author, Edit, and Review Diagnostic Reports and Medical Images\nCommunication Diagram - Alternative Flow 5a: Save Report as Draft
+
+actor ":Physician / Radiologist" as phy
+boundary ":ReportingWorklistUI" as ui
+control ":ReportController" as ctrl
+control ":DiagnosticReportingService" as srv
+entity ":DiagnosticReport" as rep
+database ":ReportRepository" as repo
+
+phy -- ui : 1: clickSaveAsDraft(findings, preliminaryConclusion) >\n< 8: displayDraftSavedConfirmation()
+
+ui -- ctrl : 2: postDraftReport(DraftReportDTO) >\n< 7: returnDraftStatus(HTTP_200)
+
+ctrl -- srv : 3: saveDraft(draftDTO) >\n< 6: returnSavedDraft()
+
+srv -- rep : 4: createDraft(procId, findings, status=DRAFT) >
+
+srv -- repo : 5: save(draftReport) >
+
+@enduml
