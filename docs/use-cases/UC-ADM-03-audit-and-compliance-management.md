@@ -31,14 +31,23 @@
 ## RADIT Disciplines
 - [x] Requirements
 - [x] Analysis
-- [ ] Design
+- [x] Design
 - [ ] Implementation
 - [ ] Testing
 
 ## Contracts and Interfaces
 - **System:** sescam-security.
+- **Interfaces (`sescam-common`, `com.sescam.radiodiagnostics.common.security`):** `AuditQueryService` (new, read only: `searchEvents`, `exportEventsAsCsv`) and `AuditService` (`recordEvent`, used by every module to write audit events).
+- **DTOs:** `AuditSearchCriteriaDTO`, `AuditSearchResultDTO`, `AuditRecordDTO`, `AuditResultStatus`, `AuditEventDTO`.
+- **Errors:** `UnauthorizedAuditAccessException` (A1, HTTP 403), `InvalidAuditQueryException` (A3, 400), `AuditQueryTooBroadException` (A3, 422: range > 31 days or > 500 matches), `AuditQueryFailedException` (A3, 503).
+- **REST (`sescam-server-app`):** `GET /api/v1/audit/events?from&to&performedBy&action&resourceKey` and `GET /api/v1/audit/events/export` (CSV), headers `X-Actor-Id`, `X-Actor-Role`. No write endpoints.
 - **Inputs:** Time range, supported audit filters, and authenticated actor identity.
 - **Outputs:** Matching audit events and details, or explicit empty, validation, authorization, and query-error results.
+
+## Analysis and Design Diagrams
+- Analysis: [class diagram](../diagrams/UC-ADM-03/uc-adm-03-class-analysis.puml), [communication – normal flow](../diagrams/UC-ADM-03/uc-adm-03-comm-normal.puml), [communication – alternative flows](../diagrams/UC-ADM-03/uc-adm-03-comm-alt.puml).
+- Design: [class diagram](../diagrams/UC-ADM-03/uc-adm-03-class-design.puml), [sequence diagram](../diagrams/UC-ADM-03/uc-adm-03-sequence-design.puml).
+- Design decisions: audit events are immutable and the repository is append-only (ADR-008); each search, export or denied attempt is itself recorded as a new audit event (`AUDIT_RECORDS_QUERIED`, `AUDIT_RECORDS_EXPORTED`, `AUDIT_ACCESS_DENIED`), so existing records are never changed; an empty result is a `NO_MATCHES` status, while failures are always errors.
 
 ## Acceptance Criteria
 - [ ] Authorized actors can search or filter audit activity for a selected time range.

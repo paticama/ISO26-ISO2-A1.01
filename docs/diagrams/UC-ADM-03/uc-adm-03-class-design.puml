@@ -1,0 +1,110 @@
+@startuml uc-adm-03-class-design
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam classAttributeIconSize 0
+
+title UC-ADM-03: Audit & Compliance Management\nDesign Class Diagram
+
+package "sescam-common (0.1.0)\ncom.sescam.radiodiagnostics.common.security" {
+  interface AuditService {
+    +recordEvent(event: AuditEventDTO): void
+  }
+  interface AuditQueryService {
+    +searchEvents(c: AuditSearchCriteriaDTO, requesterId: String, role: String): AuditSearchResultDTO
+    +exportEventsAsCsv(c: AuditSearchCriteriaDTO, requesterId: String, role: String): String
+  }
+  class AuditEventDTO <<record>> {
+    action, actorId, resourceKey,
+    previousValue, newValue, details: String
+    timestamp: Instant
+  }
+  class AuditSearchCriteriaDTO <<record>> {
+    from, to: Instant
+    performedBy, action, resourceKey: String
+  }
+  class AuditRecordDTO <<record>> {
+    eventId: String
+    sequenceNumber: long
+    timestamp: Instant
+    actorId, action, resourceKey,
+    previousValue, newValue, details: String
+  }
+  class AuditSearchResultDTO <<record>> {
+    criteria: AuditSearchCriteriaDTO
+    status: AuditResultStatus
+    totalMatches: int
+    events: List<AuditRecordDTO>
+  }
+  enum AuditResultStatus {
+    MATCHES_FOUND
+    NO_MATCHES
+  }
+  class UnauthorizedAuditAccessException
+  class InvalidAuditQueryException
+  class AuditQueryTooBroadException {
+    limit, actual: long
+  }
+  class AuditQueryFailedException
+}
+
+package "sescam-security (C1, 1.1.0)\ncom.sescam.radiodiagnostics.security" {
+  class AuditServiceImpl {
+    -repository: AuditEventRepository
+    -clock: Clock
+    +recordEvent(event: AuditEventDTO): void
+  }
+  class AuditQueryServiceImpl {
+    -maxRange: Duration = 31 days
+    -maxResults: int = 500
+    +searchEvents(...): AuditSearchResultDTO
+    +exportEventsAsCsv(...): String
+    -checkAccess(...)
+    -validate(criteria)
+    -recordAccess(action, requesterId, criteria, matches)
+  }
+  class AuditAccessPolicy {
+    +canViewAuditRecords(actorId, role): boolean
+  }
+  class AuditEvent <<entity, immutable>> {
+    -eventId, actorId, action, resourceKey,
+    previousValue, newValue, details: String
+    -sequenceNumber: long
+    -timestamp: Instant
+    +{static} from(dto, seq, recordedAt): AuditEvent
+    +matches(criteria): boolean
+    +toRecord(): AuditRecordDTO
+  }
+  interface AuditEventRepository <<append-only>> {
+    +nextSequenceNumber(): long
+    +append(event: AuditEvent): void
+    +findMatching(c): List<AuditEvent>
+    +count(): long
+  }
+  class InMemoryAuditEventRepository
+}
+
+package "sescam-server-app (0.1.0)\ncom.sescam.radiodiagnostics.server.security" {
+  class AuditRestController {
+    GET /api/v1/audit/events
+    GET /api/v1/audit/events/export
+  }
+  class AuditExceptionHandler
+  class SecurityAuditWiringConfig
+}
+
+AuditServiceImpl ..|> AuditService
+AuditQueryServiceImpl ..|> AuditQueryService
+InMemoryAuditEventRepository ..|> AuditEventRepository
+AuditServiceImpl --> AuditEventRepository
+AuditQueryServiceImpl --> AuditEventRepository
+AuditQueryServiceImpl --> AuditService : audits every access
+AuditQueryServiceImpl --> AuditAccessPolicy
+AuditEventRepository "1" o-- "*" AuditEvent
+AuditEvent ..> AuditRecordDTO : creates
+AuditSearchResultDTO *-- AuditRecordDTO
+AuditSearchResultDTO --> AuditResultStatus
+AuditRestController --> AuditQueryService
+AuditExceptionHandler ..> AuditQueryTooBroadException
+SecurityAuditWiringConfig ..> AuditQueryServiceImpl : wires
+@enduml
