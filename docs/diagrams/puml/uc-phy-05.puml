@@ -1,0 +1,35 @@
+@startuml uc-phy-05
+left to right direction
+skinparam shadowing false
+skinparam usecase {
+  BackgroundColor #FFF4C2
+  BorderColor #A67C1A
+  ArrowColor #5A4A1E
+}
+skinparam actor {
+  BackgroundColor #FFF4C2
+  BorderColor #A67C1A
+}
+skinparam rectangle {
+  BackgroundColor white
+  BorderColor #A67C1A
+}
+skinparam ArrowFontSize 11
+skinparam defaultFontName DejaVu Sans
+
+title UC-PHY-05 - Log Procedure Execution Details and Clinical/Operational Incidents: use case diagram
+
+actor "Patient User" as PAT
+actor "Physician User" as PHY
+PHY -up-|> PAT : <<generalizes>>
+
+rectangle "System: SESCAM Radiodiagnostics - module PHY (Physicians)" {
+  usecase "**UC-PHY-05**\nLog Procedure Execution Details and Clinical/Operational Incidents" as PHY05
+}
+actor "Departmental RIS/PACS" as PACS <<system>>
+actor "Administrative / Admissions System" as AAD <<system>>
+
+PHY -- PHY05
+PHY05 -- PACS
+PHY05 -- AAD
+@enduml

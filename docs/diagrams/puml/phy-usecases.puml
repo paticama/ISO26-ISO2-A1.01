@@ -1,0 +1,78 @@
+@startuml phy-usecases
+left to right direction
+skinparam shadowing false
+skinparam usecase {
+  BackgroundColor #FFF4C2
+  BorderColor #A67C1A
+  ArrowColor #5A4A1E
+}
+skinparam actor {
+  BackgroundColor #FFF4C2
+  BorderColor #A67C1A
+}
+skinparam rectangle {
+  BackgroundColor white
+  BorderColor #A67C1A
+}
+skinparam ArrowFontSize 11
+skinparam defaultFontName DejaVu Sans
+
+title PHY - Physicians: use case diagram
+
+actor "Patient User" as PAT
+actor "Physician User" as PHY
+PHY -up-|> PAT : <<generalizes>>
+
+rectangle "System: SESCAM Radiodiagnostics - module PHY (Physicians)" {
+  usecase "**UC-PHY-01**\nOrder and Prescribe Diagnostic Procedure" as PHY01
+  usecase "**UC-PHY-02**\nOrder Periodic Follow-up Surveillance Procedure" as PHY02
+  usecase "**UC-PHY-03**\nManage Orders and Consult Clinical Execution Schedules" as PHY03
+  usecase "**UC-PHY-04**\nAuthor, Edit, and Review Diagnostic Reports and Medical Images\n--\nextension points:\nFollowUpRecommendation" as PHY04
+  usecase "**UC-PHY-05**\nLog Procedure Execution Details and Clinical/Operational Incidents" as PHY05
+  usecase "**UC-PHY-06**\nConsult Operational Metrics on Orders" as PHY06
+
+  usecase "Verify Patient Safety Constraints\n& Contrast Allergies" as SEC
+}
+
+actor "Hospital EHR (HCE)" as EHR <<system>>
+actor "Departmental RIS/PACS Platform" as PACS <<system>>
+actor "Administrative / Admissions System" as AAD <<system>>
+actor "Patient User (Notification)" as PAT_NOTIF <<system>>
+
+PHY -down- PHY01
+PHY -down- PHY02
+PHY -down- PHY03
+PHY -down- PHY04
+PHY -down- PHY05
+PHY -down- PHY06
+
+PHY01 -down- EHR
+PHY01 -down- AAD
+
+PHY02 -down- AAD
+
+PHY03 -down- AAD
+
+PHY04 -down- PACS
+PHY04 -down- EHR
+PHY04 -down- PAT_NOTIF
+
+PHY05 -down- PACS
+PHY05 -down- AAD
+
+' Include relationships (shared safety verification)
+PHY01 .down.> SEC : <<include>>
+PHY02 .down.> SEC : <<include>>
+
+' Extend relationship (optional surveillance recommendation in report)
+PHY02 .down.> PHY04 : <<extend>>\n(FollowUpRecommendation)
+
+SEC -[hidden]down- EHR
+SEC -[hidden]down- AAD
+
+PHY01 -[hidden]right- PHY02
+PHY02 -[hidden]right- PHY03
+PHY03 -[hidden]right- PHY04
+PHY04 -[hidden]right- PHY05
+PHY05 -[hidden]right- PHY06
+@enduml

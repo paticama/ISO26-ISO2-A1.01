@@ -1,0 +1,200 @@
+@startuml phy-class-domain
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 6
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+skinparam class {
+    BackgroundColor #F9FBE7
+    BorderColor #827717
+    ArrowColor #33691E
+}
+
+skinparam enum {
+    BackgroundColor #FFF3E0
+    BorderColor #E65100
+}
+
+title Physician Subsystem - Domain Class Diagram (Analysis Model)\nSESCAM Radiodiagnostics and Medical Imaging
+
+enum PriorityLevel {
+    STAT_URGENT
+    PREFERENTIAL
+    ROUTINE
+}
+
+enum OrderStatus {
+    PENDING_SCHEDULING
+    SCHEDULED
+    IN_PROGRESS
+    EXECUTED_PENDING_REPORT
+    REPORTED
+    CANCELLED
+}
+
+enum ModalityType {
+    MRI
+    CT
+    X_RAY
+    ULTRASOUND
+    NUCLEAR_MEDICINE
+}
+
+enum ConstraintType {
+    CONTRAST_ALLERGY
+    RENAL_IMPAIRMENT
+    PREGNANCY
+    FERROMAGNETIC_IMPLANT
+}
+
+enum ReportStatus {
+    DRAFT
+    FINALIZED_SIGNED
+    ADDENDUM_AMENDED
+}
+
+enum IncidentSeverity {
+    MILD
+    MODERATE
+    SEVERE
+}
+
+class Physician {
+    - physicianId: String
+    - collegiateNumber: String
+    - fullName: String
+    - specialty: String
+    - department: String
+    - corporateEmail: String
+    - digitalSignatureCert: String
+    + prescribeOrder(patientId, examId, indication, priority): DiagnosticOrder
+    + prescribeSurveillance(patientId, examId, protocol, interval): SurveillanceOrder
+    + cancelOrder(orderId, rationale): void
+    + authorReport(procedureId, findings, conclusion): DiagnosticReport
+    + signReport(reportId, cert): void
+    + logExecution(procedureId, logData): ProcedureExecutionLog
+}
+
+class DiagnosticOrder {
+    - orderId: String
+    - orderNumber: String
+    - orderDate: LocalDateTime
+    - patientId: String
+    - clinicalIndication: String
+    - clinicalJustification: String
+    - priority: PriorityLevel
+    - status: OrderStatus
+    - requiresContrast: boolean
+    - requiresInformedConsent: boolean
+    - overrideApproved: boolean
+    - overrideJustification: String
+    + validateMandatoryFields(): boolean
+    + assignPriority(level: PriorityLevel): void
+    + cancel(rationale: String): void
+    + approveOverride(justification: String): void
+}
+
+class SurveillanceOrder {
+    - surveillanceId: String
+    - recurrenceIntervalMonths: int
+    - surveillanceProtocol: String
+    - nextScheduledDate: LocalDate
+    - active: boolean
+    + calculateNextExecutionDate(): LocalDate
+    + deactivateSurveillance(): void
+}
+
+class ExaminationType {
+    - procedureCode: String
+    - name: String
+    - modality: ModalityType
+    - estimatedDurationMinutes: int
+    - standardPreparationGuide: String
+    - requiresFasting: boolean
+    - requiresContrastMedia: boolean
+    - requiresInformedConsent: boolean
+    - active: boolean
+    + isEligibleForSurveillance(): boolean
+}
+
+class SafetyConstraint {
+    - constraintId: String
+    - patientId: String
+    - type: ConstraintType
+    - isAbsoluteContraindication: boolean
+    - clinicalDescription: String
+    - registeredDate: LocalDate
+    + verifyCompatibility(exam: ExaminationType): boolean
+}
+
+class DiagnosticReport {
+    - reportId: String
+    - procedureId: String
+    - authorPhysicianId: String
+    - authoringDate: LocalDateTime
+    - findingsNarrative: String
+    - conclusionNarrative: String
+    - digitalSignature: String
+    - signatureTimestamp: LocalDateTime
+    - status: ReportStatus
+    - hasCriticalEmergencyAlert: boolean
+    + saveAsDraft(): void
+    + ratifySignature(cert: String): void
+    + flagCriticalAlert(): void
+}
+
+class DicomStudy {
+    - studyInstanceUid: String
+    - accessionNumber: String
+    - studyDateTime: LocalDateTime
+    - modality: ModalityType
+    - numberOfSeries: int
+    - numberOfInstances: int
+    - pacsStorageEndpoint: String
+    - wadoRsToken: String
+    + retrieveImageSeries(): List
+}
+
+class ProcedureExecutionLog {
+    - executionId: String
+    - procedureId: String
+    - actualStartDateTime: LocalDateTime
+    - actualEndDateTime: LocalDateTime
+    - roomEquipmentId: String
+    - radiationDoseDlp: Double
+    - radiationDoseCtdi: Double
+    - contrastMediaBatch: String
+    - contrastMediaVolumeMl: Double
+    - radiotracerActivityMBq: Double
+    - informedConsentVerified: boolean
+    + calculateCumulativeDose(): Double
+}
+
+class ClinicalIncident {
+    - incidentId: String
+    - executionId: String
+    - incidentTimestamp: LocalDateTime
+    - incidentType: String
+    - severity: IncidentSeverity
+    - clinicalDescription: String
+    - procedureAborted: boolean
+    - reportedToAdmissions: boolean
+    + escalateToQualityBoard(): void
+}
+
+' Relationships
+Physician "1" --> "0..*" DiagnosticOrder : prescribes
+Physician "1" --> "0..*" DiagnosticReport : authors & signs
+Physician "1" --> "0..*" ProcedureExecutionLog : documents
+
+DiagnosticOrder <|-- SurveillanceOrder : specializes
+DiagnosticOrder "0..*" --> "1" ExaminationType : specifies procedure
+DiagnosticOrder "0..*" --> "0..*" SafetyConstraint : checked against
+DiagnosticOrder "1" <.. "0..1" ProcedureExecutionLog : fulfills
+DiagnosticOrder "1" <.. "0..1" DiagnosticReport : concludes
+
+DiagnosticReport "1" o-- "1..*" DicomStudy : references & interprets
+ProcedureExecutionLog "1" *-- "0..*" ClinicalIncident : records anomalies
+
+@enduml

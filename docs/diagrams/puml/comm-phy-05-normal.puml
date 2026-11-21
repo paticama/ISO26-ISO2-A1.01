@@ -1,0 +1,58 @@
+@startuml comm-phy-05-normal
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+skinparam actor {
+    BackgroundColor #E1F5FE
+    BorderColor #0288D1
+}
+
+skinparam boundary {
+    BackgroundColor #FFF9C4
+    BorderColor #FBC02D
+}
+
+skinparam control {
+    BackgroundColor #E8F5E9
+    BorderColor #388E3C
+}
+
+skinparam entity {
+    BackgroundColor #EDE7F6
+    BorderColor #512DA8
+}
+
+skinparam database {
+    BackgroundColor #FBE9E7
+    BorderColor #D84315
+}
+
+title UC-PHY-05: Log Procedure Execution Details and Clinical/Operational Incidents\nCommunication Diagram - Main Success Scenario (Normal Flow)
+
+actor ":Physician / Radiologist / Technician" as phy
+boundary ":ExecutionLoggingUI" as ui
+control ":ExecutionController" as ctrl
+control ":ProcedureExecutionService" as srv
+entity ":ProcedureExecutionLog" as log
+entity ":DiagnosticOrder" as ord
+database ":ExecutionRepository" as repo
+database ":OrderRepository" as orderRepo
+
+phy -- ui : 1: selectScheduledProcedure(procId)\n2: enterExecutionData(startTime, endTime, doseDLP, contrastLot, consentVerified)\n3: submitExecutionLog() >\n< 8: displayExecutionLoggedConfirmation()
+
+ui -- ctrl : 4: postExecutionLog(ExecutionLogDTO) >\n< 7: returnResponse(HTTP_201_CREATED)
+
+ctrl -- srv : 5: recordExecution(dto) >\n< 6.4: returnSuccess()
+
+srv -- log : 5.1: create(procId, doseDLP, contrastLot, timestamps) >
+
+srv -- repo : 5.2: save(executionLog) >
+
+srv -- ord : 6: updateStatus(EXECUTED_PENDING_REPORT) >
+
+srv -- orderRepo : 6.1: save(order) >
+
+@enduml
