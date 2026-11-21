@@ -12,7 +12,7 @@
     </parent>
 
     <artifactId>sescam-server-app</artifactId>
-    <name>SESCAM Server App</name>
+    <name>SESCAM Server Application</name>
 
     <dependencies>
         <dependency>
@@ -26,6 +26,10 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>sescam-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>sescam-catalogue</artifactId>
         </dependency>
     </dependencies>
 

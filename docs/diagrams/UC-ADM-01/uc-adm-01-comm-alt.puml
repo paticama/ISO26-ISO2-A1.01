@@ -1,0 +1,32 @@
+@startuml uc-adm-01-comm-alt
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+
+title UC-ADM-01: Manage System Configurations & Parameters\nCommunication Diagram - Alternative / Error Flows (A1-A4)
+
+actor ":User / Admin" as admin
+boundary ":ConfigAdminUI" as ui
+control ":ConfigurationRestController" as ctrl
+control ":ConfigurationExceptionHandler" as handler
+control ":CatalogueServiceImpl" as srv
+control ":AccessControlService" as auth
+entity ":ConfigurationParameter" as param
+database ":ConfigurationParameterRepository" as repo
+
+admin -- ui : 1: submitUpdate(key, proposedValue, expectedVersion) >\n< 6: displayError(403 / 400 / 409 / 500)
+
+ui -- ctrl : 2: PUT /api/v1/configurations/{key} >
+
+ctrl -- srv : 3: updateParameter(requestDTO) >
+
+srv -- auth : [A1] 3.1: canManageConfiguration() == false\n-> throw UnauthorizedConfigurationAccessException (403) >
+
+srv -- repo : [A4] 3.2: findByKey(key) -> version != expectedVersion\n-> throw ConcurrentConfigurationChangeException (409)\n[A3] 3.4: save() fails -> throw ConfigurationSaveException (500) >
+
+srv -- param : [A2] 3.3: validateProposedValue() == invalid\n-> throw InvalidConfigurationValueException (400) >
+
+ctrl -- handler : 4: mapDomainExceptionToHttpError() >
+
+handler -- ui : 5: returnErrorPayload(error, parameterKey, message) >
+@enduml
