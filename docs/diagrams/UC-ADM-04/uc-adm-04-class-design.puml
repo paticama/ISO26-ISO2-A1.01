@@ -1,0 +1,112 @@
+@startuml uc-adm-04-class-design
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam classAttributeIconSize 0
+
+title UC-ADM-04: Manage External Integrations & Interoperability\nDesign Class Diagram
+
+package "sescam-common (0.1.0)\ncom.sescam.radiodiagnostics.common.integration" {
+  interface IntegrationService {
+    +listIntegrations(adminId, role): List<IntegrationSummaryDTO>
+    +getIntegration(id, adminId, role): IntegrationSummaryDTO
+    +validateSettings(id, settings, adminId, role): SettingsCheckResultDTO
+    +updateIntegration(req): UpdateIntegrationResponseDTO
+    +checkConnection(id, adminId, role): ConnectionCheckResultDTO
+  }
+  class IntegrationSettingsDTO <<record>> {
+    endpointUrl, username
+    secret (write only, masked in toString)
+  }
+  class UpdateIntegrationRequestDTO <<record>> {
+    integrationId
+    settings: IntegrationSettingsDTO
+    expectedVersion: long
+    administratorId, administratorRole
+  }
+  class IntegrationSummaryDTO <<record>> {
+    id, type, displayName, endpointUrl, username
+    credentialConfigured: boolean
+    status, statusMessage, version
+    lastCheckedAt, lastModifiedBy, lastModifiedAt
+  }
+  class SettingsCheckResultDTO <<record>> {
+    valid, errors, connection
+    canSave()
+  }
+  class ConnectionCheckResultDTO <<record>>
+  class UpdateIntegrationResponseDTO <<record>>
+  enum IntegrationType { SSO EHR RIS_PACS MESSAGING }
+  enum IntegrationStatus {
+    NOT_CONFIGURED NOT_CHECKED CONNECTED
+    CONNECTION_FAILED UNAVAILABLE
+  }
+  class "Exceptions" as Ex <<A1-A3>> {
+    UnauthorizedIntegrationAccessException (403)
+    InvalidIntegrationSettingsException (400)
+    IntegrationConnectionFailedException (502)
+    ConcurrentIntegrationChangeException (409)
+    IntegrationNotFoundException (404)
+    IntegrationSaveException (500)
+  }
+  interface AccessControlService <<security>> {
+    +canManageIntegrations(actorId, role): boolean
+  }
+  interface AuditService <<security>> {
+    +recordEvent(AuditEventDTO)
+  }
+}
+
+package "sescam-integration (1.0.0) – C9\ncom.sescam.radiodiagnostics.integration" {
+  class IntegrationServiceImpl
+  class Integration <<immutable entity>> {
+    withSettings(...)
+    withStatus(...)
+  }
+  interface IntegrationRepository
+  class InMemoryIntegrationRepository
+  interface SecretStore {
+    +put(id, secret)
+    +get(id)
+    +contains(id)
+  }
+  class EncryptedInMemorySecretStore <<AES-256-GCM>>
+  interface ConnectionProbe {
+    +probe(type, url, user, secret): ProbeResult
+  }
+  class NoOpConnectionProbe
+  class SettingsValidator
+}
+
+package "sescam-server-app" {
+  class IntegrationRestController <<REST /api/v1/integrations>>
+  class IntegrationExceptionHandler
+  class IntegrationWiringConfig
+}
+
+package "sescam-client-app" {
+  class IntegrationViewController <<MVC /integrations>>
+  class IntegrationApiClient
+  class IntegrationSettingsForm
+}
+
+IntegrationServiceImpl .up.|> IntegrationService
+IntegrationServiceImpl --> IntegrationRepository
+IntegrationServiceImpl --> SecretStore
+IntegrationServiceImpl --> ConnectionProbe
+IntegrationServiceImpl --> SettingsValidator
+IntegrationServiceImpl ..> AccessControlService
+IntegrationServiceImpl ..> AuditService
+IntegrationRepository <|.. InMemoryIntegrationRepository
+SecretStore <|.. EncryptedInMemorySecretStore
+ConnectionProbe <|.. NoOpConnectionProbe
+InMemoryIntegrationRepository o-- Integration
+
+IntegrationRestController --> IntegrationService
+IntegrationExceptionHandler ..> Ex
+IntegrationWiringConfig ..> IntegrationServiceImpl : creates
+
+IntegrationViewController --> IntegrationApiClient
+IntegrationViewController --> IntegrationSettingsForm
+IntegrationApiClient ..> IntegrationRestController : HTTP + DTOs of sescam-common
+@enduml

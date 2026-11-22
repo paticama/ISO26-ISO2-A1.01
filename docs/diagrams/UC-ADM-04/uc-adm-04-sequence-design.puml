@@ -1,0 +1,65 @@
+@startuml uc-adm-04-sequence-design
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+
+title UC-ADM-04: Design Sequence Diagram – validate, confirm and save
+
+actor Admin
+participant "IntegrationViewController\n(client-app)" as VC
+participant "IntegrationApiClient\n(client-app)" as API
+participant "IntegrationRestController\n(server-app)" as RC
+participant "IntegrationServiceImpl\n(C9)" as S
+participant "AccessControlService\n(C1)" as AC
+participant "SettingsValidator" as V
+participant "ConnectionProbe" as P
+participant "IntegrationRepository" as R
+participant "SecretStore" as SS
+participant "AuditService\n(C1)" as AU
+
+== Step 5: validate and check (nothing is saved) ==
+Admin -> VC : submit form
+VC -> VC : local field validation (IntegrationSettingsForm)
+VC -> API : validate(id, settings)
+API -> RC : POST /api/v1/integrations/{id}/validate
+RC -> S : validateSettings(id, settings, adminId, role)
+S -> AC : canManageIntegrations(adminId, role)
+S -> V : validate(settings)
+S -> P : probe(type, url, user, secret)
+S --> RC : SettingsCheckResultDTO
+RC --> VC : valid? connection status?
+
+== Steps 6-7: confirm and save ==
+Admin -> VC : confirm
+VC -> API : update(id, settings, expectedVersion)
+API -> RC : PUT /api/v1/integrations/{id}
+RC -> S : updateIntegration(request)
+S -> AC : canManageIntegrations(adminId, role)
+alt not authorized (A1)
+  S -> AU : INTEGRATION_ACCESS_DENIED
+  S --> RC : UnauthorizedIntegrationAccessException -> 403
+else authorized
+  S -> R : findById(id)
+  alt version differs
+    S --> RC : ConcurrentIntegrationChangeException -> 409
+  else same version
+    S -> V : validate(settings)
+    alt invalid (A2)
+      S -> AU : INTEGRATION_CONFIGURATION_REJECTED
+      S --> RC : InvalidIntegrationSettingsException -> 400
+    else valid
+      S -> P : probe(...)
+      alt CONNECTION_FAILED or UNAVAILABLE (A2, A3)
+        S -> AU : INTEGRATION_CONFIGURATION_REJECTED
+        S --> RC : IntegrationConnectionFailedException -> 502
+      else CONNECTED or NOT_CHECKED
+        S -> R : save(new Integration version)
+        S -> SS : put(id, secret) if a new credential was typed
+        S -> AU : INTEGRATION_CONFIGURATION_UPDATED (no secret)
+        S --> RC : UpdateIntegrationResponseDTO
+      end
+    end
+  end
+end
+RC --> VC : result
+VC --> Admin : confirmation or explanation
+@enduml
