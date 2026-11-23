@@ -17,4 +17,16 @@ public interface AccessControlService {
     default boolean canManageIntegrations(String actorId, String role) {
         return canManageConfiguration(actorId, role);
     }
+
+    /**
+     * Checks whether the authenticated user has permission to register, update, consult, or discharge patients (UC-AAD-01).
+     * By default allows admissions/administrative staff, receptionists, and system administrators.
+     */
+    default boolean canManagePatients(String actorId, String role) {
+        if (role == null || role.isBlank()) {
+            return false;
+        }
+        String r = role.trim().toUpperCase();
+        return r.contains("ADMISSION") || r.contains("ADMINISTRATIVE") || r.contains("RECEPTIONIST") || r.contains("ADMIN");
+    }
 }

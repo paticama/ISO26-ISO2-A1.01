@@ -1,0 +1,32 @@
+@startuml uc-aad-01-comm-normal
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+
+title UC-AAD-01: Communication Diagram – Main Flow (Registration & Update)
+
+actor "Admissions Staff" as Staff
+object ":PatientsView" as V
+object ":PatientRegistrationForm" as F
+object ":PatientManager" as M
+object ":Patient" as P
+object ":AccessControl (C1)" as AC
+object ":PatientRepository" as R
+object ":ExternalEhrGateway (C9)" as EHR
+object ":AuditTrail (C1)" as AU
+
+Staff -> V : 1: search patient by identifier / CIP
+V -> M : 1.1: searchPatients(criteria)
+M -> AC : 1.1.1: canManagePatients(actorId, role)
+M -> R : 1.1.2: findByCriteria(criteria)
+M --> V : 1.1.3: return matching patients
+
+Staff -> F : 2: enter patient details & confirm registration
+F -> M : 2.1: registerPatient(request)
+M -> AC : 2.1.1: canManagePatients(actorId, role)
+M -> R : 2.1.2: check duplicate (CIP / DNI)
+M -> P : 2.1.3: create new Patient entity
+M -> R : 2.1.4: save(patient)
+M -> AU : 2.1.5: record PATIENT_REGISTERED
+M -> EHR : 2.1.6: syncPatientRecord(patient)
+M --> F : 2.1.7: return PatientDTO with sync status
+@enduml
