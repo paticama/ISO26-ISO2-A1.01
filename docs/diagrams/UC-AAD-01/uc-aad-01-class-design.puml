@@ -1,0 +1,133 @@
+@startuml uc-aad-01-class-design
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam classAttributeIconSize 0
+
+title UC-AAD-01: Design Class Diagram (sescam-common, sescam-patients, sescam-server-app)
+
+package "sescam-common contracts (com.sescam.radiodiagnostics.common.patients)" {
+  interface PatientService {
+    + registerPatient(CreatePatientRequestDTO) : PatientDTO
+    + getPatientById(String, String, String) : PatientDTO
+    + getPatientByCip(String, String, String) : PatientDTO
+    + searchPatients(PatientSearchCriteriaDTO, String, String) : List<PatientSummaryDTO>
+    + updatePatient(UpdatePatientRequestDTO) : PatientDTO
+    + dischargePatient(DischargePatientRequestDTO) : PatientDTO
+  }
+
+  interface EhrGateway {
+    + syncPatientRecord(PatientDTO) : EhrSyncResultDTO
+  }
+
+  class PatientDTO <<record>> {
+    + id : String
+    + cip : String
+    + dni : String
+    + firstName : String
+    + lastName : String
+    + birthDate : LocalDate
+    + gender : Gender
+    + phone : String
+    + email : String
+    + address : AddressDTO
+    + preferredChannel : PreferredNotificationChannel
+    + emergencyContact : EmergencyContactDTO
+    + clinicalSummaryNotes : String
+    + status : PatientStatus
+    + version : long
+    + createdAt : Instant
+    + updatedAt : Instant
+    + ehrSyncStatus : String
+  }
+
+  class PatientSummaryDTO <<record>>
+  class CreatePatientRequestDTO <<record>>
+  class UpdatePatientRequestDTO <<record>>
+  class DischargePatientRequestDTO <<record>>
+  class PatientSearchCriteriaDTO <<record>>
+  class EhrSyncResultDTO <<record>>
+  enum PatientStatus
+  enum Gender
+  enum PreferredNotificationChannel
+
+  class PatientNotFoundException
+  class DuplicatePatientException
+  class InvalidPatientDataException
+  class ConcurrentPatientUpdateException
+  class UnauthorizedPatientAccessException
+  class EhrSyncException
+}
+
+package "sescam-common security" {
+  interface AccessControlService {
+    + canManagePatients(actorId, role) : boolean
+  }
+  interface AuditService {
+    + recordEvent(AuditEventDTO) : void
+  }
+}
+
+package "sescam-patients module (com.sescam.radiodiagnostics.patients)" {
+  class PatientServiceImpl implements PatientService {
+    - patientRepository : PatientRepository
+    - accessControlService : AccessControlService
+    - auditService : AuditService
+    - ehrGateway : EhrGateway
+  }
+
+  interface PatientRepository {
+    + save(Patient) : Patient
+    + findById(String) : Optional<Patient>
+    + findByCip(String) : Optional<Patient>
+    + findByDni(String) : Optional<Patient>
+    + search(PatientSearchCriteriaDTO) : List<Patient>
+    + existsByCip(String) : boolean
+    + existsByDni(String) : boolean
+  }
+
+  class InMemoryPatientRepository implements PatientRepository
+  class NoOpEhrGateway implements EhrGateway
+
+  class Patient <<entity>> {
+    - id : String
+    - cip : String
+    - dni : String
+    - firstName : String
+    - lastName : String
+    - birthDate : LocalDate
+    - gender : Gender
+    - phone : String
+    - email : String
+    - address : Address
+    - preferredChannel : PreferredNotificationChannel
+    - emergencyContact : EmergencyContact
+    - clinicalSummaryNotes : String
+    - status : PatientStatus
+    - version : long
+    - createdAt : Instant
+    - updatedAt : Instant
+    - ehrSyncStatus : String
+  }
+}
+
+package "sescam-server-app (com.sescam.radiodiagnostics.server.patients)" {
+  class PatientRestController {
+    - patientService : PatientService
+    + register(CreatePatientPayload, actorId, role)
+    + search(query, status, page, size, actorId, role)
+    + get(id, actorId, role)
+    + update(id, UpdatePatientPayload, actorId, role)
+    + discharge(id, DischargePayload, actorId, role)
+  }
+  class PatientExceptionHandler
+  class PatientWiringConfig
+}
+
+PatientRestController --> PatientService
+PatientServiceImpl --> PatientRepository
+PatientServiceImpl --> AccessControlService
+PatientServiceImpl --> AuditService
+PatientServiceImpl --> EhrGateway
+PatientServiceImpl ..> Patient : creates and updates
+@enduml

@@ -1,0 +1,62 @@
+@startuml uc-aad-01-sequence-design
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+
+title UC-AAD-01: Design Sequence Diagram – Registration, Update & Concurrency
+
+actor "Admissions Staff" as Staff
+participant "PatientRestController\n(server-app)" as RC
+participant "PatientServiceImpl\n(sescam-patients)" as S
+participant "AccessControlService\n(C1)" as AC
+participant "PatientRepository\n(sescam-patients)" as R
+participant "AuditService\n(C1)" as AU
+participant "EhrGateway\n(C9)" as EHR
+
+== 1. Patient Registration Flow ==
+Staff -> RC : POST /api/v1/patients\n[Headers: X-Actor-Id, X-Actor-Role; Body: CreatePatientPayload]
+RC -> S : registerPatient(request)
+S -> AC : canManagePatients(actorId, role)
+alt Unauthorized (A5)
+  S -> AU : recordEvent(PATIENT_ACCESS_DENIED)
+  S --> RC : throw UnauthorizedPatientAccessException (403)
+else Authorized
+  S -> S : validateFields(request)
+  alt Invalid Data (A2)
+    S -> AU : recordEvent(PATIENT_REGISTRATION_REJECTED)
+    S --> RC : throw InvalidPatientDataException (400)
+  else Valid Data
+    S -> R : existsByCip(cip) || existsByDni(dni)
+    alt Duplicate Found (A1)
+      S -> AU : recordEvent(PATIENT_REGISTRATION_REJECTED)
+      S --> RC : throw DuplicatePatientException (409)
+    else Unique Record
+      S -> R : save(new Patient(..., version=1L))
+      S -> AU : recordEvent(PATIENT_REGISTERED)
+      S -> EHR : syncPatientRecord(patientDTO)
+      EHR --> S : EhrSyncResultDTO(synced=true, "EXT-1001")
+      S --> RC : PatientDTO
+      RC --> Staff : 201 Created [PatientDTO]
+    end
+  end
+end
+
+== 2. Patient Update & Concurrency Check (A4) ==
+Staff -> RC : PUT /api/v1/patients/{id}\n[Body: UpdatePatientPayload (includes expectedVersion)]
+RC -> S : updatePatient(request)
+S -> AC : canManagePatients(actorId, role)
+S -> R : findById(id)
+alt Patient Not Found
+  S --> RC : throw PatientNotFoundException (404)
+else Found
+  alt stored.version != request.expectedVersion (A4)
+    S --> RC : throw ConcurrentPatientUpdateException (409)
+  else Versions Match
+    S -> S : validateFields(request)
+    S -> R : save(updated patient, version+1)
+    S -> AU : recordEvent(PATIENT_UPDATED)
+    S -> EHR : syncPatientRecord(patientDTO)
+    S --> RC : PatientDTO
+    RC --> Staff : 200 OK [PatientDTO]
+  end
+end
+@enduml

@@ -2,7 +2,7 @@
 
 ## Use Case
 - **UC:** `UC-AAD-01`
-- **RF:** `FR-AAD-01`, `FR-AAD-02`, `FR-AAD-03`
+- **RF:** `FR-AAD-01`, `FR-AAD-02`, `FR-AAD-03`, `FR-AAD-04`
 - **Phase:** Elaboration
 - **Iteration:** 1
 - **Priority:** High
@@ -37,28 +37,44 @@
 
 ## RADIT Disciplines
 - [x] Requirements: Specify registration, consultation, update, and discharge workflow.
-- [ ] Analysis: Define the patient-record and EHR integration boundaries.
-- [ ] Design: Define patient DTOs, validation rules, and service interfaces.
-- [ ] Implementation: Implement the patient-management service in `sescam-patients` and integration adapter.
-- [ ] Testing: Unit and integration tests for validation, audit, synchronization, and authorization.
+- [x] Analysis: Define the patient-record and EHR integration boundaries (class and communication diagrams).
+- [x] Design: Define patient DTOs, validation rules, service interfaces, design class and sequence diagrams.
+- [x] Implementation: Implement the patient-management service in `sescam-patients`, REST controller in `sescam-server-app`, and integration adapter.
+- [x] Testing: Unit, repository, controller, and contract tests for validation, audit, duplicate detection, synchronization, and authorization.
 
 ## Contracts and Interfaces
-- `Client:` Admissions UI for search, registration, consultation, update, and discharge.
-- `Server:` Patient-management service in `sescam-patients`, REST endpoint in `sescam-server-app`.
-- `Patient/EHR interface:` Patient record and EHR synchronization adapter.
-- `Audit interface:` Records actor, timestamp, operation, and outcome.
-- `Errors:` `PATIENT_NOT_FOUND`, `DUPLICATE_PATIENT`, `INVALID_PATIENT_DATA`, `UNAUTHORIZED_OPERATION`, `EHR_SYNC_FAILED`, and `CONCURRENT_UPDATE` are returned explicitly; no error is treated as success.
+- **System:** `sescam-patients` (C6 v1.0.0).
+- **Interfaces (`sescam-common`, `com.sescam.radiodiagnostics.common.patients`):** `PatientService` (`registerPatient`, `getPatientById`, `getPatientByCip`, `searchPatients`, `updatePatient`, `dischargePatient`), `EhrGateway` (`syncPatientRecord`). `AccessControlService` (`common.security`) defines `canManagePatients`.
+- **DTOs & Types:** `PatientDTO`, `PatientSummaryDTO`, `CreatePatientRequestDTO`, `UpdatePatientRequestDTO`, `DischargePatientRequestDTO`, `PatientSearchCriteriaDTO`, `EhrSyncResultDTO`, `PatientStatus`, `Gender`, `PreferredNotificationChannel`, `AddressDTO`, `EmergencyContactDTO`.
+- **Errors:** `PatientNotFoundException` (404), `DuplicatePatientException` (409), `InvalidPatientDataException` (400), `ConcurrentPatientUpdateException` (409), `UnauthorizedPatientAccessException` (403), `EhrSyncException` (502).
+- **REST (`sescam-server-app`):**
+  - `POST /api/v1/patients`: Register new patient.
+  - `GET /api/v1/patients`: Search patients by identifier/CIP/name.
+  - `GET /api/v1/patients/{id}`: Consult patient details.
+  - `PUT /api/v1/patients/{id}`: Update patient demographic and contact data.
+  - `POST /api/v1/patients/{id}/discharge`: Discharge patient.
+  - Headers: `X-Actor-Id`, `X-Actor-Role`.
+- **Client view (`sescam-client-app`):** `/patients` (search and worklist), `/patients/new` (registration form), `/patients/{id}` (detail view and update form), `/patients/{id}/discharge` (discharge dialog). REST client `PatientApiClient`.
+
+## Analysis and Design Diagrams
+- Analysis: [class diagram](../diagrams/UC-AAD-01/uc-aad-01-class-analysis.puml), [communication – normal flow](../diagrams/UC-AAD-01/uc-aad-01-comm-normal.puml), [communication – alternative flows](../diagrams/UC-AAD-01/uc-aad-01-comm-alt.puml).
+- Design: [class diagram](../diagrams/UC-AAD-01/uc-aad-01-class-design.puml), [sequence diagram](../diagrams/UC-AAD-01/uc-aad-01-sequence-design.puml).
+
+## Design Decisions
+- **Optimistic Locking:** Every patient entity maintains a `version` attribute incremented on each update. If an update request sends an outdated expected version, `ConcurrentPatientUpdateException` (409) is thrown (A4).
+- **Duplicate Prevention:** Before creating a new patient, the system validates that neither CIP nor DNI/NIE already exists in the patient registry; violations throw `DuplicatePatientException` (409) and log an audit event (A1).
+- **Audit Traceability (NFR-11):** All registration, update, discharge, rejection, and authorization failure events are written directly to `AuditService` (`AuditEventDTO`).
+- **External EHR Decoupling:** C6 defines an outbound `EhrGateway` port. Until the live HL7/FHIR connector exists in C9, `NoOpEhrGateway` marks synchronization as `SYNCED` or simulates failure when requested without failing the local transaction silently.
 
 ## Acceptance Criteria
-- [ ] Admissions Staff can register, consult, update, and discharge a patient.
-- [ ] Mandatory fields, formats, and duplicate warnings are enforced.
-- [ ] Successful and rejected operations are auditable.
-- [ ] Synchronization outcomes are visible and never represented as silent success.
-- [ ] System Administrator configuration privileges remain distinct from Admissions Staff operational privileges.
+- [x] Admissions Staff can register, consult, update, and discharge a patient.
+- [x] Mandatory fields, formats, and duplicate warnings are enforced.
+- [x] Successful and rejected operations are auditable.
+- [x] Synchronization outcomes are visible and never represented as silent success.
+- [x] System Administrator configuration privileges remain distinct from Admissions Staff operational privileges.
 
 ## Decisions (DECISIONS.md)
-- See [DECISIONS.md](../../DECISIONS.md).
-- Requirements meeting minutes remain neutral until a confirmed link is available.
+- See [DECISIONS.md](../../DECISIONS.md) and [DECISIONS18-11.md](../../DECISIONS18-11.md) (ADR-013, ADR-014, ADR-015, ADR-016, ADR-017).
 
 ## Effort Estimation
 - **Estimated effort without AI:** 8 hours
