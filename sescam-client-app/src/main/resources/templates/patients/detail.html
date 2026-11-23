@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Patient Details - SESCAM</title>
+    <style>
+        :root { --border: #d0d7de; --muted: #57606a; --error: #b42318; --ok: #1a7f37; --bg: #f6f8fa; --btn: #0969da; }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: system-ui, sans-serif; color: #1f2328; background: #fff; }
+        header { padding: 16px; border-bottom: 1px solid var(--border); background: var(--bg); display: flex; justify-content: space-between; align-items: center; }
+        header h1 { margin: 0; font-size: 1.25rem; }
+        main { padding: 16px; max-width: 800px; margin: 0 auto; }
+        .message { margin: 16px 0; padding: 12px; border-radius: 6px; border: 1px solid var(--border); }
+        .message.error { border-color: var(--error); color: var(--error); }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+        .field { display: flex; flex-direction: column; gap: 4px; }
+        .field.full { grid-column: 1 / -1; }
+        label { font-weight: 600; font-size: 0.85rem; }
+        input, select, textarea { padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-family: inherit; font-size: 0.9rem; }
+        .actions { margin-top: 16px; display: flex; gap: 8px; justify-content: space-between; }
+        button, .btn { padding: 8px 16px; background: var(--btn); color: #fff; border: none; border-radius: 6px; cursor: pointer; text-decoration: none; font-size: 0.9rem; }
+        .btn-danger { background: var(--error); }
+        .btn-secondary { background: var(--bg); color: #1f2328; border: 1px solid var(--border); }
+        section { border: 1px solid var(--border); border-radius: 6px; padding: 16px; margin-bottom: 16px; }
+        section h2 { margin-top: 0; font-size: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+        .badge { padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+        .badge.ACTIVE { background: #dafbe1; color: var(--ok); }
+        .badge.DISCHARGED { background: #ffebe9; color: var(--error); }
+        .badge.SYNCED { background: #dafbe1; color: var(--ok); }
+        .badge.FAILED_SYNC { background: #ffebe9; color: var(--error); }
+        .badge.PENDING_SYNC { background: #fff8c5; color: #9a6700; }
+    </style>
+</head>
+<body>
+<header>
+    <div>
+        <h1>Patient Record: <span th:text="${form != null and form.firstName != null ? form.firstName + ' ' + (form.lastName != null ? form.lastName : '') : ''}"></span></h1>
+        <span class="badge" th:if="${form != null and form.status != null}" th:classappend="${form.status.name()}" th:text="${form.status.name()}"></span>
+        <span class="badge" th:classappend="${patient != null ? patient.ehrSyncStatus() : ''}" th:text="${'EHR: ' + (patient != null ? patient.ehrSyncStatus() : 'UNKNOWN')}"></span>
+    </div>
+    <a th:href="@{/patients}" class="btn btn-secondary">Back to List</a>
+</header>
+<main>
+    <div th:if="${failure != null}" class="message error" role="alert">
+        <strong th:text="${failure}"></strong>
+    </div>
+
+    <form method="post" th:action="@{/patients/{id}/update(id=${form.id})}" th:object="${form}">
+        <input type="hidden" th:field="*{expectedVersion}"/>
+
+        <section>
+            <h2>Demographics (Read-only Identifiers)</h2>
+            <div class="form-grid">
+                <div class="field">
+                    <label>CIP</label>
+                    <input type="text" th:value="${form.cip}" disabled/>
+                </div>
+                <div class="field">
+                    <label>DNI / NIE</label>
+                    <input type="text" th:value="${form.dni}" disabled/>
+                </div>
+                <div class="field">
+                    <label>Birth Date</label>
+                    <input type="text" th:value="${form.birthDate}" disabled/>
+                </div>
+                <div class="field">
+                    <label>Gender</label>
+                    <input type="text" th:value="${form.gender}" disabled/>
+                </div>
+                <div class="field">
+                    <label for="firstName">First Name</label>
+                    <input type="text" id="firstName" th:field="*{firstName}" required/>
+                </div>
+                <div class="field">
+                    <label for="lastName">Last Name</label>
+                    <input type="text" id="lastName" th:field="*{lastName}" required/>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Contact & Address Details</h2>
+            <div class="form-grid">
+                <div class="field">
+                    <label for="phone">Phone</label>
+                    <input type="text" id="phone" th:field="*{phone}"/>
+                </div>
+                <div class="field">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" th:field="*{email}"/>
+                </div>
+                <div class="field full">
+                    <label for="street">Street Address</label>
+                    <input type="text" id="street" th:field="*{street}"/>
+                </div>
+                <div class="field">
+                    <label for="postalCode">Postal Code</label>
+                    <input type="text" id="postalCode" th:field="*{postalCode}"/>
+                </div>
+                <div class="field">
+                    <label for="city">City / Municipality</label>
+                    <input type="text" id="city" th:field="*{city}"/>
+                </div>
+                <div class="field">
+                    <label for="province">Province</label>
+                    <input type="text" id="province" th:field="*{province}"/>
+                </div>
+                <div class="field">
+                    <label for="preferredChannel">Preferred Notification Channel</label>
+                    <select id="preferredChannel" th:field="*{preferredChannel}">
+                        <option th:each="c : ${channels}" th:value="${c}" th:text="${c}"></option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Emergency Contact & Clinical History Notes</h2>
+            <div class="form-grid">
+                <div class="field">
+                    <label for="emergencyContactName">Contact Name</label>
+                    <input type="text" id="emergencyContactName" th:field="*{emergencyContactName}"/>
+                </div>
+                <div class="field">
+                    <label for="emergencyContactRelationship">Relationship</label>
+                    <input type="text" id="emergencyContactRelationship" th:field="*{emergencyContactRelationship}"/>
+                </div>
+                <div class="field">
+                    <label for="emergencyContactPhone">Contact Phone</label>
+                    <input type="text" id="emergencyContactPhone" th:field="*{emergencyContactPhone}"/>
+                </div>
+                <div class="field full">
+                    <label for="clinicalSummaryNotes">Clinical History Notes / Summary</label>
+                    <textarea id="clinicalSummaryNotes" rows="3" th:field="*{clinicalSummaryNotes}"></textarea>
+                </div>
+            </div>
+        </section>
+
+        <div class="actions">
+            <button type="submit">Save Changes</button>
+        </div>
+    </form>
+
+    <section th:if="${form.status.name() != 'DISCHARGED'}" style="margin-top: 24px; border-color: #ffd8d3;">
+        <h2 style="color: var(--error);">Discharge Patient</h2>
+        <form method="post" th:action="@{/patients/{id}/discharge(id=${form.id})}" th:object="${form}">
+            <input type="hidden" th:field="*{expectedVersion}"/>
+            <div class="field" style="margin-bottom: 12px;">
+                <label for="dischargeReason">Discharge Reason</label>
+                <input type="text" id="dischargeReason" th:field="*{dischargeReason}" required placeholder="Reason for discharge or relocation..."/>
+            </div>
+            <button type="submit" class="btn btn-danger">Confirm Discharge</button>
+        </form>
+    </section>
+</main>
+</body>
+</html>
