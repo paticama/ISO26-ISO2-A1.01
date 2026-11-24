@@ -1,0 +1,77 @@
+@startuml uc-phy-05-sequence-design
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+
+title UC-PHY-05: Design Sequence Diagram – server (main flow, 2a, 2b)
+
+actor "Physician /\nRadiologist / Technician" as Phy
+participant "client-app\n(see client diagram)" as UI
+participant "ExecutionRestController\n(server-app)" as RC
+participant "ProcedureExecutionServiceImpl\n(sescam-diagnostics)" as S
+participant "AccessControlService\n(C1)" as AC
+participant "ScheduledProcedureGateway\n(C5 / stand-in)" as G
+participant "ExecutionRules" as RU
+participant "ExecutionRepository" as R
+participant "AuditService\n(C1)" as AU
+participant "ProcedureEventPublisher\n(C4, C5 subscribe)" as EV
+
+== Step 1: procedures awaiting execution ==
+UI -> RC : GET /api/v1/executions/pending [X-Actor-Id, X-Actor-Role]
+RC -> S : listProceduresAwaitingExecution(actorId, role)
+S -> AC : canLogProcedureExecution(actorId, role)
+S -> G : listBookedProcedures()
+S -> R : existsByOrderId(orderId) for each
+S --> RC : List<ScheduledProcedureDTO> (not executed yet)
+RC --> UI : 200
+
+== Steps 2-4 (+2a, 2b): record execution ==
+UI -> RC : POST /api/v1/executions [ExecutionLogPayload]
+RC -> S : recordExecution(ExecutionLogDTO)
+S -> AC : canLogProcedureExecution(actorId, role)
+alt actorId blank OR role not allowed
+  S -> AU : recordEvent(EXECUTION_ACCESS_DENIED) [best effort]
+  S --> RC : throw UnauthorizedExecutionAccessException (403)
+else allowed
+  S -> G : findByOrderId(orderId)
+  alt not booked
+    S --> RC : throw ProcedureNotFoundException (404)
+  else booked
+    S -> R : existsByOrderId(orderId)
+    alt already recorded
+      S --> RC : throw ExecutionAlreadyRecordedException (409)
+    else first record
+      S -> RU : invalidFields(request, procedure, now)
+      alt invalid (times, consent, contrast batch, dose per modality,\naborted without reason or incident, incident fields)
+        S -> AU : recordEvent(EXECUTION_REJECTED) [best effort]
+        S --> RC : throw InvalidExecutionDataException(fields) (400)
+      else valid
+        alt 2b aborted
+          S -> S : status = INCOMPLETE_INCIDENT
+        else completed
+          S -> S : status = EXECUTED_PENDING_REPORT
+        end
+        S -> R : save(ProcedureExecution + ClinicalIncidents linked to patientId)
+        S -> AU : recordEvent(EXECUTION_RECORDED | PROCEDURE_ABORTED)
+        loop 2a each incident
+          S -> AU : recordEvent(CLINICAL_INCIDENT_LOGGED, severity, type)
+        end
+        S -> EV : publishExecutionRecorded(ProcedureExecutionEvent)
+        note right of EV
+          C4 sets the order to EXECUTED_PENDING_REPORT /
+          INCOMPLETE_INCIDENT; C5 reschedules when
+          requiresRescheduling() (2b).
+        end note
+        S --> RC : ExecutionRecordDTO
+        RC --> UI : 201 Created
+      end
+    end
+  end
+end
+
+note over S, EV
+  Differences with the analysis communication diagrams (comm-phy-05-*):
+  - one POST carries the execution, its incidents (2a) and the abort flag (2b),
+    instead of three separate requests;
+  - C7 does not write DiagnosticOrder (owned by C4): it publishes an event (ADR-014).
+end note
+@enduml
