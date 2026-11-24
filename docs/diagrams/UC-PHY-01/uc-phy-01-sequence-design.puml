@@ -5,7 +5,7 @@ skinparam shadowing false
 title UC-PHY-01: Design Sequence Diagram – Create order, alternatives 4a, 6a and 6b
 
 actor "Physician" as Phy
-participant "OrderEntryView\n(client-app)" as UI
+participant "client-app\n(see client diagram)" as UI
 participant "OrderRestController\n(server-app)" as RC
 participant "OrderServiceImpl\n(sescam-orders)" as S
 participant "AccessControlService\n(C1)" as AC
@@ -31,13 +31,13 @@ else Form valid
   UI -> RC : POST /api/v1/orders\n[Body: CreateOrderPayload -> CreateOrderDTO]
   RC -> S : createOrder(request)
   S -> AC : canOrderProcedures(actorId, role)
-  alt Not a physician
-    S -> AU : recordEvent(ORDER_ACCESS_DENIED)
+  alt actorId blank OR not a physician
+    S -> AU : recordEvent(ORDER_ACCESS_DENIED)\n[best effort, actor "UNKNOWN" if blank]
     S --> RC : throw UnauthorizedOrderAccessException (403)
   else Authorized
     S -> S : validate patientId, examTypeCode,\nindication, justification, priority
     alt Invalid (server-side 4a)
-      S -> AU : recordEvent(ORDER_REJECTED)
+      S -> AU : recordEvent(ORDER_REJECTED) [best effort]
       S --> RC : throw InvalidOrderDataException (400)
     else Valid
       S -> CAT : getActiveExamType(examTypeCode)
@@ -51,7 +51,7 @@ else Form valid
         SG --> S : List<SafetyConstraintDTO>
         S -> S : SafetyRules.incompatibleConstraints(examType, constraints)
         alt 6b. Incompatible constraint AND overrideJustification blank
-          S -> AU : recordEvent(ORDER_SAFETY_ALERT)
+          S -> AU : recordEvent(ORDER_SAFETY_ALERT) [best effort]
           S --> RC : throw SafetyAlertException(constraints)
           RC --> UI : 422 Unprocessable [constraints]
           UI --> Phy : show contraindication alert
@@ -90,5 +90,9 @@ note over S, EV
   2. Override of an ABSOLUTE contraindication: allowed here (always justified and
      audited); confirm with clinical stakeholders.
   3. ExamTypeService is new in C2 (approval of the C2 owner).
+  Audit rule: refusals (denied, rejected, safety alert) are audited best effort so a
+  failing audit store never hides the 403/400/422; the audit of a stored order is
+  mandatory and its failure fails the request (NFR-11).
+  Client side of this flow: uc-phy-01-sequence-design-client.puml
 end note
 @enduml

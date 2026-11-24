@@ -36,10 +36,10 @@
 
 ## RADIT Disciplines
 - [x] Requirements: Elicit and specify prescription workflow with safety constraint validation.
-- [ ] Analysis: Model domain class diagram & sequence diagrams for order creation.
-- [ ] Design: Define Java interfaces (`OrderEntryService`) and DTOs (`CreateOrderDTO`).
-- [ ] Implementation: Implement service contract and REST controller in OpenJDK 17/21.
-- [ ] Testing: Unit tests (JUnit 5 + Mockito) validating safety constraint & contrast rules.
+- [x] Analysis: [activity diagram](../diagrams/UC-PHY-01/uc-phy-01-activity.puml) (main flow + 4a, 6a, 6b), [analysis class diagram](../diagrams/UC-PHY-01/uc-phy-01-class-analysis.puml) (boundary/control/entity, entity per module), [domain class diagram](../diagrams/puml/phy-class-domain.puml) and communication diagrams ([normal](../diagrams/puml/comm-phy-01-normal.puml), [4a](../diagrams/puml/comm-phy-01-alt4a.puml), [6a](../diagrams/puml/comm-phy-01-alt6a.puml), [6b](../diagrams/puml/comm-phy-01-alt6b.puml)).
+- [x] Design: interfaces and DTOs in `sescam-common` (see Contracts below); server [design class diagram](../diagrams/UC-PHY-01/uc-phy-01-class-design.puml) and [sequence diagram](../diagrams/UC-PHY-01/uc-phy-01-sequence-design.puml). Client design diagrams come with the client slice.
+- [ ] Implementation: server slice (`sescam-orders` 1.0.0 + `OrderRestController`) and client slice (`sescam-client-app` order view).
+- [ ] Testing: JUnit 5 + Mockito, one test per acceptance criterion and per alternative flow, JaCoCo ≥ 80%.
 
 ## Contracts and Interfaces
 - `com.sescam.radiodiagnostics.common.orders.OrderService` (C4; was `OrderEntryService`, renamed to the module interface of `PLAN18-11.md` §3) with `createOrder(CreateOrderDTO) : OrderResponseDTO`
@@ -47,7 +47,8 @@
 - Exceptions: `InvalidOrderDataException` (400), `UnauthorizedOrderAccessException` (403), `SafetyAlertException` (422, A6b)
 - Outbound ports: `PatientSafetyGateway` (EHR constraints, implemented by C9), `OrderEventPublisher` (order → admissions), `AccessControlService.canOrderProcedures`, `AuditService`
 - Needed from C2 (`common.catalogue`, pending owner approval): `ExamTypeService`, `ExamTypeDTO`, `ModalityType`, `ExamTypeNotFoundException`
-- Design diagrams: [`docs/diagrams/UC-PHY-01/`](../diagrams/UC-PHY-01/)
+- REST API (server-app): `GET /api/v1/orders/exam-types`, `POST /api/v1/orders` (201; 400, 403, 404, 422)
+- Analysis and design diagrams: [`docs/diagrams/UC-PHY-01/`](../diagrams/UC-PHY-01/)
 
 ## Acceptance Criteria
 - [ ] Specification approved in accordance with team template.
