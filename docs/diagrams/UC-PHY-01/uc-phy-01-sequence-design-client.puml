@@ -1,0 +1,65 @@
+@startuml uc-phy-01-sequence-design-client
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+
+title UC-PHY-01: Design Sequence Diagram – client slice (4a, 6a, 6b, errors)\nsescam-client-app
+
+actor "Physician" as Phy
+participant "orders/new.html\n(Thymeleaf)" as V
+participant "OrderViewController" as C
+participant "OrderForm" as F
+participant "OrderApiClient" as A
+participant "OrderRestController\n(server-app)" as RC
+
+== Steps 1-3: open form with catalogue ==
+Phy -> C : GET /orders/new
+C -> A : listExamTypes()
+A -> RC : GET /api/v1/orders/exam-types
+alt server reachable
+  RC --> A : 200 [ExamTypeDTO...]
+  A --> C : List<ExamTypeDTO>
+else server down
+  A --> C : throw OrderClientException(SERVER_UNREACHABLE)
+  C -> C : examTypes = [], catalogueFailure = message
+end
+C -> V : render(form, examTypes, priorities)
+V --> Phy : catalogue + empty form
+
+== Steps 4-5: submit ==
+Phy -> C : POST /orders (patient, exam, indication,\njustification, priority[, overrideJustification])
+C -> F : validate()
+alt 4a. mandatory data missing
+  F --> C : errors {field -> message}
+  C -> V : render(form, errors)
+  V --> Phy : highlight missing fields\n(no request to the server)
+else form valid
+  C -> F : toPayload()
+  F --> C : OrderPayload (trimmed)
+  C -> A : createOrder(payload, actorId, actorRole)
+  A -> RC : POST /api/v1/orders\n[X-Actor-Id, X-Actor-Role, JSON payload]
+  alt 201 Created
+    RC --> A : OrderResponseDTO
+    A --> C : OrderResponseDTO
+    C -> V : render(order)
+    V --> Phy : 8. tracking number, status PENDING_SCHEDULING\n(+ consent and preparation if attached, 6a)\n(+ override note if overridden)
+  else 422 safety alert (6b)
+    RC --> A : {message, constraints[]}
+    A --> C : throw OrderClientException(SAFETY_ALERT, constraints)
+    C -> V : render(form, failure)
+    V --> Phy : contraindications + override justification field\n+ "Send with override" / "Cancel order"
+    alt physician overrides
+      Phy -> C : POST /orders (same data + overrideJustification)
+      note right of C : same flow from step 5; the server repeats every check
+    else physician cancels
+      Phy -> C : POST /orders/cancel
+      C -> V : render(empty form, cancelled)
+      V --> Phy : "Order cancelled. Nothing was saved."
+    end
+  else 400 / 403 / 404 / 5xx / no connection
+    RC --> A : error {message[, invalidFields]}
+    A --> C : throw OrderClientException(INVALID_DATA | FORBIDDEN |\nEXAM_NOT_FOUND | FAILED | SERVER_UNREACHABLE)
+    C -> V : render(form, failure[, field errors])
+    V --> Phy : message; data kept;\n"You can send it again" if retryable
+  end
+end
+@enduml
