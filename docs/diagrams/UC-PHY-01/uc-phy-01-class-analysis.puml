@@ -1,0 +1,77 @@
+@startuml uc-phy-01-class-analysis
+title UC-PHY-01 – Analysis class diagram (boundary / control / entity)\nC4 sescam-orders v1.0.0
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+
+' Analysis classes of the use case, before the split into Maven modules.
+' Entity placement (ADR-014): DiagnosticOrder -> C4 orders; ExaminationType -> C2 catalogue;
+' SafetyConstraint -> read from the EHR through C9; AuditRecord -> C1 security.
+
+actor Physician
+
+package "Client side" {
+  class OrderEntryUI <<boundary>> {
+    catalogue of examination types
+    prescription form
+    safety alert / override dialog
+    order confirmation
+  }
+  class OrderFormValidation <<control>> {
+    check mandatory data (4a)
+  }
+}
+
+package "Server side" {
+  class OrderEntryController <<control>> {
+    create order
+    list examination types
+  }
+  class SafetyVerification <<control>> {
+    verify constraints vs. examination (6, 6b)
+  }
+  class ConsentAndPreparation <<control>> {
+    attach consent and preparation (6a)
+  }
+  class DiagnosticOrder <<entity>> {
+    orderNumber
+    patientId
+    clinicalIndication
+    clinicalJustification
+    priority
+    status
+    overrideApproved
+    overrideJustification
+  }
+  class ExaminationType <<entity>> {
+    code
+    modality
+    duration
+    preparationGuide
+    requiresContrast
+    requiresInformedConsent
+  }
+  class SafetyConstraint <<entity>> {
+    type
+    absoluteContraindication
+    description
+  }
+  class AuditRecord <<entity>>
+  class EhrSystem <<boundary>>
+  class AdmissionsWorklist <<boundary>>
+}
+
+Physician -- OrderEntryUI
+OrderEntryUI ..> OrderFormValidation
+OrderEntryUI ..> OrderEntryController : submit / catalogue
+OrderEntryController ..> ExaminationType : reads
+OrderEntryController ..> SafetyVerification
+SafetyVerification ..> EhrSystem : patient profile
+EhrSystem ..> SafetyConstraint : provides
+SafetyVerification ..> ExaminationType
+OrderEntryController ..> ConsentAndPreparation
+ConsentAndPreparation ..> ExaminationType
+OrderEntryController ..> DiagnosticOrder : creates
+OrderEntryController ..> AuditRecord : records
+OrderEntryController ..> AdmissionsWorklist : order queued
+DiagnosticOrder "0..*" --> "1" ExaminationType
+@enduml
