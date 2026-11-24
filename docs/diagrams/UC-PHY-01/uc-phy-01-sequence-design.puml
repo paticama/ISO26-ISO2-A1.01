@@ -72,8 +72,14 @@ else Form valid
         alt 6a. examType.requiresContrast OR requiresInformedConsent
           S -> S : consent = ConsentAndPreparationDTO\n(from examType: template, guide, fasting, contrast)
         end
-        S -> R : save(DiagnosticOrder status=PENDING_SCHEDULING,\noverrideApproved, version=1)
+        S -> S : build DiagnosticOrder status=PENDING_SCHEDULING,\noverrideApproved, version=1
         S -> AU : recordEvent(ORDER_CREATED | ORDER_CREATED_CONTRAST_CONSENT |\nORDER_OVERRIDE_APPROVED)
+        note right of AU
+          Audited before saving (NFR-11): if the audit fails,
+          nothing is stored or published, so a retry
+          does not create a duplicate order.
+        end note
+        S -> R : save(DiagnosticOrder)
         S -> EV : publishOrderCreated(OrderCreatedEvent)
         S --> RC : OrderResponseDTO
         RC --> UI : 201 Created [OrderResponseDTO]
