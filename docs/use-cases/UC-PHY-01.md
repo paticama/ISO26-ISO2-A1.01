@@ -37,9 +37,9 @@
 ## RADIT Disciplines
 - [x] Requirements: Elicit and specify prescription workflow with safety constraint validation.
 - [x] Analysis: [activity diagram](../diagrams/UC-PHY-01/uc-phy-01-activity.puml) (main flow + 4a, 6a, 6b), [analysis class diagram](../diagrams/UC-PHY-01/uc-phy-01-class-analysis.puml) (boundary/control/entity, entity per module), [domain class diagram](../diagrams/puml/phy-class-domain.puml) and communication diagrams ([normal](../diagrams/puml/comm-phy-01-normal.puml), [4a](../diagrams/puml/comm-phy-01-alt4a.puml), [6a](../diagrams/puml/comm-phy-01-alt6a.puml), [6b](../diagrams/puml/comm-phy-01-alt6b.puml)).
-- [x] Design: interfaces and DTOs in `sescam-common` (see Contracts below); server [design class diagram](../diagrams/UC-PHY-01/uc-phy-01-class-design.puml) and [sequence diagram](../diagrams/UC-PHY-01/uc-phy-01-sequence-design.puml). Client design diagrams come with the client slice.
-- [ ] Implementation: server slice (`sescam-orders` 1.0.0 + `OrderRestController`) and client slice (`sescam-client-app` order view).
-- [ ] Testing: JUnit 5 + Mockito, one test per acceptance criterion and per alternative flow, JaCoCo ≥ 80%.
+- [x] Design: interfaces and DTOs in `sescam-common` (see Contracts below); server [design class diagram](../diagrams/UC-PHY-01/uc-phy-01-class-design.puml) and [sequence diagram](../diagrams/UC-PHY-01/uc-phy-01-sequence-design.puml); client [design class diagram](../diagrams/UC-PHY-01/uc-phy-01-class-design-client.puml) and [sequence diagram](../diagrams/UC-PHY-01/uc-phy-01-sequence-design-client.puml).
+- [x] Implementation: server slice (`sescam-orders` 1.0.0, `OrderRestController`, `OrderExceptionHandler`, `OrderWiringConfig`) and client slice (`OrderViewController`, `OrderForm`, `OrderApiClient`, `orders/new.html`). Stand-ins until the modules exist: exam catalogue (C2), EHR safety gateway (C9), order subscriber (C5).
+- [x] Testing: JUnit 5 + Mockito. `sescam-orders` 26 tests (service per flow: main, 4a, 6a, 6b alert, 6b override, denied role, unknown exam, audit failure), `sescam-server-app` `OrderRestControllerTest` 7 (MockMvc), `sescam-client-app` 22 (form, REST client, view per flow). JaCoCo ≥ 80% in the three modules.
 
 ## Contracts and Interfaces
 - `com.sescam.radiodiagnostics.common.orders.OrderService` (C4; was `OrderEntryService`, renamed to the module interface of `PLAN18-11.md` §3) with `createOrder(CreateOrderDTO) : OrderResponseDTO`
@@ -52,9 +52,9 @@
 
 ## Acceptance Criteria
 - [ ] Specification approved in accordance with team template.
-- [ ] Patient EHR safety contraindications and contrast consent verified.
-- [ ] Validated orders recorded in `Pending Scheduling` status and routed to Admissions.
-- [ ] 100% passage of automated unit tests.
+- [x] Patient EHR safety contraindications and contrast consent verified (`SafetyRules`, 6a/6b tests; EHR read through `PatientSafetyGateway`, no-op until C9 provides it).
+- [ ] Validated orders recorded in `Pending Scheduling` status and routed to Admissions. *Recorded: done. Routed: `OrderCreatedEvent` is published, but nothing consumes it until C5 (AAD-05) subscribes.*
+- [x] 100% passage of automated unit tests.
 
 ## Decisions (DECISIONS.md)
 - Complies with **ADR-001** (Unified Process), **ADR-003** (Interface-Driven Decoupling), and **ADR-007** (SSO/EHR Standards).
