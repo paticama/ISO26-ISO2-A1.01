@@ -29,4 +29,12 @@ public interface AccessControlService {
         String r = role.trim().toUpperCase();
         return r.contains("ADMISSION") || r.contains("ADMINISTRATIVE") || r.contains("RECEPTIONIST") || r.contains("ADMIN");
     }
+
+    /**
+     * Checks whether the authenticated user may order and prescribe diagnostic procedures (UC-PHY-01).
+     * By default only physicians; administrators are not allowed to prescribe.
+     */
+    default boolean canOrderProcedures(String actorId, String role) {
+        return role != null && role.trim().toUpperCase().contains("PHYSICIAN");
+    }
 }

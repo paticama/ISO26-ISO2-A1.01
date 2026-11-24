@@ -42,8 +42,12 @@
 - [ ] Testing: Unit tests (JUnit 5 + Mockito) validating safety constraint & contrast rules.
 
 ## Contracts and Interfaces
-- `es.uclm.esi.sescam.orders.api.OrderEntryService`
-- `CreateOrderDTO`, `OrderResponseDTO`
+- `com.sescam.radiodiagnostics.common.orders.OrderService` (C4; was `OrderEntryService`, renamed to the module interface of `PLAN18-11.md` §3) with `createOrder(CreateOrderDTO) : OrderResponseDTO`
+- DTOs and enums in `common.orders`: `CreateOrderDTO`, `OrderResponseDTO`, `ConsentAndPreparationDTO`, `SafetyConstraintDTO`, `OrderCreatedEvent`, `PriorityLevel`, `OrderStatus`, `ConstraintType`
+- Exceptions: `InvalidOrderDataException` (400), `UnauthorizedOrderAccessException` (403), `SafetyAlertException` (422, A6b)
+- Outbound ports: `PatientSafetyGateway` (EHR constraints, implemented by C9), `OrderEventPublisher` (order → admissions), `AccessControlService.canOrderProcedures`, `AuditService`
+- Needed from C2 (`common.catalogue`, pending owner approval): `ExamTypeService`, `ExamTypeDTO`, `ModalityType`, `ExamTypeNotFoundException`
+- Design diagrams: [`docs/diagrams/UC-PHY-01/`](../diagrams/UC-PHY-01/)
 
 ## Acceptance Criteria
 - [ ] Specification approved in accordance with team template.
