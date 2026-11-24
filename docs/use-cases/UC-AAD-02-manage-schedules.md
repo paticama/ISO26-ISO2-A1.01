@@ -39,9 +39,9 @@
 ## RADIT Disciplines
 - [x] Requirements: Specify schedule lifecycle and appointment impact handling.
 - [x] Analysis: [analysis class diagram](../diagrams/UC-AAD-02/uc-aad-02-class-analysis.puml) (Schedule and Slot in C3; bookings stay in C5 and are only referenced by id) and communication diagrams ([normal](../diagrams/UC-AAD-02/uc-aad-02-comm-normal.puml), [A1-A6](../diagrams/UC-AAD-02/uc-aad-02-comm-alt.puml)).
-- [x] Design: interfaces and DTOs in `sescam-common` (see Contracts below); server [design class diagram](../diagrams/UC-AAD-02/uc-aad-02-class-design.puml) and [sequence diagram](../diagrams/UC-AAD-02/uc-aad-02-sequence-design.puml). Client design diagrams come with the client slice.
-- [ ] Implementation: server slice (`sescam-schedules` 1.0.0 + `ScheduleRestController`) and client slice (`sescam-client-app` schedule view).
-- [ ] Testing: JUnit 5 + Mockito, one test per acceptance criterion and per alternative flow, JaCoCo ≥ 80%.
+- [x] Design: interfaces and DTOs in `sescam-common` (see Contracts below); server [design class diagram](../diagrams/UC-AAD-02/uc-aad-02-class-design.puml) and [sequence diagram](../diagrams/UC-AAD-02/uc-aad-02-sequence-design.puml); client [design class diagram](../diagrams/UC-AAD-02/uc-aad-02-client-class-design.puml) and [sequence diagram](../diagrams/UC-AAD-02/uc-aad-02-client-sequence-design.puml).
+- [x] Implementation: server slice (`sescam-schedules` 1.0.0, `ScheduleRestController` in server-app) and client slice (`ScheduleViewController`, `HttpScheduleApiClient`, `ScheduleForm` and the `schedules/*` views in client-app).
+- [x] Testing: JUnit 5 + Mockito, one test per acceptance criterion and per alternative flow (A1-A6). `sescam-schedules`: 44 tests, 99% line coverage; server-app: 6 REST integration tests; client-app: 22 tests (form validations, REST client, view controller).
 
 ## Contracts and Interfaces
 - `Client:` Admissions UI for schedule search, creation, update, closing, and reopening.
@@ -57,12 +57,12 @@
 - Analysis and design diagrams: [`docs/diagrams/UC-AAD-02/`](../diagrams/UC-AAD-02/)
 
 ## Acceptance Criteria
-- [ ] Admissions Staff can open, update, close, and reopen authorized schedules.
-- [ ] Invalid overlaps and capacity violations are rejected.
-- [ ] Every affected appointment is identified before a change is committed.
-- [ ] Closed schedules cannot accept new bookings.
-- [ ] Reopened schedules pass availability and conflict checks.
-- [ ] System Administrator configuration remains distinct from Admissions Staff operations.
+- [x] Admissions Staff can open, update, close, and reopen authorized schedules.
+- [x] Invalid overlaps and capacity violations are rejected.
+- [x] Every affected appointment is identified before a change is committed.
+- [x] Closed schedules cannot accept new bookings.
+- [x] Reopened schedules pass availability and conflict checks.
+- [x] System Administrator configuration remains distinct from Admissions Staff operations.
 
 ## Decisions (DECISIONS.md)
 - See [DECISIONS.md](../../DECISIONS.md).

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Examination Schedules - SESCAM</title>
+    <style>
+        :root { --border: #d0d7de; --muted: #57606a; --error: #b42318; --ok: #1a7f37; --warn: #9a6700; --bg: #f6f8fa; --btn: #0969da; }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: system-ui, sans-serif; color: #1f2328; background: #fff; }
+        header { padding: 16px; border-bottom: 1px solid var(--border); background: var(--bg); display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+        header h1 { margin: 0; font-size: 1.25rem; }
+        main { padding: 16px; max-width: 1100px; margin: 0 auto; }
+        .message { margin: 16px 0; padding: 12px; border-radius: 6px; border: 1px solid var(--border); }
+        .message.error { border-color: var(--error); color: var(--error); }
+        .message.ok { border-color: var(--ok); color: var(--ok); }
+        .message.warn { border-color: var(--warn); color: var(--warn); }
+        form.inline { display: flex; gap: 8px; flex-wrap: wrap; align-items: end; margin-bottom: 16px; }
+        label { display: flex; flex-direction: column; font-size: .85rem; gap: 4px; }
+        input, select { padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: .9rem; }
+        button, .btn { padding: 8px 16px; background: var(--btn); color: #fff; border: none; border-radius: 6px; cursor: pointer; text-decoration: none; font-size: .9rem; }
+        button.danger { background: var(--error); }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+        th, td { padding: 8px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+        th { background: var(--bg); }
+        .status { font-weight: 600; }
+        .status.OPEN { color: var(--ok); }
+        .status.CLOSED { color: var(--error); }
+        .field-error { color: var(--error); font-size: .8rem; }
+        .hint { color: var(--muted); font-size: .8rem; }
+        fieldset { border: 1px solid var(--border); border-radius: 6px; margin: 16px 0; padding: 12px; }
+        a { color: #0969da; }
+    </style>
+</head>
+<body>
+<header>
+    <div>
+        <h1>Examination Schedules (UC-AAD-02)</h1>
+        <span class="hint">Open, update, close and reopen room and equipment schedules</span>
+    </div>
+    <a th:href="@{/schedules/new}" class="btn">+ Open schedule</a>
+</header>
+<main>
+    <div th:if="${failure != null}" class="message error" role="alert"><strong th:text="${failure}"></strong></div>
+
+    <form method="get" th:action="@{/schedules}" class="inline">
+        <label>Date <input type="date" name="date" th:value="${date}"/></label>
+        <label>Resource <input type="text" name="resourceId" th:value="${resourceId}" placeholder="MRI-ROOM-1"/></label>
+        <label>Location <input type="text" name="locationId" th:value="${locationId}" placeholder="HGUCR"/></label>
+        <label>Status
+            <select name="status">
+                <option value="">Any</option>
+                <option th:each="s : ${statuses}" th:value="${s}" th:text="${s}" th:selected="${s == selectedStatus}"></option>
+            </select>
+        </label>
+        <button type="submit">Search</button>
+    </form>
+
+    <div th:if="${schedules != null}" class="table-wrap">
+        <p th:if="${#lists.isEmpty(schedules)}" class="hint">No schedules match the filters.</p>
+        <table th:unless="${#lists.isEmpty(schedules)}">
+            <thead>
+            <tr><th>Resource</th><th>Location</th><th>Modality</th><th>Start</th><th>End</th><th>Booked / capacity</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="s : ${schedules}">
+                <td th:text="${s.resourceId}"></td>
+                <td th:text="${s.locationId}"></td>
+                <td th:text="${s.modality}"></td>
+                <td th:text="${#temporals.format(s.start, 'yyyy-MM-dd HH:mm')}"></td>
+                <td th:text="${#temporals.format(s.end, 'HH:mm')}"></td>
+                <td th:text="${s.bookedCount} + ' / ' + ${s.totalCapacity}"></td>
+                <td><span class="status" th:classappend="${s.status}" th:text="${s.status}"></span></td>
+                <td><a th:href="@{/schedules/{id}(id=${s.scheduleId})}">Manage</a></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>
