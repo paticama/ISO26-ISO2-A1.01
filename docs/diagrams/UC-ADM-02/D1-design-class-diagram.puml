@@ -88,16 +88,45 @@ package "sescam-server-app" {
   }
 }
 
-package "sescam-client-app" {
-  class RoleManagementView {
-    - restClient : RoleRestClient
-    + checkForm() : boolean
+package "sescam-client-app (com.sescam.radiodiagnostics.client.security)" {
+  class RoleAdminViewController <<Controller>> {
+    - apiClient : RoleAdminApiClient
+    + open(model) : String  <<GET /security/roles>>
+    + lookup(form, model, actorId) : String  <<GET /security/roles/lookup>>
+    + validate(form, model, actorId) : String  <<POST /security/roles/validate>>
+    + confirm(form, model, actorId) : String  <<POST /security/roles/confirm>>
   }
 
-  class RoleRestClient {
-    + getRoleAssignments(administratorId : String, targetUserId : String) : RoleAssignmentDTO
+  class RoleChangeForm {
+    - userId : String
+    - roleName : String
+    + validate(roleRequired : boolean) : Map<String, String>
+  }
+
+  class RoleAdminApiClient <<Component>> {
+    + getRoleAssignments(userId : String, administratorId : String) : RoleAssignmentDTO
     + validateRoleChange(request : RoleChangeRequestDTO) : RoleChangeResultDTO
     + confirmRoleChange(request : RoleChangeRequestDTO) : RoleChangeResultDTO
+  }
+
+  class RoleAdminClientException <<exception>> {
+    - kind : Kind
+    + canRetry() : boolean
+  }
+
+  enum "RoleAdminClientException.Kind" as RoleAdminKind {
+    FORBIDDEN
+    USER_NOT_FOUND
+    INVALID_REQUEST
+    FAILED
+    SERVER_UNREACHABLE
+  }
+
+  class "security/roles.html" as RolesView <<Thymeleaf view>> {
+    user lookup
+    current roles + account status
+    review change / confirm
+    one block per ChangeOutcome
   }
 }
 
@@ -119,8 +148,22 @@ RoleChangeResultDTO o-- "0..*" RoleDTO
 RoleChangeResultDTO --> "1" ChangeOutcome : outcome
 
 RoleAdministrationController --> "1" AccessControlService : accessControlService
-RoleManagementView --> "1" RoleRestClient : restClient
-RoleRestClient ..> RoleAdministrationController : REST
+RoleAdminViewController --> "1" RoleAdminApiClient : apiClient
+RoleAdminViewController ..> RoleChangeForm : binds
+RoleAdminViewController ..> RolesView : renders
+RoleAdminApiClient ..> RoleAdministrationController : REST/JSON
+RoleAdminApiClient ..> RoleAdminClientException : <<throws>>
+RoleAdminClientException --> RoleAdminKind
+RoleAdminApiClient ..> RoleAssignmentDTO
+RoleAdminApiClient ..> RoleChangeResultDTO
+
+note bottom of RoleAdminApiClient
+  Refused changes come back as RoleChangeResultDTO
+  (403 UNAUTHORIZED, 422 INVALID, 409 SAFEGUARD_REQUIRED,
+  500 SAVE_FAILED) and are shown, not thrown.
+  Thrown: 400 path mismatch, 404 unknown user, 403 on lookup,
+  unreadable answer, no connection.
+end note
 
 note right of AuditService
   Owned by UC-ADM-03 (Alba).
