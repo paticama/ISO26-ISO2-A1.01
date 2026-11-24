@@ -52,7 +52,9 @@ if (2b. Aborted?) then (yes)
   :Audit PROCEDURE_ABORTED and CLINICAL_INCIDENT_LOGGED;
   :Publish ProcedureExecutionEvent(INCOMPLETE_INCIDENT)\nfor Admissions rescheduling and Orders status;
   |Physician (client)|
-  :Show "Procedure aborted. Admissions notified for rescheduling";
+  :Show "Procedure aborted. Rescheduling must be
+  requested to Admissions manually"
+  (until C5 subscribes to the event);
   stop
 else (no)
   |Server|

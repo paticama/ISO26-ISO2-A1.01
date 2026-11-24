@@ -1,0 +1,56 @@
+@startuml uc-phy-05-sequence-design-client
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+
+title UC-PHY-05: Design Sequence Diagram – client slice (main flow, 2a, 2b, errors)\nsescam-client-app
+
+actor "Physician /\nRadiologist / Technician" as Phy
+participant "executions/new.html\n(Thymeleaf)" as V
+participant "ExecutionViewController" as C
+participant "ExecutionForm" as F
+participant "ExecutionApiClient" as A
+participant "ExecutionRestController\n(server-app)" as RC
+
+== Step 1: select procedure ==
+Phy -> C : GET /executions/new [X-Actor-Id, X-Actor-Role]
+C -> A : listPending(actorId, actorRole)
+A -> RC : GET /api/v1/executions/pending
+alt ok
+  RC --> A : 200 [ScheduledProcedureDTO...]
+  A --> C : procedures
+else 403 / server down
+  A --> C : throw ExecutionClientException
+  C -> C : procedures = [], pendingFailure = message
+end
+C -> V : render(form, procedures, incidentTypes, severities, zone)
+V --> Phy : list of procedures awaiting execution + form
+
+== Steps 2-3 (+2a, 2b): submit ==
+Phy -> C : POST /executions (execution data[, incident][, aborted + reason])
+C -> F : validate()
+alt invalid on the client
+  F --> C : errors {field -> message}
+  C -> V : render(form, errors)
+  V --> Phy : highlight fields (no request to the server)
+else valid
+  C -> F : toPayload(zone)
+  F --> C : ExecutionPayload (local times -> Instant; incident only if filled)
+  C -> A : recordExecution(payload, actorId, actorRole)
+  A -> RC : POST /api/v1/executions
+  alt 201 Created
+    RC --> A : ExecutionRecordDTO
+    A --> C : record
+    C -> V : render(record)
+    alt status EXECUTED_PENDING_REPORT
+      V --> Phy : 5. "Execution recorded" + metrics (+ incidents logged, 2a)
+    else status INCOMPLETE_INCIDENT (2b)
+      V --> Phy : "Procedure aborted. Rescheduling must be requested to Admissions manually."
+    end
+  else 400 / 403 / 404 / 409 / 5xx / no connection
+    RC --> A : {error, message[, invalidFields]}
+    A --> C : throw ExecutionClientException(kind[, invalidFields])
+    C -> V : render(form, failure[, field errors from the server])
+    V --> Phy : message; data kept; retry when retryable
+  end
+end
+@enduml

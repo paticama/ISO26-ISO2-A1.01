@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Log procedure execution – SESCAM</title>
+    <style>
+        :root { --border: #d0d7de; --muted: #57606a; --error: #b42318; --ok: #1a7f37; --warn: #9a6700; --bg: #f6f8fa; }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: system-ui, sans-serif; color: #1f2328; background: #fff; }
+        header { padding: 16px; border-bottom: 1px solid var(--border); background: var(--bg); }
+        header h1 { margin: 0; font-size: 1.25rem; }
+        main { padding: 16px; max-width: 960px; margin: 0 auto; }
+        form { display: grid; gap: 12px; }
+        fieldset { border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: grid; gap: 12px;
+                   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+        legend { font-weight: 600; padding: 0 4px; }
+        label { display: flex; flex-direction: column; gap: 4px; font-size: .9rem; }
+        label.inline { flex-direction: row; align-items: center; gap: 8px; }
+        input, select, textarea { padding: 8px; border: 1px solid var(--border); border-radius: 6px; font: inherit; }
+        textarea { min-height: 60px; }
+        .wide { grid-column: 1 / -1; }
+        .field-error { color: var(--error); font-size: .8rem; }
+        button { padding: 8px 14px; border-radius: 6px; border: 1px solid #0969da; background: #0969da; color: #fff;
+                 font: inherit; cursor: pointer; justify-self: start; }
+        .message { margin: 16px 0; padding: 12px; border-radius: 6px; border: 1px solid var(--border); }
+        .message.error { border-color: var(--error); color: var(--error); }
+        .message.warn { border-color: var(--warn); color: var(--warn); }
+        .message.ok { border-color: var(--ok); color: var(--ok); }
+        .hint { color: var(--muted); font-size: .8rem; }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Log procedure execution</h1>
+    <span class="hint">Every execution and incident is attributed to you and recorded for audit.</span>
+</header>
+<main>
+    <!-- Step 5 / 2b: result -->
+    <div th:if="${record != null and record.status().name() == 'EXECUTED_PENDING_REPORT'}" class="message ok"
+         id="recorded" role="status">
+        <strong>Execution recorded.</strong>
+        <div th:text="|${record.examTypeName()} (order ${record.orderId()}), patient ${record.patientId()}|"></div>
+        <div th:text="|${#temporals.format(record.startedAt().atZone(zone), 'yyyy-MM-dd HH:mm')} – ${#temporals.format(record.endedAt().atZone(zone), 'HH:mm')}, ${record.roomEquipmentId()}|"></div>
+        <div>Status: <span th:text="${record.status()}"></span> (waiting for the report)</div>
+        <div th:if="${!record.incidents().isEmpty()}" id="incidents-logged"
+             th:text="|${record.incidents().size()} incident(s) logged and flagged for audit.|"></div>
+        <p><a th:href="@{/executions/new}">Log another procedure</a></p>
+    </div>
+    <div th:if="${record != null and record.status().name() == 'INCOMPLETE_INCIDENT'}" class="message warn"
+         id="aborted" role="status">
+        <strong>Procedure aborted. Rescheduling must be requested to Admissions manually.</strong>
+        <div th:text="|Reason: ${record.abortReason()}|"></div>
+        <div th:text="|${record.incidents().size()} incident(s) logged and flagged for audit.|"></div>
+        <p><a th:href="@{/executions/new}">Log another procedure</a></p>
+    </div>
+
+    <div th:if="${pendingFailure != null}" class="message error" id="pending-failure" role="alert"
+         th:text="${pendingFailure}"></div>
+
+    <div th:if="${failure != null}" class="message error" id="failure" role="alert">
+        <strong th:text="${failure.message}"></strong>
+        <div th:if="${failure.canRetry()}">Nothing has been recorded. You can send it again.</div>
+    </div>
+
+    <form id="execution-form" method="post" th:action="@{/executions}" th:if="${record == null}">
+        <fieldset>
+            <legend>Procedure</legend>
+            <label class="wide">Procedure awaiting execution
+                <select name="orderId">
+                    <option value="">Select…</option>
+                    <option th:each="p : ${procedures}" th:value="${p.orderId()}" th:selected="${p.orderId() == form.orderId}"
+                            th:text="|${p.examTypeName()} – patient ${p.patientId()} – ${p.roomId()}${p.scheduledAt() != null ? ' – ' + #temporals.format(p.scheduledAt().atZone(zone), 'yyyy-MM-dd HH:mm') : ''}|"></option>
+                </select>
+                <span class="field-error" th:if="${errors != null and errors['orderId'] != null}" th:text="${errors['orderId']}"></span>
+            </label>
+            <span class="hint wide" th:if="${procedures != null and procedures.isEmpty() and pendingFailure == null}" id="none-pending">
+                No booked procedures are waiting for their execution log.
+            </span>
+        </fieldset>
+
+        <fieldset>
+            <legend>Execution</legend>
+            <label>Actual start
+                <input type="datetime-local" name="startedAt" th:value="${form.startedAt}">
+                <span class="field-error" th:if="${errors != null and errors['startedAt'] != null}" th:text="${errors['startedAt']}"></span>
+            </label>
+            <label>Actual end
+                <input type="datetime-local" name="endedAt" th:value="${form.endedAt}">
+                <span class="field-error" th:if="${errors != null and errors['endedAt'] != null}" th:text="${errors['endedAt']}"></span>
+            </label>
+            <label>Room / equipment
+                <input type="text" name="roomEquipmentId" maxlength="100" th:value="${form.roomEquipmentId}">
+                <span class="field-error" th:if="${errors != null and errors['roomEquipmentId'] != null}" th:text="${errors['roomEquipmentId']}"></span>
+            </label>
+            <label class="inline wide">
+                <input type="checkbox" name="informedConsentVerified" value="true" th:checked="${form.informedConsentVerified}">
+                Informed consent verified
+            </label>
+            <span class="field-error wide" th:if="${errors != null and errors['informedConsentVerified'] != null}" th:text="${errors['informedConsentVerified']}"></span>
+        </fieldset>
+
+        <fieldset>
+            <legend>Contrast and dose</legend>
+            <label>Contrast batch
+                <input type="text" name="contrastBatch" maxlength="100" th:value="${form.contrastBatch}">
+                <span class="field-error" th:if="${errors != null and errors['contrastBatch'] != null}" th:text="${errors['contrastBatch']}"></span>
+            </label>
+            <label>Contrast volume (ml)
+                <input type="number" step="0.1" min="0" name="contrastVolumeMl" th:value="${form.contrastVolumeMl}">
+                <span class="field-error" th:if="${errors != null and errors['contrastVolumeMl'] != null}" th:text="${errors['contrastVolumeMl']}"></span>
+            </label>
+            <label>DLP (mGy·cm)
+                <input type="number" step="0.1" min="0" name="doseDlp" th:value="${form.doseDlp}">
+                <span class="field-error" th:if="${errors != null and errors['doseDlp'] != null}" th:text="${errors['doseDlp']}"></span>
+            </label>
+            <label>CTDIvol (mGy)
+                <input type="number" step="0.01" min="0" name="doseCtdiVol" th:value="${form.doseCtdiVol}">
+                <span class="field-error" th:if="${errors != null and errors['doseCtdiVol'] != null}" th:text="${errors['doseCtdiVol']}"></span>
+            </label>
+            <label>Radiotracer activity (MBq)
+                <input type="number" step="0.1" min="0" name="radiotracerActivityMBq" th:value="${form.radiotracerActivityMBq}">
+                <span class="field-error" th:if="${errors != null and errors['radiotracerActivityMBq'] != null}" th:text="${errors['radiotracerActivityMBq']}"></span>
+            </label>
+        </fieldset>
+
+        <fieldset>
+            <legend>Incident (only if one occurred)</legend>
+            <label>Type
+                <select name="incidentType">
+                    <option value="">None</option>
+                    <option th:each="t : ${incidentTypes}" th:value="${t}" th:selected="${t == form.incidentType}" th:text="${t}"></option>
+                </select>
+                <span class="field-error" th:if="${errors != null and errors['incidentType'] != null}" th:text="${errors['incidentType']}"></span>
+            </label>
+            <label>Severity
+                <select name="incidentSeverity">
+                    <option value="">None</option>
+                    <option th:each="s : ${severities}" th:value="${s}" th:selected="${s == form.incidentSeverity}" th:text="${s}"></option>
+                </select>
+                <span class="field-error" th:if="${errors != null and errors['incidentSeverity'] != null}" th:text="${errors['incidentSeverity']}"></span>
+            </label>
+            <label class="wide">Description
+                <textarea name="incidentDescription" maxlength="2000" th:text="${form.incidentDescription}"></textarea>
+                <span class="field-error" th:if="${errors != null and errors['incidentDescription'] != null}" th:text="${errors['incidentDescription']}"></span>
+            </label>
+            <label class="wide">Treatment given / action taken
+                <textarea name="incidentTreatment" maxlength="2000" th:text="${form.incidentTreatment}"></textarea>
+            </label>
+            <label class="inline wide">
+                <input type="checkbox" name="aborted" value="true" th:checked="${form.aborted}">
+                The incident prevented completing the examination (abort)
+            </label>
+            <label class="wide">Abort reason
+                <input type="text" name="abortReason" maxlength="500" th:value="${form.abortReason}">
+                <span class="field-error" th:if="${errors != null and errors['abortReason'] != null}" th:text="${errors['abortReason']}"></span>
+            </label>
+        </fieldset>
+
+        <p class="hint" th:text="|Times in ${zone}.|"></p>
+        <button type="submit">Submit execution log</button>
+    </form>
+</main>
+</body>
+</html>
