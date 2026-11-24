@@ -1,0 +1,77 @@
+@startuml uc-aad-02-class-analysis
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 6
+
+title UC-AAD-02: Manage Schedules - Analysis Class Diagram\nTitular Module: C3 (sescam-schedules v1.0.0)
+
+package "Client (sescam-client-app)" {
+    class ScheduleManagementView <<boundary>>
+}
+
+package "Server (sescam-server-app)" {
+    class ScheduleController <<control>>
+}
+
+package "C3: sescam-schedules (Titular Module)" {
+    class ScheduleManager <<control>> {
+        open / update / close / reopen
+        validate dates, capacity, overlaps
+        identify affected appointments
+    }
+
+    enum ScheduleStatus {
+        OPEN
+        CLOSED
+    }
+
+    class Schedule <<entity>> {
+        - scheduleId
+        - resourceId
+        - locationId
+        - modality
+        - start / end
+        - slotDurationMinutes
+        - capacityPerSlot
+        - status: ScheduleStatus
+        - version
+        - appointmentsPendingRescheduling
+    }
+
+    class Slot <<entity>> {
+        - slotId
+        - start / end
+        - capacity
+        - bookingReferences
+        - version
+    }
+
+    Schedule "1" *-- "1..*" Slot : divided into
+    Schedule --> ScheduleStatus
+}
+
+package "Collaborating Modules (via sescam-common interfaces)" {
+    class "PolicyService (C2)" as C2 <<interface>> {
+        + getIntPolicy("schedules.max-capacity-per-slot")
+    }
+    class "AuditService (C1)" as C1 <<interface>> {
+        + recordEvent(AuditEventDTO)
+    }
+    class "Admissions C5 (UC-AAD-05)" as C5 <<interface>> {
+        reserves / releases slot places
+        receives ScheduleChangedEvent
+    }
+}
+
+ScheduleManagementView ..> ScheduleController : REST /api/v1/schedules
+ScheduleController ..> ScheduleManager
+ScheduleManager --> Schedule : creates / changes
+ScheduleManager ..> C2 : capacity limit set by System Administrator
+ScheduleManager ..> C1 : audit every change and denial (NFR-11)
+ScheduleManager ..> C5 : rescheduling hand-off (event)
+C5 ..> ScheduleManager : findCompatibleSlots / reserveSlotAtomically / releaseSlot
+note bottom of Slot
+  A booking of C5 is only referenced here by its id.
+  The Booking entity stays in C5 (ADR-014).
+end note
+@enduml

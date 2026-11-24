@@ -1,0 +1,39 @@
+@startuml uc-aad-02-comm-alt
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+
+title UC-AAD-02: Manage Schedules (C3 v1.0.0)\nCommunication Diagram - Alternative / Exception Flows (A1-A6)
+
+actor ":AdmissionsStaff" as adm
+boundary ":ScheduleView" as ui
+control ":ScheduleRestController" as ctrl
+control ":ScheduleExceptionHandler" as handler
+control ":ScheduleServiceImpl" as srv
+control ":ScheduleAccessPolicy" as policy
+control ":ScheduleRules" as rules
+database ":ScheduleRepository" as repo
+entity ":Schedule" as sch
+control ":AuditService (C1)" as c1
+control ":ScheduleEventPublisher (C5)" as c5
+
+adm -- ui : 1: confirm(open | update | close | reopen) >\n< A1.5: show conflicting schedules\n< A2.5: list affected appointments, ask to confirm\n< A5.4: show invalid fields\n< A6.4: "Operation reserved"
+
+ui -- ctrl : 2: POST / PUT / POST {id}/close / POST {id}/reopen >\n< A1.4 / A2.4: 409 SCHEDULE_OVERLAP / APPOINTMENTS_AFFECTED\n< A5.3: 400 INVALID_SCHEDULE, 422 CAPACITY_EXCEEDED\n< A6.3: 403 UNAUTHORIZED_OPERATION
+
+ctrl -- srv : 3: openSchedule | updateSchedule | closeSchedule | reopenSchedule >
+
+srv -- policy : A6.1: canOperateSchedules() = false >
+srv -- rules : A5.1: validateWindow() throws InvalidSchedule / CapacityExceeded >
+srv -- repo : A1.1: findByResource() returns open overlapping schedules >\nA4.1: findByResource() [revalidate before reopening] >
+srv -- sch : A2.1: appointmentsAffectedBy() / appointmentsAffectedByClosing() != [] and not confirmed >\nA3.1: close(reason) [appointments stay in their slots] >\nA4.2: reopen() [after capacity and overlap checks] >
+srv -- c1 : A1.2 / A2.2 / A5.2: recordEvent(SCHEDULE_CHANGE_REJECTED) >\nA6.2: recordEvent(SCHEDULE_ACCESS_DENIED) >\nA3.2 / A4.3: recordEvent(SCHEDULE_CLOSED / SCHEDULE_REOPENED) >
+srv -- c5 : A2.6 [confirmed]: publish(ScheduleChangedEvent with affected appointments) >\nA3.3: publish(ScheduleChangedEvent CLOSE) >
+
+ctrl -- handler : A1.3 / A2.3 / A5.3 / A6.3: ScheduleException(code) >
+note right of sch
+  A3: a closed schedule exposes no bookable slot,
+  reserveSlotAtomically() fails with SLOT_UNAVAILABLE,
+  existing appointments are preserved.
+end note
+@enduml

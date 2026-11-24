@@ -1,0 +1,97 @@
+@startuml uc-aad-02-class-design
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+
+title UC-AAD-02: Manage Schedules - Design Class Diagram (server slice, C3 v1.0.0)
+
+package "sescam-common :: common.schedules" {
+    interface ScheduleService {
+        + searchSchedules(ScheduleSearchCriteriaDTO, actorId, actorRole): List<ScheduleSummaryDTO>
+        + getSchedule(scheduleId, actorId, actorRole): ScheduleDTO
+        + openSchedule(OpenScheduleRequestDTO): ScheduleChangeResultDTO
+        + updateSchedule(UpdateScheduleRequestDTO): ScheduleChangeResultDTO
+        + closeSchedule(ScheduleStatusChangeRequestDTO): ScheduleChangeResultDTO
+        + reopenSchedule(ScheduleStatusChangeRequestDTO): ScheduleChangeResultDTO
+        .. for C5 (UC-AAD-05) ..
+        + findCompatibleSlots(modality, from, to): List<SlotDTO>
+        + reserveSlotAtomically(slotId, expectedVersion, bookingReference): SlotDTO
+        + releaseSlot(slotId, bookingReference): void
+    }
+    interface ScheduleEventPublisher {
+        + publish(ScheduleChangedEvent): void
+    }
+    abstract class ScheduleException {
+        + getCode(): ScheduleErrorCode
+    }
+    enum ScheduleErrorCode {
+        SCHEDULE_OVERLAP
+        CAPACITY_EXCEEDED
+        INVALID_SCHEDULE
+        APPOINTMENTS_AFFECTED
+        UNAUTHORIZED_OPERATION
+        SCHEDULE_NOT_FOUND
+        CONCURRENT_MODIFICATION
+        SLOT_UNAVAILABLE
+    }
+    class "ScheduleDTO, ScheduleSummaryDTO, SlotDTO,\nAffectedAppointmentDTO, ScheduleChangeResultDTO,\nOpen/Update/StatusChange RequestDTO,\nScheduleSearchCriteriaDTO, ScheduleChangedEvent" as DTOs <<record>>
+    ScheduleException --> ScheduleErrorCode
+    ScheduleException <|-- ScheduleOverlapException
+    ScheduleException <|-- AppointmentsAffectedException
+    ScheduleException <|-- "InvalidSchedule, CapacityExceeded,\nUnauthorizedScheduleOperation, ScheduleNotFound,\nConcurrentScheduleChange, SlotUnavailable"
+}
+
+package "sescam-schedules (C3)" {
+    class ScheduleServiceImpl {
+        - repository: ScheduleRepository
+        - rules: ScheduleRules
+        - accessPolicy: ScheduleAccessPolicy
+        - auditService: AuditService
+        - eventPublisher: ScheduleEventPublisher
+        - clock: Clock
+    }
+    class Schedule {
+        + appointmentsAffectedBy(start, end, slotMinutes, capacity): List<AffectedAppointmentDTO>
+        + appointmentsAffectedByClosing(): List<AffectedAppointmentDTO>
+        + update(...), close(reason, now), reopen(reason, now)
+        + reserve(slotId, version, ref, now): Slot
+        + release(slotId, ref): boolean
+        + checkVersion(expected)
+    }
+    class Slot
+    interface ScheduleRepository
+    class InMemoryScheduleRepository
+    class ScheduleRules {
+        + MAX_CAPACITY_PER_SLOT_KEY
+        + validateIdentity(...)
+        + validateWindow(...)
+        + validateCapacity(int)
+    }
+    class ScheduleAccessPolicy {
+        + canOperateSchedules(actorId, role)
+        + canViewSchedules(actorId, role)
+    }
+    class NoOpScheduleEventPublisher
+    Schedule "1" *-- "1..*" Slot
+    ScheduleRepository <|.. InMemoryScheduleRepository
+    ScheduleServiceImpl --> ScheduleRepository
+    ScheduleServiceImpl --> ScheduleRules
+    ScheduleServiceImpl --> ScheduleAccessPolicy
+    ScheduleServiceImpl ..> Schedule
+}
+
+package "sescam-server-app :: server.schedules" {
+    class ScheduleRestController <<@RestController /api/v1/schedules>>
+    class ScheduleExceptionHandler <<@RestControllerAdvice>>
+    class ScheduleWiringConfig <<@Configuration>>
+}
+
+ScheduleService <|.. ScheduleServiceImpl
+ScheduleEventPublisher <|.. NoOpScheduleEventPublisher
+ScheduleServiceImpl --> ScheduleEventPublisher
+ScheduleServiceImpl --> "AuditService (C1)"
+ScheduleRules --> "PolicyService (C2)"
+ScheduleRestController --> ScheduleService
+ScheduleExceptionHandler ..> ScheduleException
+ScheduleWiringConfig ..> ScheduleServiceImpl : creates
+@enduml
