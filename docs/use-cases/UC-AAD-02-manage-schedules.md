@@ -38,17 +38,23 @@
 
 ## RADIT Disciplines
 - [x] Requirements: Specify schedule lifecycle and appointment impact handling.
-- [ ] Analysis: Define schedule, resource, and booking boundaries.
-- [ ] Design: Define schedule DTOs, conflict rules, and rescheduling contracts.
-- [ ] Implementation: Implement schedule management and availability services.
-- [ ] Testing: Test overlap, capacity, closing, reopening, and affected appointments.
+- [x] Analysis: [analysis class diagram](../diagrams/UC-AAD-02/uc-aad-02-class-analysis.puml) (Schedule and Slot in C3; bookings stay in C5 and are only referenced by id) and communication diagrams ([normal](../diagrams/UC-AAD-02/uc-aad-02-comm-normal.puml), [A1-A6](../diagrams/UC-AAD-02/uc-aad-02-comm-alt.puml)).
+- [x] Design: interfaces and DTOs in `sescam-common` (see Contracts below); server [design class diagram](../diagrams/UC-AAD-02/uc-aad-02-class-design.puml) and [sequence diagram](../diagrams/UC-AAD-02/uc-aad-02-sequence-design.puml). Client design diagrams come with the client slice.
+- [ ] Implementation: server slice (`sescam-schedules` 1.0.0 + `ScheduleRestController`) and client slice (`sescam-client-app` schedule view).
+- [ ] Testing: JUnit 5 + Mockito, one test per acceptance criterion and per alternative flow, JaCoCo ≥ 80%.
 
 ## Contracts and Interfaces
 - `Client:` Admissions UI for schedule search, creation, update, closing, and reopening.
 - `Server:` Schedule and availability service in `sescam-schedules`, REST endpoint in `sescam-server-app`.
-- `Schedule interface:` Schedule, resource, capacity, and conflict-validation contract.
-- `Booking interface:` Affected-appointment lookup and rescheduling hand-off.
-- `Errors:` `SCHEDULE_OVERLAP`, `CAPACITY_EXCEEDED`, `INVALID_SCHEDULE`, `APPOINTMENTS_AFFECTED`, and `UNAUTHORIZED_OPERATION` are returned explicitly; no schedule change is silently committed.
+- `Schedule interface:` `com.sescam.radiodiagnostics.common.schedules.ScheduleService` (C3):
+  - Admissions Staff: `searchSchedules`, `getSchedule`, `openSchedule`, `updateSchedule`, `closeSchedule`, `reopenSchedule` → `ScheduleChangeResultDTO` (resulting schedule, affected appointments, `reschedulingRequired`).
+  - Consumed by C5 for UC-AAD-05 (in-process, no actor): `findCompatibleSlots(modality, from, to)`, `reserveSlotAtomically(slotId, expectedVersion, bookingReference)`, `releaseSlot(slotId, bookingReference)`.
+- DTOs and enums in `common.schedules`: `ScheduleDTO`, `ScheduleSummaryDTO`, `SlotDTO`, `AffectedAppointmentDTO`, `ScheduleChangeResultDTO`, `OpenScheduleRequestDTO`, `UpdateScheduleRequestDTO`, `ScheduleStatusChangeRequestDTO`, `ScheduleSearchCriteriaDTO`, `ScheduleStatus`, `ScheduleOperation`, `ScheduleErrorCode`.
+- `Booking interface:` affected-appointment lookup is done in C3 from the booking references held by each slot; the rescheduling hand-off is the event `ScheduleChangedEvent` sent through the outbound port `ScheduleEventPublisher` (no-op until C5 implements it, ADR-014). Affected appointments are never dropped: they stay in `appointmentsPendingRescheduling` until C5 releases them.
+- Collaborators: `PolicyService` (C2) for the limit `schedules.max-capacity-per-slot` set by the System Administrator (default 4), `AuditService` (C1) for every change, rejection and denial (NFR-11). Roles are checked in C3 by `ScheduleAccessPolicy` (Admissions Staff operates; System Administrator and clinical staff only consult) until the RBAC permissions of UC-ADM-02 are merged.
+- `Errors:` `SCHEDULE_OVERLAP`, `CAPACITY_EXCEEDED`, `INVALID_SCHEDULE`, `APPOINTMENTS_AFFECTED`, and `UNAUTHORIZED_OPERATION` are returned explicitly; no schedule change is silently committed. Also `SCHEDULE_NOT_FOUND`, `CONCURRENT_MODIFICATION` (optimistic locking) and `SLOT_UNAVAILABLE` (booking hand-off). All are subclasses of `ScheduleException`.
+- REST API (server-app): `GET /api/v1/schedules` (date, resourceId, locationId, status), `GET /api/v1/schedules/{id}`, `POST /api/v1/schedules` (201), `PUT /api/v1/schedules/{id}`, `POST /api/v1/schedules/{id}/close`, `POST /api/v1/schedules/{id}/reopen`, `GET /api/v1/schedules/slots/available` (modality, from, to). Status codes: 400 `INVALID_SCHEDULE`, 403 `UNAUTHORIZED_OPERATION`, 404 `SCHEDULE_NOT_FOUND`, 409 `SCHEDULE_OVERLAP` / `APPOINTMENTS_AFFECTED` / `CONCURRENT_MODIFICATION`, 422 `CAPACITY_EXCEEDED`.
+- Analysis and design diagrams: [`docs/diagrams/UC-AAD-02/`](../diagrams/UC-AAD-02/)
 
 ## Acceptance Criteria
 - [ ] Admissions Staff can open, update, close, and reopen authorized schedules.

@@ -1,0 +1,50 @@
+@startuml uc-aad-02-sequence-design
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+
+title UC-AAD-02: Manage Schedules - Design Sequence Diagram (update schedule, A1, A2)
+
+actor "Admissions Staff" as adm
+participant ":ScheduleRestController" as ctrl
+participant ":ScheduleServiceImpl" as srv
+participant ":ScheduleAccessPolicy" as policy
+participant ":ScheduleRules" as rules
+participant ":ScheduleRepository" as repo
+participant ":Schedule" as sch
+participant ":AuditService" as audit
+participant ":ScheduleEventPublisher" as pub
+
+adm -> ctrl : PUT /api/v1/schedules/{id}\n(window, slot, capacity, expectedVersion, confirm)
+ctrl -> srv : updateSchedule(UpdateScheduleRequestDTO)
+srv -> policy : canOperateSchedules(actorId, role)
+alt A6 role not allowed
+    srv -> audit : recordEvent(SCHEDULE_ACCESS_DENIED)
+    srv --> ctrl : UnauthorizedScheduleOperationException
+    ctrl --> adm : 403 UNAUTHORIZED_OPERATION
+end
+srv -> repo : findById(id)
+srv -> sch : checkVersion(expectedVersion)
+srv -> rules : validateWindow(start, end, slotMinutes, capacity, now)
+alt A5 invalid / capacity above C2 limit
+    srv -> audit : recordEvent(SCHEDULE_CHANGE_REJECTED)
+    ctrl --> adm : 400 INVALID_SCHEDULE / 422 CAPACITY_EXCEEDED
+end
+srv -> repo : findByResource(resourceId)
+alt A1 open schedule overlaps
+    srv -> audit : recordEvent(SCHEDULE_CHANGE_REJECTED)
+    ctrl --> adm : 409 SCHEDULE_OVERLAP + conflictingSchedules
+end
+srv -> sch : appointmentsAffectedBy(start, end, slotMinutes, capacity)
+alt A2 affected and not confirmed
+    srv -> audit : recordEvent(SCHEDULE_CHANGE_REJECTED)
+    ctrl --> adm : 409 APPOINTMENTS_AFFECTED + affectedAppointments
+else no impact or confirmed
+    srv -> sch : update(start, end, slotMinutes, capacity, reason, now)
+    note right : appointments that no longer fit move\nto appointmentsPendingRescheduling
+    srv -> repo : save(schedule)
+    srv -> audit : recordEvent(SCHEDULE_UPDATED, before, after)
+    srv -> pub : publish(ScheduleChangedEvent(affected))
+    srv --> ctrl : ScheduleChangeResultDTO
+    ctrl --> adm : 200 schedule + rescheduling actions
+end
+@enduml
