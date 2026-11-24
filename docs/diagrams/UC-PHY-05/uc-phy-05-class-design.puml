@@ -1,0 +1,187 @@
+@startuml uc-phy-05-class-design
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam classAttributeIconSize 0
+
+title UC-PHY-05: Design Class Diagram (sescam-common, sescam-diagnostics, sescam-server-app)\nC7 sescam-diagnostics v1.0.0
+
+package "sescam-common contracts (com.sescam.radiodiagnostics.common.diagnostics)" {
+  interface ProcedureExecutionService {
+    + listProceduresAwaitingExecution(actorId, actorRole) : List<ScheduledProcedureDTO>
+    + recordExecution(ExecutionLogDTO) : ExecutionRecordDTO
+  }
+  interface ScheduledProcedureGateway {
+    + listBookedProcedures() : List<ScheduledProcedureDTO>
+    + findByOrderId(orderId) : Optional<ScheduledProcedureDTO>
+  }
+  interface ProcedureEventPublisher {
+    + publishExecutionRecorded(ProcedureExecutionEvent) : void
+  }
+
+  class ExecutionLogDTO <<record>> {
+    + orderId : String
+    + startedAt : Instant
+    + endedAt : Instant
+    + roomEquipmentId : String
+    + contrastBatch : String
+    + contrastVolumeMl : Double
+    + doseDlp : Double
+    + doseCtdiVol : Double
+    + radiotracerActivityMBq : Double
+    + informedConsentVerified : boolean
+    + aborted : boolean
+    + abortReason : String
+    + incidents : List<IncidentDTO>
+    + actorId : String
+    + actorRole : String
+  }
+  class IncidentDTO <<record>> {
+    + type : IncidentType
+    + severity : IncidentSeverity
+    + description : String
+    + treatmentGiven : String
+    + occurredAt : Instant
+  }
+  class ExecutionRecordDTO <<record>> {
+    + executionId : String
+    + orderId : String
+    + patientId : String
+    + status : ExecutionStatus
+    + incidents : List<ClinicalIncidentDTO>
+    + recordedBy : String
+    + recordedAt : Instant
+    ..
+    (+ the execution data of ExecutionLogDTO)
+  }
+  class ClinicalIncidentDTO <<record>> {
+    + incidentId : String
+    + executionId : String
+    + patientId : String
+    + type, severity, description,
+      treatmentGiven, occurredAt
+    + procedureAborted : boolean
+  }
+  class ScheduledProcedureDTO <<record>> {
+    + orderId : String
+    + patientId : String
+    + examTypeCode : String
+    + examTypeName : String
+    + modality : ModalityType
+    + scheduledAt : Instant
+    + roomId : String
+    + requiresContrast : boolean
+    + requiresInformedConsent : boolean
+  }
+  class ProcedureExecutionEvent <<record>> {
+    + executionId, orderId, patientId
+    + status : ExecutionStatus
+    + abortReason : String
+    + occurredAt : Instant
+    + requiresRescheduling() : boolean
+  }
+  enum ExecutionStatus {
+    EXECUTED_PENDING_REPORT
+    INCOMPLETE_INCIDENT
+  }
+  enum IncidentType {
+    ADVERSE_CONTRAST_REACTION
+    ANAPHYLACTOID_EVENT
+    OTHER_CLINICAL_COMPLICATION
+    EQUIPMENT_MALFUNCTION
+    OTHER_OPERATIONAL
+  }
+  enum IncidentSeverity {
+    MILD
+    MODERATE
+    SEVERE
+  }
+  class UnauthorizedExecutionAccessException <<exception>>
+  class ProcedureNotFoundException <<exception>>
+  class ExecutionAlreadyRecordedException <<exception>>
+  class InvalidExecutionDataException <<exception>> {
+    + getInvalidFields() : List<String>
+  }
+}
+
+package "sescam-common security (C1)" {
+  interface AccessControlService {
+    + canLogProcedureExecution(actorId, role) : boolean  <<default, NEW>>
+  }
+  interface AuditService {
+    + recordEvent(AuditEventDTO) : void
+  }
+}
+
+package "sescam-diagnostics module (com.sescam.radiodiagnostics.diagnostics)" {
+  class ProcedureExecutionServiceImpl implements ProcedureExecutionService {
+    - executionRepository : ExecutionRepository
+    - procedureGateway : ScheduledProcedureGateway
+    - accessControlService : AccessControlService
+    - auditService : AuditService
+    - eventPublisher : ProcedureEventPublisher
+    - rules : ExecutionRules
+    - clock : Clock
+  }
+  class ExecutionRules {
+    + invalidFields(ExecutionLogDTO, ScheduledProcedureDTO, now) : List<String>
+  }
+  interface ExecutionRepository {
+    + save(ProcedureExecution) : ProcedureExecution
+    + findByOrderId(String) : Optional<ProcedureExecution>
+    + existsByOrderId(String) : boolean
+  }
+  class InMemoryExecutionRepository implements ExecutionRepository
+  class InMemoryScheduledProcedureGateway implements ScheduledProcedureGateway
+  class NoOpProcedureEventPublisher implements ProcedureEventPublisher
+
+  class ProcedureExecution <<entity>> {
+    - id, orderId, patientId
+    - examTypeName, modality
+    - startedAt, endedAt, roomEquipmentId
+    - contrastBatch, contrastVolumeMl
+    - doseDlp, doseCtdiVol, radiotracerActivityMBq
+    - informedConsentVerified
+    - status : ExecutionStatus
+    - abortReason
+    - recordedBy, recordedAt
+    + toDTO() : ExecutionRecordDTO
+  }
+  class ClinicalIncident <<entity>> {
+    - id, executionId, patientId
+    - type, severity, description
+    - treatmentGiven, occurredAt
+    - procedureAborted : boolean
+  }
+}
+
+package "sescam-server-app (com.sescam.radiodiagnostics.server.diagnostics)" {
+  class ExecutionRestController {
+    GET /api/v1/executions/pending
+    POST /api/v1/executions
+  }
+  class ExecutionExceptionHandler
+  class DiagnosticsWiringConfig
+}
+
+ExecutionRestController --> ProcedureExecutionService
+ProcedureExecutionServiceImpl --> ExecutionRepository
+ProcedureExecutionServiceImpl --> ScheduledProcedureGateway
+ProcedureExecutionServiceImpl --> AccessControlService
+ProcedureExecutionServiceImpl --> AuditService
+ProcedureExecutionServiceImpl --> ProcedureEventPublisher
+ProcedureExecutionServiceImpl --> ExecutionRules
+ProcedureExecutionServiceImpl ..> ProcedureExecution : creates
+ProcedureExecution "1" *-- "0..*" ClinicalIncident
+ExecutionLogDTO o-- "0..*" IncidentDTO
+ExecutionRecordDTO o-- "0..*" ClinicalIncidentDTO
+
+note bottom of InMemoryScheduledProcedureGateway
+  TEMPORARY stand-in seeded with booked procedures
+  until C5 (AAD-05, Victoria) implements the gateway.
+end note
+note bottom of NoOpProcedureEventPublisher
+  Until C4 (order status) and C5 (rescheduling, 2b)
+  subscribe to ProcedureExecutionEvent.
+end note
+@enduml

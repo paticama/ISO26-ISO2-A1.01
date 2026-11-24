@@ -37,4 +37,16 @@ public interface AccessControlService {
     default boolean canOrderProcedures(String actorId, String role) {
         return role != null && role.trim().toUpperCase().contains("PHYSICIAN");
     }
+
+    /**
+     * Checks whether the authenticated user may log procedure executions and incidents (UC-PHY-05).
+     * By default physicians, radiologists and radiology technicians (the actors of the communication diagrams).
+     */
+    default boolean canLogProcedureExecution(String actorId, String role) {
+        if (role == null) {
+            return false;
+        }
+        String r = role.trim().toUpperCase();
+        return r.contains("PHYSICIAN") || r.contains("RADIOLOGIST") || r.contains("TECHNICIAN");
+    }
 }

@@ -1,0 +1,84 @@
+@startuml uc-phy-05-class-analysis
+title UC-PHY-05 – Analysis class diagram (boundary / control / entity)\nC7 sescam-diagnostics v1.0.0
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+
+' Entity placement (ADR-014): ProcedureExecution and ClinicalIncident -> C7 diagnostics.
+' The booked procedure (order + slot) belongs to C4 orders / C5 admissions and is only READ.
+' Open decision #1 of PLAN18-11 resolved here as: ClinicalIncident (C7, during an examination)
+' is a different entity from PatientIncident (C8, PAT-05, reported by the patient).
+
+actor "Physician / Radiologist / Technician" as Phy
+
+package "Client side" {
+  class ExecutionLoggingUI <<boundary>> {
+    procedures awaiting execution
+    execution form
+    incident section (2a)
+    abort option (2b)
+    confirmation
+  }
+  class ExecutionFormValidation <<control>> {
+    mandatory fields, end after start
+  }
+}
+
+package "Server side" {
+  class ExecutionController <<control>> {
+    list procedures awaiting execution
+    record execution
+  }
+  class ExecutionRules <<control>> {
+    consent, contrast batch,
+    dose per modality, aborted => incident
+  }
+  class ProcedureExecution <<entity>> {
+    orderId
+    patientId
+    startedAt
+    endedAt
+    roomEquipmentId
+    contrastBatch
+    contrastVolumeMl
+    doseDlp
+    doseCtdiVol
+    radiotracerActivityMBq
+    informedConsentVerified
+    status
+    abortReason
+  }
+  class ClinicalIncident <<entity>> {
+    type
+    severity
+    description
+    treatmentGiven
+    occurredAt
+    patientId
+  }
+  class BookedProcedure <<entity>> {
+    orderId
+    patientId
+    examination
+    modality
+    requiresContrast
+    requiresInformedConsent
+  }
+  class AuditRecord <<entity>>
+  class AdmissionsAndOrders <<boundary>> {
+    rescheduling (2b)
+    order status
+  }
+}
+
+Phy -- ExecutionLoggingUI
+ExecutionLoggingUI ..> ExecutionFormValidation
+ExecutionLoggingUI ..> ExecutionController : list / submit
+ExecutionController ..> BookedProcedure : reads
+ExecutionController ..> ExecutionRules
+ExecutionRules ..> BookedProcedure
+ExecutionController ..> ProcedureExecution : creates
+ProcedureExecution "1" *-- "0..*" ClinicalIncident : records
+ProcedureExecution "0..1" --> "1" BookedProcedure : fulfils
+ExecutionController ..> AuditRecord : records
+ExecutionController ..> AdmissionsAndOrders : execution event
+@enduml
