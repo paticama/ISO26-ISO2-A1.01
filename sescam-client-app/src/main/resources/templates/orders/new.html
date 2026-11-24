@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Order diagnostic procedure – SESCAM</title>
+    <style>
+        :root { --border: #d0d7de; --muted: #57606a; --error: #b42318; --ok: #1a7f37; --warn: #9a6700; --bg: #f6f8fa; }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: system-ui, sans-serif; color: #1f2328; background: #fff; }
+        header { padding: 16px; border-bottom: 1px solid var(--border); background: var(--bg); }
+        header h1 { margin: 0; font-size: 1.25rem; }
+        main { padding: 16px; max-width: 900px; margin: 0 auto; }
+        form { display: grid; gap: 12px; margin-bottom: 12px; }
+        label { display: flex; flex-direction: column; gap: 4px; font-size: .9rem; }
+        input, select, textarea { padding: 8px; border: 1px solid var(--border); border-radius: 6px; font: inherit; }
+        textarea { min-height: 70px; }
+        .field-error { color: var(--error); font-size: .8rem; }
+        .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        button { padding: 8px 14px; border-radius: 6px; border: 1px solid var(--border); background: #fff; font: inherit; cursor: pointer; }
+        button.primary { background: #0969da; color: #fff; border-color: #0969da; }
+        button.danger { background: var(--warn); color: #fff; border-color: var(--warn); }
+        .message { margin: 16px 0; padding: 12px; border-radius: 6px; border: 1px solid var(--border); }
+        .message.error { border-color: var(--error); color: var(--error); }
+        .message.warn { border-color: var(--warn); color: var(--warn); }
+        .message.ok { border-color: var(--ok); color: var(--ok); }
+        .hint { color: var(--muted); font-size: .8rem; }
+        .exam-info { color: var(--muted); font-size: .85rem; }
+        ul.constraints { margin: 6px 0; padding-left: 18px; }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Order diagnostic procedure</h1>
+    <span class="hint">Every order is attributed to you and recorded for audit.</span>
+</header>
+<main>
+    <div th:if="${catalogueFailure != null}" class="message error" id="catalogue-failure" role="alert"
+         th:text="${catalogueFailure}"></div>
+
+    <div th:if="${cancelled != null}" class="message" id="cancelled" role="status">
+        Order cancelled. Nothing was saved.
+    </div>
+
+    <!-- Step 8: confirmation -->
+    <div th:if="${order != null}" class="message ok" id="confirmation" role="status">
+        <strong>Order created.</strong>
+        <div>Tracking number: <strong id="order-number" th:text="${order.orderNumber()}"></strong></div>
+        <div th:text="|${order.examTypeName()} for patient ${order.patientId()}, priority ${order.priority()}|"></div>
+        <div>Status: <span th:text="${order.status()}"></span> (waiting for slot allocation)</div>
+        <div th:if="${order.overrideApproved()}" id="override-note">
+            Created with a clinical override: <span th:text="${order.overrideJustification()}"></span>
+        </div>
+        <div th:if="${order.consent() != null}" id="consent" class="exam-info">
+            <div th:if="${order.consent().informedConsentRequired()}">
+                Informed consent attached<span th:if="${order.consent().consentTemplateId() != null}"
+                    th:text="| (${order.consent().consentTemplateId()})|"></span>.
+            </div>
+            <div th:if="${order.consent().contrastRequired()}">Contrast medium will be used.</div>
+            <div th:if="${order.consent().fastingRequired()}">The patient must fast.</div>
+            <div th:if="${order.consent().preparationGuide() != null}"
+                 th:text="|Preparation: ${order.consent().preparationGuide()}|"></div>
+        </div>
+        <p><a th:href="@{/orders/new}">Order another procedure</a></p>
+    </div>
+
+    <!-- Other failures -->
+    <div th:if="${failure != null and !failure.safetyAlert}" class="message error" id="failure" role="alert">
+        <strong th:text="${failure.message}"></strong>
+        <div th:if="${failure.canRetry()}">The order has not been created. You can send it again.</div>
+    </div>
+
+    <!-- 6b: safety alert -->
+    <div th:if="${failure != null and failure.safetyAlert}" class="message warn" id="safety-alert" role="alert">
+        <strong th:text="${failure.message}"></strong>
+        <ul class="constraints">
+            <li th:each="c : ${failure.constraints}">
+                <span th:text="${c.type()}"></span>
+                <span th:if="${c.absoluteContraindication()}">(absolute contraindication)</span>:
+                <span th:text="${c.description()}"></span>
+            </li>
+        </ul>
+        <div>To proceed, enter a clinical justification for the override below and send the order again, or cancel.</div>
+    </div>
+
+    <form id="order-form" method="post" th:action="@{/orders}" th:if="${order == null}">
+        <label>Patient
+            <input type="text" name="patientId" maxlength="100" th:value="${form.patientId}" placeholder="e.g. PAT-1A2B3C4D">
+            <span class="field-error" id="patientId-error" th:if="${errors != null and errors['patientId'] != null}" th:text="${errors['patientId']}"></span>
+        </label>
+        <label>Examination type
+            <select name="examTypeCode">
+                <option value="">Select…</option>
+                <option th:each="e : ${examTypes}" th:value="${e.code()}" th:selected="${e.code() == form.examTypeCode}"
+                        th:text="|${e.name()} (${e.modality()}, ${e.estimatedDurationMinutes()} min)|"></option>
+            </select>
+            <span class="field-error" id="examTypeCode-error" th:if="${errors != null and errors['examTypeCode'] != null}" th:text="${errors['examTypeCode']}"></span>
+        </label>
+        <label>Clinical indication
+            <textarea name="clinicalIndication" maxlength="2000" th:text="${form.clinicalIndication}"></textarea>
+            <span class="field-error" id="clinicalIndication-error" th:if="${errors != null and errors['clinicalIndication'] != null}" th:text="${errors['clinicalIndication']}"></span>
+        </label>
+        <label>Clinical justification
+            <textarea name="clinicalJustification" maxlength="2000" th:text="${form.clinicalJustification}"></textarea>
+            <span class="field-error" id="clinicalJustification-error" th:if="${errors != null and errors['clinicalJustification'] != null}" th:text="${errors['clinicalJustification']}"></span>
+        </label>
+        <label>Priority
+            <select name="priority">
+                <option value="">Select…</option>
+                <option th:each="p : ${priorities}" th:value="${p}" th:selected="${p == form.priority}" th:text="${p}"></option>
+            </select>
+            <span class="field-error" id="priority-error" th:if="${errors != null and errors['priority'] != null}" th:text="${errors['priority']}"></span>
+        </label>
+        <label th:if="${failure != null and failure.safetyAlert}">Clinical override justification
+            <textarea name="overrideJustification" id="overrideJustification" maxlength="2000" th:text="${form.overrideJustification}"></textarea>
+            <span class="field-error" th:if="${errors != null and errors['overrideJustification'] != null}" th:text="${errors['overrideJustification']}"></span>
+        </label>
+        <div class="actions">
+            <button type="submit" class="primary"
+                    th:text="${failure != null and failure.safetyAlert} ? 'Send with override' : 'Submit order'">Submit order</button>
+            <button type="submit" class="danger" formnovalidate th:formaction="@{/orders/cancel}"
+                    th:if="${failure != null and failure.safetyAlert}">Cancel order</button>
+        </div>
+    </form>
+</main>
+</body>
+</html>

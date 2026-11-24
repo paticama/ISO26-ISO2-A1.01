@@ -1,0 +1,21 @@
+@startuml uc-aad-05-comm-alt-a1
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+
+title UC-AAD-05: Book Requested Examination (C5 v1.0.0)\nCommunication Diagram - Alternative Flow A1: Occupied Slot
+
+actor ":AdmissionsStaff" as adm
+boundary ":BookingUI" as ui
+control ":BookingController" as ctrl
+control ":BookingService" as srv
+control ":ScheduleService (C3)" as c3
+
+adm -- ui : 1: selectSlotAndConfirm(orderId, slotId) >\n< 7: displayError("SLOT_UNAVAILABLE") & refreshCompatibleSlots()
+
+ui -- ctrl : 2: postBooking(BookRequestDTO) >\n< 6: HTTP 409 (SLOT_UNAVAILABLE + refreshedSlots)
+
+ctrl -- srv : 3: bookExamination(BookRequestDTO) >\n< 5: returnSlotUnavailableWithAlternatives(refreshedSlots)
+
+srv -- c3 : 4: reserveSlotAtomically(slotId) -> [Occupied]\n4.1: findCompatibleSlots(modality, priority) >
+@enduml

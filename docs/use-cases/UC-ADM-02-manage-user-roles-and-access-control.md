@@ -32,15 +32,18 @@
 
 ## RADIT Disciplines
 - [x] Requirements
-- [x] Analysis
-- [ ] Design
-- [ ] Implementation
-- [ ] Testing
+- [x] Analysis: [class](../diagrams/UC-ADM-02/A1-analysis-class-diagram.puml), [activity](../diagrams/UC-ADM-02/A2-analysis-activity-diagram.puml) (main + A1-A4), [interaction](../diagrams/UC-ADM-02/A3-analysis-interaction-diagram.puml).
+- [x] Design: contracts in `sescam-common` (`es.uclm.esi.sescam.security.api`); [design class diagram](../diagrams/UC-ADM-02/D1-design-class-diagram.puml) and [design sequence diagram](../diagrams/UC-ADM-02/D2-design-sequence-diagram.puml), both covering server and client.
+- [x] Implementation: server slice (`AccessControlServiceImpl`, `RoleAdministrationController`) and client slice (`RoleAdminViewController`, `RoleChangeForm`, `RoleAdminApiClient`, `security/roles.html`).
+- [x] Testing: JUnit 5 + Mockito. Server: `AccessControlServiceImplTest` (15), `DomainTest` (6), `RoleAdministrationControllerTest` (6), `RoleChangeAuditIntegrationTest` (1). Client: `RoleChangeFormTest` (4), `RoleAdminApiClientTest` (6), `RoleAdminViewControllerTest` (10), one per outcome A1-A4. JaCoCo ≥ 80% in `sescam-security` and `sescam-client-app`.
 
 ## Contracts and Interfaces
 - **System:** sescam-security.
 - **Inputs:** Target user account, requested role assignment or change, and authenticated administrator identity.
 - **Outputs:** Current role assignment, validation and save result, and confirmation of resulting access.
+- **Interfaces:** `AccessControlService` (`getRoleAssignments`, `validateRoleChange`, `confirmRoleChange`), `RoleAssignmentDTO`, `RoleChangeRequestDTO`, `RoleChangeResultDTO`, `RoleDTO`, `ChangeOutcome`, `AccessDeniedException`.
+- **REST API (server-app):** `GET /api/security/users/{id}/roles`, `POST .../roles/validate`, `POST .../roles/confirm`. **Client view:** `/security/roles`.
+- **Open:** the safeguards for A4 are not defined yet; the API only reports `SAFEGUARD_REQUIRED` and the change is not applied. There is no endpoint to list the available roles, so the client takes the role name as text.
 
 ## Acceptance Criteria
 - [ ] An authorized administrator can view a user's current role assignments.

@@ -1,0 +1,103 @@
+@startuml uc-phy-01-class-design-client
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam classAttributeIconSize 0
+
+title UC-PHY-01: Design Class Diagram – client slice (sescam-client-app)\nC4 sescam-orders v1.0.0
+
+package "sescam-client-app (com.sescam.radiodiagnostics.client.orders)" {
+  class OrderViewController <<Controller>> {
+    - apiClient : OrderApiClient
+    + newOrder(model) : String  <<GET /orders/new>>
+    + submit(form, model, actorId, actorRole) : String  <<POST /orders>>
+    + cancel(model) : String  <<POST /orders/cancel>>
+    - prepare(model, form) : void
+  }
+
+  class OrderForm {
+    - patientId : String
+    - examTypeCode : String
+    - clinicalIndication : String
+    - clinicalJustification : String
+    - priority : PriorityLevel
+    - overrideJustification : String
+    + validate() : Map<String, String>
+    + toPayload() : OrderPayload
+  }
+
+  class OrderApiClient <<Component>> {
+    - restClient : RestClient
+    - objectMapper : ObjectMapper
+    + listExamTypes() : List<ExamTypeDTO>
+    + createOrder(OrderPayload, actorId, actorRole) : OrderResponseDTO
+    ~ toException(ClientHttpResponse) : OrderClientException
+  }
+
+  class OrderPayload <<record>> {
+    + patientId : String
+    + examTypeCode : String
+    + clinicalIndication : String
+    + clinicalJustification : String
+    + priority : String
+    + overrideJustification : String
+  }
+
+  class OrderClientException <<exception>> {
+    - kind : Kind
+    - constraints : List<SafetyConstraintDTO>
+    - invalidFields : List<String>
+    + isSafetyAlert() : boolean
+    + canRetry() : boolean
+  }
+
+  enum Kind {
+    FORBIDDEN
+    INVALID_DATA
+    EXAM_NOT_FOUND
+    SAFETY_ALERT
+    FAILED
+    SERVER_UNREACHABLE
+  }
+
+  class "orders/new.html" as View <<Thymeleaf view>> {
+    catalogue select
+    prescription form
+    safety alert + override / cancel (6b)
+    confirmation + consent (6a)
+  }
+}
+
+package "sescam-common" {
+  class ExamTypeDTO <<record>>
+  class OrderResponseDTO <<record>>
+  class SafetyConstraintDTO <<record>>
+  enum PriorityLevel
+}
+
+package "sescam-server-app" {
+  class OrderRestController {
+    GET /api/v1/orders/exam-types
+    POST /api/v1/orders
+  }
+}
+
+OrderViewController --> OrderApiClient
+OrderViewController ..> OrderForm : binds
+OrderViewController ..> View : renders
+OrderForm ..> OrderPayload : creates
+OrderForm --> PriorityLevel
+OrderApiClient ..> OrderPayload : sends
+OrderApiClient ..> OrderClientException : <<throws>>
+OrderApiClient ..> ExamTypeDTO
+OrderApiClient ..> OrderResponseDTO
+OrderClientException --> Kind
+OrderClientException --> "0..*" SafetyConstraintDTO
+OrderApiClient ..> OrderRestController : REST/JSON\nX-Actor-Id, X-Actor-Role
+
+note right of OrderClientException
+  HTTP -> Kind: 403 FORBIDDEN, 400 INVALID_DATA (+ invalidFields),
+  404 EXAM_NOT_FOUND, 422 SAFETY_ALERT (+ constraints),
+  other FAILED, no connection SERVER_UNREACHABLE.
+end note
+@enduml
