@@ -44,7 +44,7 @@ else valid
     alt status EXECUTED_PENDING_REPORT
       V --> Phy : 5. "Execution recorded" + metrics (+ incidents logged, 2a)
     else status INCOMPLETE_INCIDENT (2b)
-      V --> Phy : "Procedure aborted. Admissions notified for rescheduling."
+      V --> Phy : "Procedure aborted. Rescheduling must be requested to Admissions manually."
     end
   else 400 / 403 / 404 / 409 / 5xx / no connection
     RC --> A : {error, message[, invalidFields]}

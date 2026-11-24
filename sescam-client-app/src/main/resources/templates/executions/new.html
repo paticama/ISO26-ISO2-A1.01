@@ -49,7 +49,7 @@
     </div>
     <div th:if="${record != null and record.status().name() == 'INCOMPLETE_INCIDENT'}" class="message warn"
          id="aborted" role="status">
-        <strong>Procedure aborted. Admissions notified for rescheduling.</strong>
+        <strong>Procedure aborted. Rescheduling must be requested to Admissions manually.</strong>
         <div th:text="|Reason: ${record.abortReason()}|"></div>
         <div th:text="|${record.incidents().size()} incident(s) logged and flagged for audit.|"></div>
         <p><a th:href="@{/executions/new}">Log another procedure</a></p>

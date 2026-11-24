@@ -136,7 +136,7 @@ class ExecutionViewControllerTest {
                         .param("incidentType", "ANAPHYLACTOID_EVENT").param("incidentSeverity", "SEVERE")
                         .param("incidentDescription", "Anaphylactoid reaction"))
                 .andExpect(content().string(containsString("id=\"aborted\"")))
-                .andExpect(content().string(containsString("Admissions notified for rescheduling.")))
+                .andExpect(content().string(containsString("Rescheduling must be requested to Admissions manually.")))
                 .andExpect(content().string(containsString("Reason: Severe reaction")));
     }
 
