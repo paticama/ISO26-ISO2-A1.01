@@ -255,14 +255,29 @@ class OrderServiceImplTest {
     }
 
     @Test
-    @DisplayName("If the audit entry of a stored order cannot be recorded, the request fails")
+    @DisplayName("If the audit entry of an order cannot be recorded, the request fails and nothing is stored")
     void auditFailureOnSuccessPropagates() {
         org.mockito.Mockito.doThrow(new IllegalStateException("audit store down"))
                 .when(auditService).recordEvent(any());
 
         assertThatThrownBy(() -> service.createOrder(request("XR-CHEST", null)))
                 .isInstanceOf(IllegalStateException.class);
+        assertThat(repository.count()).isZero();
         verify(eventPublisher, never()).publishOrderCreated(any());
+    }
+
+    @Test
+    @DisplayName("A retry after an audit failure creates exactly one order")
+    void retryAfterAuditFailureCreatesOneOrder() {
+        org.mockito.Mockito.doThrow(new IllegalStateException("audit store down")).doNothing()
+                .when(auditService).recordEvent(any());
+
+        assertThatThrownBy(() -> service.createOrder(request("XR-CHEST", null)))
+                .isInstanceOf(IllegalStateException.class);
+        service.createOrder(request("XR-CHEST", null));
+
+        assertThat(repository.count()).isEqualTo(1);
+        verify(eventPublisher).publishOrderCreated(any());
     }
 
     @Test

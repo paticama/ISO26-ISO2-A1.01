@@ -110,14 +110,15 @@ public class OrderServiceImpl implements OrderService {
                 exam.requiresContrast(), consent, overridden ? request.overrideJustification() : null,
                 request.actorId(), now);
 
-        DiagnosticOrder saved = orderRepository.save(order);
-
+        // Audit before saving (NFR-11): if the audit store fails, nothing is stored or published,
+        // so a retry of the same order does not create a duplicate.
         String action = overridden ? "ORDER_OVERRIDE_APPROVED"
                 : attachConsent ? "ORDER_CREATED_CONTRAST_CONSENT_REQUIRED" : "ORDER_CREATED";
-        audit(action, request.actorId(), saved.getId(),
-                "Order " + saved.getOrderNumber() + " for patient " + saved.getPatientId() + ", exam " + exam.code()
-                        + (overridden ? ". Override: " + saved.getOverrideJustification() : ""));
+        audit(action, request.actorId(), order.getId(),
+                "Order " + order.getOrderNumber() + " for patient " + order.getPatientId() + ", exam " + exam.code()
+                        + (overridden ? ". Override: " + order.getOverrideJustification() : ""));
 
+        DiagnosticOrder saved = orderRepository.save(order);
         eventPublisher.publishOrderCreated(new OrderCreatedEvent(saved.getId(), saved.getOrderNumber(),
                 saved.getPatientId(), saved.getExamTypeCode(), saved.getPriority(), saved.isRequiresContrast(),
                 saved.getOrderedAt()));
@@ -148,7 +149,7 @@ public class OrderServiceImpl implements OrderService {
         }
     }
 
-    /** Audit entry of a stored order: if it cannot be recorded the request fails (NFR-11). */
+    /** Audit entry of an order about to be stored: if it cannot be recorded, the request fails before saving (NFR-11). */
     private void audit(String action, String actorId, String resourceKey, String details) {
         auditService.recordEvent(new AuditEventDTO(action, actorIdOrUnknown(actorId), resourceKey, null, null,
                 details, clock.instant()));
