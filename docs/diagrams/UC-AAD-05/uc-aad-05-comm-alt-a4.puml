@@ -1,0 +1,29 @@
+@startuml uc-aad-05-comm-alt-a4
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+
+title UC-AAD-05: Book Requested Examination (C5 v1.0.0)\nCommunication Diagram - Alternative Flow A4: Notification Failure
+
+actor ":AdmissionsStaff" as adm
+boundary ":BookingUI" as ui
+control ":BookingController" as ctrl
+control ":BookingService" as srv
+entity ":Booking" as booking
+control ":NotificationService (C8)" as c8
+control ":AuditService (C1)" as c1
+
+adm -- ui : 1: confirmBooking(orderId, slotId) >\n< 8: displayBookedWithWarning("Booked, but notification FAILED / PENDING_RETRY")
+
+ui -- ctrl : 2: postBooking(BookRequestDTO) >\n< 7: HTTP 201 (BookingResponseDTO, notificationStatus=FAILED)
+
+ctrl -- srv : 3: bookExamination(BookRequestDTO) >\n< 6: returnBookingWithNotificationWarning()
+
+srv -- booking : 4: createConfirmedBooking(BOOKED) >
+
+srv -- c8 : 5: sendBookingNotification() -> [Delivery Failure] >
+
+srv -- booking : 5.1: markNotificationStatus(FAILED_PENDING_RETRY) >
+
+srv -- c1 : 5.2: recordAuditEvent("BOOKING_NOTIFICATION_FAILED", bookingId) >
+@enduml

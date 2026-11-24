@@ -40,7 +40,7 @@
 
 ## RADIT Disciplines
 - [x] Requirements: Specify examination booking, notification, and worklist integration.
-- [ ] Analysis: Define booking transaction and notification boundaries.
+- [x] Analysis: Define booking transaction and notification boundaries ([`docs/diagrams/UC-AAD-05/`](../diagrams/UC-AAD-05/)).
 - [ ] Design: Define booking DTOs, state transitions, and slot-validation contracts.
 - [ ] Implementation: Implement booking, notification, and worklist update services.
 - [ ] Testing: Test occupied slots, priority, state transitions, cancellation, rescheduling, and concurrency.
