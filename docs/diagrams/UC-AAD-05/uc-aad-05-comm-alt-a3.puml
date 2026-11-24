@@ -1,0 +1,39 @@
+@startuml uc-aad-05-comm-alt-a3
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+
+title UC-AAD-05: Book Requested Examination (C5 v1.0.0)\nCommunication Diagram - Alternative Flow A3: Cancellation Request
+
+actor ":AdmissionsStaff" as adm
+boundary ":BookingUI" as ui
+control ":BookingController" as ctrl
+control ":BookingService" as srv
+control ":PolicyService (C2)" as c2
+control ":ScheduleService (C3)" as c3
+control ":OrderService (C4)" as c4
+entity ":Booking" as booking
+control ":WorklistService (C5)" as wl
+control ":NotificationService (C8)" as c8
+control ":AuditService (C1)" as c1
+
+adm -- ui : 1: requestCancellation(bookingId, reason) >\n< 11: displayCancellationConfirmation()
+
+ui -- ctrl : 2: deleteOrCancelBooking(bookingId, reason) >\n< 10: HTTP 200 (BookingResponseDTO)
+
+ctrl -- srv : 3: cancelBooking(bookingId, reason) >\n< 9: returnCancelledBooking()
+
+srv -- c2 : 4: getCancellationPolicy("booking.cancellation.*") >
+
+srv -- booking : 5: cancel(reason)\n5.1: appendBookingHistoryEntry(CANCELLED) >
+
+srv -- c3 : 6: releaseSlot(slotId) >
+
+srv -- c4 : 6.1: revertOrderToPending(orderId) >
+
+srv -- wl : 7: removeBookingFromWorklist(bookingId) >
+
+srv -- c8 : 8: sendCancellationNotification(patientId) >
+
+srv -- c1 : 8.1: recordAuditEvent("EXAMINATION_CANCELLED", bookingId, reason) >
+@enduml

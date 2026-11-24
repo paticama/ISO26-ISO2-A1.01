@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>User roles and access control – SESCAM</title>
+    <style>
+        :root { --border: #d0d7de; --muted: #57606a; --error: #b42318; --ok: #1a7f37; --warn: #9a6700; --bg: #f6f8fa; }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: system-ui, sans-serif; color: #1f2328; background: #fff; }
+        header { padding: 16px; border-bottom: 1px solid var(--border); background: var(--bg); }
+        header h1 { margin: 0; font-size: 1.25rem; }
+        main { padding: 16px; max-width: 900px; margin: 0 auto; }
+        form { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; align-items: end; margin-bottom: 12px; }
+        label { display: flex; flex-direction: column; gap: 4px; font-size: .9rem; }
+        input { padding: 8px; border: 1px solid var(--border); border-radius: 6px; font: inherit; }
+        .field-error { color: var(--error); font-size: .8rem; }
+        .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        button { padding: 8px 14px; border-radius: 6px; border: 1px solid var(--border); background: #fff; font: inherit; cursor: pointer; }
+        button.primary { background: #0969da; color: #fff; border-color: #0969da; }
+        button.confirm { background: var(--ok); color: #fff; border-color: var(--ok); }
+        .message { margin: 16px 0; padding: 12px; border-radius: 6px; border: 1px solid var(--border); }
+        .message.error { border-color: var(--error); color: var(--error); }
+        .message.warn { border-color: var(--warn); color: var(--warn); }
+        .message.ok { border-color: var(--ok); color: var(--ok); }
+        .chips { display: flex; gap: 6px; flex-wrap: wrap; padding: 0; margin: 4px 0; list-style: none; }
+        .chips li { padding: 2px 10px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); font-size: .85rem; }
+        .hint { color: var(--muted); font-size: .8rem; }
+    </style>
+</head>
+<body>
+<header>
+    <h1>User roles and access control</h1>
+    <span class="hint">Every role change is attributed to you and recorded for audit.</span>
+</header>
+<main>
+    <form id="lookup-form" method="get" th:action="@{/security/roles/lookup}">
+        <label>User account
+            <input type="text" name="userId" maxlength="100" required th:value="${form.userId}" placeholder="e.g. physician-7">
+            <span class="field-error" id="userId-error" th:if="${errors != null and errors['userId'] != null}" th:text="${errors['userId']}"></span>
+        </label>
+        <div class="actions">
+            <button type="submit" class="primary">Show roles</button>
+        </div>
+    </form>
+
+    <div th:if="${failure != null}" class="message error" id="failure" role="alert">
+        <strong th:text="${failure.message}"></strong>
+        <div th:if="${failure.canRetry()}">You can try again; no assignment was changed.</div>
+    </div>
+
+    <section th:if="${assignment != null}" id="assignment">
+        <h2 th:text="|Current roles of ${assignment.userId()}|"></h2>
+        <p>Account status: <strong id="account-status" th:text="${assignment.accountStatus()}"></strong></p>
+        <ul class="chips" id="current-roles">
+            <li th:each="r : ${assignment.roles()}" th:text="${r.name()}"></li>
+        </ul>
+
+        <form id="change-form" method="post" th:action="@{/security/roles/validate}">
+            <input type="hidden" name="userId" th:value="${assignment.userId()}">
+            <label>New role
+                <input type="text" name="roleName" maxlength="100" required th:value="${form.roleName}" placeholder="e.g. PHYSICIAN">
+                <span class="field-error" id="roleName-error" th:if="${errors != null and errors['roleName'] != null}" th:text="${errors['roleName']}"></span>
+            </label>
+            <div class="actions">
+                <button type="submit" class="primary">Review change</button>
+            </div>
+        </form>
+    </section>
+
+    <!-- Validation or save result: one block per outcome of the use case -->
+    <section th:if="${result != null}" id="result">
+        <div th:if="${result.outcome().name() == 'VALID'}" class="message ok" id="outcome-valid">
+            <strong th:text="${result.message()}"></strong>
+            <div>Roles after the change:</div>
+            <ul class="chips"><li th:each="r : ${result.roles()}" th:text="${r.name()}"></li></ul>
+            <div>Resulting permissions:</div>
+            <ul class="chips" id="effective-permissions"><li th:each="p : ${result.effectivePermissions()}" th:text="${p}"></li></ul>
+            <form id="confirm-form" method="post" th:action="@{/security/roles/confirm}">
+                <input type="hidden" name="userId" th:value="${form.userId}">
+                <input type="hidden" name="roleName" th:value="${form.roleName}">
+                <div class="actions">
+                    <button type="submit" class="confirm">Confirm change</button>
+                    <a th:href="@{/security/roles/lookup(userId=${form.userId})}">Cancel</a>
+                </div>
+            </form>
+        </div>
+
+        <div th:if="${result.outcome().name() == 'CONFIRMED'}" class="message ok" id="outcome-confirmed" role="status">
+            <strong th:text="${result.message()}"></strong>
+            <div>Roles now:</div>
+            <ul class="chips"><li th:each="r : ${result.roles()}" th:text="${r.name()}"></li></ul>
+            <div>Effective permissions:</div>
+            <ul class="chips"><li th:each="p : ${result.effectivePermissions()}" th:text="${p}"></li></ul>
+        </div>
+
+        <div th:if="${result.outcome().name() == 'UNAUTHORIZED'}" class="message error" id="outcome-unauthorized" role="alert">
+            <strong th:text="${result.message()}"></strong>
+            <div>The assignment has not been changed.</div>
+        </div>
+
+        <div th:if="${result.outcome().name() == 'INVALID'}" class="message error" id="outcome-invalid" role="alert">
+            <strong th:text="${result.message()}"></strong>
+            <div>The assignment has not been changed. Review the role and try again.</div>
+            <ul class="chips"><li th:each="r : ${result.roles()}" th:text="${r.name()}"></li></ul>
+        </div>
+
+        <div th:if="${result.outcome().name() == 'SAFEGUARD_REQUIRED'}" class="message warn" id="outcome-safeguard" role="alert">
+            <strong th:text="${result.message()}"></strong>
+            <div>This is a sensitive assignment and it has not been applied.</div>
+        </div>
+
+        <div th:if="${result.outcome().name() == 'SAVE_FAILED'}" class="message error" id="outcome-save-failed" role="alert">
+            <strong th:text="${result.message()}"></strong>
+            <div>Access has NOT changed.</div>
+            <form method="post" th:action="@{/security/roles/confirm}">
+                <input type="hidden" name="userId" th:value="${form.userId}">
+                <input type="hidden" name="roleName" th:value="${form.roleName}">
+                <button type="submit">Retry</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Field errors when the form is posted without data (change form not shown) -->
+    <div th:if="${errors != null and assignment == null and result == null and failure == null and errors['roleName'] != null}"
+         class="message error" role="alert" th:text="${errors['roleName']}"></div>
+</main>
+</body>
+</html>

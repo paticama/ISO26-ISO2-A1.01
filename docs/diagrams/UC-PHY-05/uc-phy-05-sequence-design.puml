@@ -50,11 +50,16 @@ else allowed
         else completed
           S -> S : status = EXECUTED_PENDING_REPORT
         end
-        S -> R : save(ProcedureExecution + ClinicalIncidents linked to patientId)
+        S -> S : build ProcedureExecution + ClinicalIncidents linked to patientId
         S -> AU : recordEvent(EXECUTION_RECORDED | PROCEDURE_ABORTED)
         loop 2a each incident
           S -> AU : recordEvent(CLINICAL_INCIDENT_LOGGED, severity, type)
         end
+        note right of AU
+          Audited before saving (NFR-11): if the audit fails,
+          nothing is stored or published and a retry is not a 409.
+        end note
+        S -> R : save(ProcedureExecution)
         S -> EV : publishExecutionRecorded(ProcedureExecutionEvent)
         note right of EV
           C4 sets the order to EXECUTED_PENDING_REPORT /

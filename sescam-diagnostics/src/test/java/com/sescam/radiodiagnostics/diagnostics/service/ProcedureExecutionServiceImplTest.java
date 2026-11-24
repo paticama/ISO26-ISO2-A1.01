@@ -37,6 +37,7 @@ import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -230,7 +231,7 @@ class ProcedureExecutionServiceImplTest {
     }
 
     @Test
-    @DisplayName("A failing audit store does not hide a refusal, but fails a stored execution")
+    @DisplayName("A failing audit store does not hide a refusal, and an execution it cannot audit is not stored")
     void auditFailures() {
         doThrow(new IllegalStateException("audit store down")).when(auditService).recordEvent(any());
 
@@ -239,7 +240,26 @@ class ProcedureExecutionServiceImplTest {
                 .isInstanceOf(UnauthorizedExecutionAccessException.class);
         assertThatThrownBy(() -> service.recordExecution(ctLog(false, null, List.of())))
                 .isInstanceOf(IllegalStateException.class);
+        assertThat(repository.count()).isZero();
         verify(eventPublisher, never()).publishExecutionRecorded(any());
+    }
+
+    @Test
+    @DisplayName("An incident that cannot be audited leaves nothing stored, and a retry succeeds without a 409")
+    void incidentAuditFailureThenRetry() {
+        doNothing().doThrow(new IllegalStateException("audit store down")).doNothing()
+                .when(auditService).recordEvent(any());
+
+        assertThatThrownBy(() -> service.recordExecution(ctLog(false, null, List.of(REACTION))))
+                .isInstanceOf(IllegalStateException.class);
+        assertThat(repository.count()).isZero();
+        verify(eventPublisher, never()).publishExecutionRecorded(any());
+
+        ExecutionRecordDTO retry = service.recordExecution(ctLog(false, null, List.of(REACTION)));
+
+        assertThat(retry.status()).isEqualTo(ExecutionStatus.EXECUTED_PENDING_REPORT);
+        assertThat(repository.count()).isEqualTo(1);
+        verify(eventPublisher).publishExecutionRecorded(any());
     }
 
     @Test

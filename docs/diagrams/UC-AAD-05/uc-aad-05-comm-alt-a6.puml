@@ -1,0 +1,24 @@
+@startuml uc-aad-05-comm-alt-a6
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+
+title UC-AAD-05: Book Requested Examination (C5 v1.0.0)\nCommunication Diagram - Alternative Flow A6: Unauthorized Policy Action
+
+actor ":AdmissionsStaff" as adm
+boundary ":BookingUI" as ui
+control ":BookingController" as ctrl
+control ":BookingService" as srv
+control ":AccessControlService (C1)" as c1
+control ":AuditService (C1)" as audit
+
+adm -- ui : 1: attemptModifyBookingPolicy(policyKey, value) >\n< 6: displayError("403 Forbidden: System Administrator role required")
+
+ui -- ctrl : 2: putPolicyOverride(policyKey, value) >\n< 5: HTTP 403 (UNAUTHORIZED_POLICY_ACTION)
+
+ctrl -- srv : 3: updateBookingPolicy(actorId, role) >\n< 4.2: throw UnauthorizedAccessException()
+
+srv -- c1 : 4: canManageConfiguration(actorId, "ADMISSIONS") -> false >
+
+srv -- audit : 4.1: recordAuditEvent("UNAUTHORIZED_POLICY_ACTION_DENIED", actorId) >
+@enduml

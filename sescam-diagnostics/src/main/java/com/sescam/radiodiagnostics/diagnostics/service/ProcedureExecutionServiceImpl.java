@@ -108,23 +108,26 @@ public class ProcedureExecutionServiceImpl implements ProcedureExecutionService 
                     i.occurredAt() == null ? request.endedAt() : i.occurredAt(), request.aborted()));
         }
 
-        ProcedureExecution saved = executionRepository.save(new ProcedureExecution(
+        ProcedureExecution execution = new ProcedureExecution(
                 executionId, orderId, procedure.patientId(), procedure.examTypeName(), procedure.modality(),
                 request.startedAt(), request.endedAt(), request.roomEquipmentId().trim(),
                 blankToNull(request.contrastBatch()), request.contrastVolumeMl(),
                 request.doseDlp(), request.doseCtdiVol(), request.radiotracerActivityMBq(),
                 request.informedConsentVerified(), status, request.aborted() ? request.abortReason().trim() : null,
-                incidents, request.actorId(), now));
+                incidents, request.actorId(), now);
 
-        audit(request.aborted() ? "PROCEDURE_ABORTED" : "EXECUTION_RECORDED", request.actorId(), saved.getId(),
-                "Order " + orderId + ", patient " + saved.getPatientId() + ", status " + status
-                        + (request.aborted() ? ", reason: " + saved.getAbortReason() : ""));
-        for (ClinicalIncident incident : saved.getIncidents()) {
+        // Audit before saving (NFR-11): if the audit store fails, nothing is stored or published,
+        // so the client gets an error and a retry does not hit "already recorded" (409).
+        audit(request.aborted() ? "PROCEDURE_ABORTED" : "EXECUTION_RECORDED", request.actorId(), execution.getId(),
+                "Order " + orderId + ", patient " + execution.getPatientId() + ", status " + status
+                        + (request.aborted() ? ", reason: " + execution.getAbortReason() : ""));
+        for (ClinicalIncident incident : execution.getIncidents()) {
             audit("CLINICAL_INCIDENT_LOGGED", request.actorId(), incident.getId(),
                     incident.getSeverity() + " " + incident.getType() + " for patient " + incident.getPatientId()
                             + " during order " + orderId);
         }
 
+        ProcedureExecution saved = executionRepository.save(execution);
         eventPublisher.publishExecutionRecorded(new ProcedureExecutionEvent(saved.getId(), orderId,
                 saved.getPatientId(), status, saved.getAbortReason(), now));
 
@@ -139,7 +142,10 @@ public class ProcedureExecutionServiceImpl implements ProcedureExecutionService 
         }
     }
 
-    /** Audit of a stored execution or incident: if it cannot be recorded the request fails (NFR-11). */
+    /**
+     * Audit of an execution or incident about to be stored: if it cannot be recorded, the request fails
+     * before anything is stored (NFR-11).
+     */
     private void audit(String action, String actorId, String resourceKey, String details) {
         auditService.recordEvent(new AuditEventDTO(action, isBlank(actorId) ? "UNKNOWN" : actorId, resourceKey,
                 null, null, details, clock.instant()));

@@ -1,0 +1,33 @@
+@startuml uc-aad-05-comm-alt-a2
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+
+title UC-AAD-05: Book Requested Examination (C5 v1.0.0)\nCommunication Diagram - Alternative Flow A2: Reschedule Request
+
+actor ":AdmissionsStaff" as adm
+boundary ":BookingUI" as ui
+control ":BookingController" as ctrl
+control ":BookingService" as srv
+control ":ScheduleService (C3)" as c3
+entity ":Booking" as booking
+control ":WorklistService (C5)" as wl
+control ":NotificationService (C8)" as c8
+control ":AuditService (C1)" as c1
+
+adm -- ui : 1: requestReschedule(bookingId, newSlotId, reason) >\n< 10: displayRescheduleConfirmation()
+
+ui -- ctrl : 2: putReschedule(bookingId, RescheduleDTO) >\n< 9: HTTP 200 (BookingResponseDTO)
+
+ctrl -- srv : 3: rescheduleBooking(bookingId, dto) >\n< 8: returnRescheduledBooking()
+
+srv -- c3 : 4: reserveSlotAtomically(newSlotId)\n4.1: releaseSlot(oldSlotId) >
+
+srv -- booking : 5: reschedule(newSlotId, reason)\n5.1: appendBookingHistoryEntry(RESCHEDULED) >
+
+srv -- wl : 6: updateWorklistSlot(bookingId, newSlotId) >
+
+srv -- c8 : 7: sendRescheduleNotification(patientId, newSlot) >
+
+srv -- c1 : 7.1: recordAuditEvent("EXAMINATION_RESCHEDULED", bookingId) >
+@enduml
