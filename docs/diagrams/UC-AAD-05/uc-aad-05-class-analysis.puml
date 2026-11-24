@@ -1,0 +1,95 @@
+@startuml uc-aad-05-class-analysis
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 6
+
+title UC-AAD-05: Book Requested Examination - Analysis Class Diagram\nTitular Module: C5 (sescam-admissions v1.0.0)
+
+package "C5: sescam-admissions (Titular Module)" {
+    enum BookingStatus {
+        PENDING
+        BOOKED
+        RESCHEDULED
+        CANCELLED
+    }
+
+    class Booking {
+        - bookingId: String
+        - orderId: String
+        - patientId: String
+        - slotId: String
+        - scheduledStart: LocalDateTime
+        - scheduledEnd: LocalDateTime
+        - status: BookingStatus
+        - version: long
+        - notificationStatus: String
+        + confirm(): void
+        + reschedule(newSlotId, reason): void
+        + cancel(reason): void
+    }
+
+    class BookingHistoryEntry {
+        - entryId: String
+        - previousStatus: BookingStatus
+        - newStatus: BookingStatus
+        - previousSlotId: String
+        - newSlotId: String
+        - reason: String
+        - changedBy: String
+        - changedAt: Instant
+    }
+
+    class WaitlistEntry {
+        - waitlistId: String
+        - orderId: String
+        - priorityScore: int
+        - status: String
+        + promoteToBooked(): void
+    }
+
+    class WorklistItem {
+        - worklistId: String
+        - bookingId: String
+        - roomId: String
+        - modality: String
+        - scheduledTime: LocalDateTime
+        - status: String
+    }
+
+    Booking "1" *-- "1..*" BookingHistoryEntry : preserves history
+    Booking "0..1" --> "0..1" WaitlistEntry : promotes from
+    Booking "1" --> "0..1" WorklistItem : updates daily worklist
+}
+
+package "Collaborating Modules (via sescam-common interfaces)" {
+    class "OrderService (C4)" as C4 <<interface>> {
+        + getPendingOrder(orderId)
+        + markOrderBooked(orderId)
+    }
+    class "ScheduleService (C3)" as C3 <<interface>> {
+        + findCompatibleSlots(modality, priority)
+        + reserveSlotAtomically(slotId, version)
+        + releaseSlot(slotId)
+    }
+    class "PatientService (C6)" as C6 <<interface>> {
+        + getPatientSummary(patientId)
+    }
+    class "PolicyService (C2)" as C2 <<interface>> {
+        + getIntPolicy(key, defaultValue)
+    }
+    class "NotificationService (C8)" as C8 <<interface>> {
+        + sendBookingNotification(...)
+    }
+    class "AccessControlService & AuditService (C1)" as C1 <<interface>> {
+        + authorize(actorId, role)
+        + recordEvent(auditEvent)
+    }
+}
+
+Booking ..> C4 : validates & updates order state
+Booking ..> C3 : checks & reserves slot capacity
+Booking ..> C6 : verifies patient eligibility
+Booking ..> C2 : checks cancellation/booking policies
+Booking ..> C8 : triggers patient notification
+Booking ..> C1 : enforces RBAC & NFR-11 audit
+@enduml

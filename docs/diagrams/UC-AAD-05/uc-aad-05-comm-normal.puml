@@ -1,0 +1,42 @@
+@startuml uc-aad-05-comm-normal
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+
+title UC-AAD-05: Book Requested Examination (C5 v1.0.0)\nCommunication Diagram - Main Success Scenario (Normal Flow)
+
+actor ":AdmissionsStaff" as adm
+boundary ":BookingUI" as ui
+control ":BookingController" as ctrl
+control ":BookingService" as srv
+control ":OrderService (C4)" as c4
+control ":ScheduleService (C3)" as c3
+control ":PatientService (C6)" as c6
+control ":PolicyService (C2)" as c2
+entity ":Booking" as booking
+control ":WorklistService (C5)" as wl
+control ":NotificationService (C8)" as c8
+control ":AuditService (C1)" as c1
+
+adm -- ui : 1: selectPendingRequest(orderId)\n3: selectSlotAndConfirm(slotId) >\n< 11: displayBookingAndNotificationOutcome()
+
+ui -- ctrl : 2: getCompatibleOptions(orderId) >\n4: postBooking(BookRequestDTO) >\n< 10: HTTP 201 (BookingResponseDTO)
+
+ctrl -- srv : 2.1: loadBookingContext(orderId) >\n5: bookExamination(BookRequestDTO) >\n< 9: returnBookingOutcome()
+
+srv -- c4 : 2.2: getPendingOrder(orderId)\n5.1: revalidateOrderPending(orderId)\n6.2: markOrderBooked(orderId) >
+
+srv -- c3 : 2.3: findCompatibleSlots(modality, priority)\n5.3: reserveSlotAtomically(slotId, version) >
+
+srv -- c2 : 2.4: getPolicyRules("booking.*") >
+
+srv -- c6 : 5.2: verifyPatientEligible(patientId) >
+
+srv -- booking : 6: createConfirmedBooking(orderId, patientId, slotId)\n6.1: persist() >
+
+srv -- c1 : 6.3: recordAuditEvent("EXAMINATION_BOOKED", bookingId) >
+
+srv -- c8 : 7: sendBookingNotification(patientId, bookingDetails) >
+
+srv -- wl : 8: publishBookingToWorklist(booking) >
+@enduml
