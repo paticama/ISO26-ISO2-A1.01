@@ -1,0 +1,117 @@
+@startuml uc-phy-05-class-design-client
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam classAttributeIconSize 0
+
+title UC-PHY-05: Design Class Diagram – client slice (sescam-client-app)\nC7 sescam-diagnostics v1.0.0
+
+package "sescam-client-app (com.sescam.radiodiagnostics.client.diagnostics)" {
+  class ExecutionViewController <<Controller>> {
+    - apiClient : ExecutionApiClient
+    - zone : ZoneId
+    + newExecution(model, actorId, actorRole) : String  <<GET /executions/new>>
+    + submit(form, model, actorId, actorRole) : String  <<POST /executions>>
+    - prepare(model, form, actorId, actorRole) : void
+  }
+
+  class ExecutionForm {
+    - orderId : String
+    - startedAt : LocalDateTime
+    - endedAt : LocalDateTime
+    - roomEquipmentId : String
+    - contrastBatch : String
+    - contrastVolumeMl : Double
+    - doseDlp : Double
+    - doseCtdiVol : Double
+    - radiotracerActivityMBq : Double
+    - informedConsentVerified : boolean
+    - incidentType : IncidentType
+    - incidentSeverity : IncidentSeverity
+    - incidentDescription : String
+    - incidentTreatment : String
+    - aborted : boolean
+    - abortReason : String
+    + validate() : Map<String, String>
+    + hasIncident() : boolean
+    + toPayload(zone) : ExecutionPayload
+  }
+
+  class ExecutionApiClient <<Component>> {
+    + listPending(actorId, actorRole) : List<ScheduledProcedureDTO>
+    + recordExecution(ExecutionPayload, actorId, actorRole) : ExecutionRecordDTO
+    ~ toException(ClientHttpResponse) : ExecutionClientException
+  }
+
+  class ExecutionPayload <<record>> {
+    orderId, startedAt, endedAt, roomEquipmentId,
+    contrastBatch, contrastVolumeMl,
+    doseDlp, doseCtdiVol, radiotracerActivityMBq,
+    informedConsentVerified, aborted, abortReason,
+    incidents : List<IncidentDTO>
+  }
+
+  class ExecutionClientException <<exception>> {
+    - kind : Kind
+    - invalidFields : List<String>
+    + canRetry() : boolean
+  }
+
+  enum Kind {
+    FORBIDDEN
+    INVALID_DATA
+    PROCEDURE_NOT_FOUND
+    ALREADY_RECORDED
+    FAILED
+    SERVER_UNREACHABLE
+  }
+
+  class "executions/new.html" as View <<Thymeleaf view>> {
+    procedures awaiting execution (select)
+    execution data + doses
+    incident section (2a)
+    abort checkbox + reason (2b)
+    confirmation / aborted notice
+  }
+}
+
+package "sescam-common (common.diagnostics)" {
+  class ScheduledProcedureDTO <<record>>
+  class ExecutionRecordDTO <<record>>
+  class IncidentDTO <<record>>
+  enum IncidentType
+  enum IncidentSeverity
+}
+
+package "sescam-server-app" {
+  class ExecutionRestController {
+    GET /api/v1/executions/pending
+    POST /api/v1/executions
+  }
+}
+
+ExecutionViewController --> ExecutionApiClient
+ExecutionViewController ..> ExecutionForm : binds
+ExecutionViewController ..> View : renders
+ExecutionForm ..> ExecutionPayload : creates
+ExecutionForm ..> IncidentDTO : creates (0..1)
+ExecutionForm --> IncidentType
+ExecutionForm --> IncidentSeverity
+ExecutionApiClient ..> ExecutionPayload : sends
+ExecutionApiClient ..> ScheduledProcedureDTO
+ExecutionApiClient ..> ExecutionRecordDTO
+ExecutionApiClient ..> ExecutionClientException : <<throws>>
+ExecutionClientException --> Kind
+ExecutionApiClient ..> ExecutionRestController : REST/JSON\nX-Actor-Id, X-Actor-Role
+
+note right of ExecutionForm
+  The view documents ONE incident per submission;
+  the API accepts a list. Dose rules per modality are
+  checked by the server and shown as field errors.
+end note
+note right of ExecutionClientException
+  403 FORBIDDEN, 400 INVALID_DATA (+ invalidFields),
+  404 PROCEDURE_NOT_FOUND, 409 ALREADY_RECORDED,
+  other FAILED, no connection SERVER_UNREACHABLE.
+end note
+@enduml

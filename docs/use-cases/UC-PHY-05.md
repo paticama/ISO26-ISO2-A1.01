@@ -33,18 +33,25 @@
 
 ## RADIT Disciplines
 - [x] Requirements: Specify execution logs (contrast lot, equipment, consent) and incident tracking.
-- [ ] Analysis: Incident logging audit model.
-- [ ] Design: Execution service contracts.
-- [ ] Implementation: Incident logging endpoints and rescheduling event dispatch.
-- [ ] Testing: Tests for aborted procedures and rescheduling alerts.
+- [x] Analysis: [activity diagram](../diagrams/UC-PHY-05/uc-phy-05-activity.puml) (main flow + 2a, 2b), [analysis class diagram](../diagrams/UC-PHY-05/uc-phy-05-class-analysis.puml) (boundary/control/entity, entity per module), [domain class diagram](../diagrams/puml/phy-class-domain.puml) and communication diagrams ([normal](../diagrams/puml/comm-phy-05-normal.puml), [2a](../diagrams/puml/comm-phy-05-alt2a.puml), [2b](../diagrams/puml/comm-phy-05-alt2b.puml)).
+- [x] Design: contracts in `sescam-common` (see below); server [design class diagram](../diagrams/UC-PHY-05/uc-phy-05-class-design.puml) and [sequence diagram](../diagrams/UC-PHY-05/uc-phy-05-sequence-design.puml); client [design class diagram](../diagrams/UC-PHY-05/uc-phy-05-class-design-client.puml) and [sequence diagram](../diagrams/UC-PHY-05/uc-phy-05-sequence-design-client.puml).
+- [x] Implementation: server slice (`sescam-diagnostics` 1.0.0: `ProcedureExecutionServiceImpl`, `ExecutionRules`, `ProcedureExecution`, `ClinicalIncident`; `ExecutionRestController` in server-app) and client slice (`ExecutionViewController`, `ExecutionForm`, `ExecutionApiClient`, `executions/new.html`). Stand-ins until the modules exist: bookings of C5 (`InMemoryScheduledProcedureGateway`) and the subscribers of the execution event in C4/C5.
+- [x] Testing: JUnit 5 + Mockito. `sescam-diagnostics` 23 tests (rules per field, service per flow: main, 2a, 2b, abort without reason/incident, consent and CT dose missing, denied role, unknown procedure, second record, audit failure), `sescam-server-app` `ExecutionRestControllerTest` 5 (MockMvc), `sescam-client-app` 20 (form, REST client, view per flow), `sescam-common` `DiagnosticsContractsTest` 5. JaCoCo ≥ 80% in the four modules.
 
 ## Contracts and Interfaces
-- `es.uclm.esi.sescam.diagnostics.api.ProcedureExecutionService`
-- `ExecutionLogDTO`, `IncidentDTO`
+- `com.sescam.radiodiagnostics.common.diagnostics.ProcedureExecutionService` (C7; package follows the repository convention instead of `es.uclm.esi.sescam.diagnostics.api`): `listProceduresAwaitingExecution(actorId, actorRole)`, `recordExecution(ExecutionLogDTO) : ExecutionRecordDTO`
+- DTOs and enums in `common.diagnostics`: `ExecutionLogDTO` (execution + incidents + abort in one request), `IncidentDTO`, `ExecutionRecordDTO`, `ClinicalIncidentDTO`, `ScheduledProcedureDTO`, `ProcedureExecutionEvent`, `ExecutionStatus`, `IncidentType`, `IncidentSeverity`
+- Exceptions: `InvalidExecutionDataException` (400, with invalid fields), `UnauthorizedExecutionAccessException` (403), `ProcedureNotFoundException` (404), `ExecutionAlreadyRecordedException` (409)
+- Outbound ports: `ScheduledProcedureGateway` (booked procedures, to be implemented by C5), `ProcedureEventPublisher` (C4 order status, C5 rescheduling), `AccessControlService.canLogProcedureExecution` (physician, radiologist, technician), `AuditService`
+- REST API (server-app): `GET /api/v1/executions/pending`, `POST /api/v1/executions` (201; 400, 403, 404, 409). Client view: `/executions/new`.
+- Decision: `ClinicalIncident` (C7, during an examination) is a different entity from `PatientIncident` (C8, PAT-05). Open decision #1 of `PLAN18-11.md` §9, to confirm at the team meeting.
 
 ## Acceptance Criteria
-- [ ] Execution details logged with timestamp and room utilization.
-- [ ] Aborted procedures trigger rescheduling notification to Admissions.
+- [x] Execution details logged with timestamp and room utilization.
+- [x] Execution metrics captured: contrast batch and volume, radiation dose (DLP, CTDIvol, mandatory for CT), radiotracer activity (mandatory for nuclear medicine). *(issue #23)*
+- [x] Clinical incidents and adverse reactions documented with severity grading. *(issue #23)*
+- [ ] Incident report linked to patient clinical history and flagged for audit. *(issue #23) Linked by `patientId` and audited (`CLINICAL_INCIDENT_LOGGED`); showing it in the history is PAT-02 (It3).*
+- [ ] Aborted procedures trigger rescheduling notification to Admissions. *`ProcedureExecutionEvent` with `requiresRescheduling()` is published; nothing consumes it until C5 subscribes.*
 
 ## Decisions (DECISIONS.md)
 - Complies with **ADR-003** and **ADR-008**.
