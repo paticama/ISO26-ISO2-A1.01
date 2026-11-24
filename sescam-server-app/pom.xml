@@ -49,6 +49,12 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
+            <artifactId>sescam-diagnostics</artifactId>
+            <!-- module version (ADR-016), not the build version managed in the parent -->
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
             <artifactId>sescam-patients</artifactId>
             <!-- module version (ADR-016), not the build version managed in the parent -->
             <version>1.0.0</version>
