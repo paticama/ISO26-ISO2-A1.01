@@ -1,0 +1,182 @@
+@startuml D1-design-class-diagram
+title UC-ADM-02 – Design class diagram (C1 sescam-security v1.0.0)
+' Source: PLAN18-11.md §1, §3, §7; DECISIONS18-11.md ADR-014/015; UC-ADM-02 spec
+' (inputs/outputs). Interface and DTO names are PROPOSALS ("starting point").
+skinparam classAttributeIconSize 0
+
+package "sescam-common" {
+  interface AccessControlService <<interface>> {
+    + getRoleAssignments(administratorId : String, targetUserId : String) : RoleAssignmentDTO
+    + validateRoleChange(request : RoleChangeRequestDTO) : RoleChangeResultDTO
+    + confirmRoleChange(request : RoleChangeRequestDTO) : RoleChangeResultDTO
+  }
+
+  interface AuditService <<interface>> {
+    + record(event : AuditEventDTO) : void
+  }
+
+  enum ChangeOutcome {
+    VALID
+    CONFIRMED
+    UNAUTHORIZED
+    INVALID
+    SAFEGUARD_REQUIRED
+    SAVE_FAILED
+  }
+
+  class RoleDTO {
+    - name : String
+  }
+
+  class RoleAssignmentDTO {
+    - userId : String
+    - accountStatus : String
+    - roles : List<RoleDTO>
+  }
+
+  class RoleChangeRequestDTO {
+    - administratorId : String
+    - targetUserId : String
+    - roleName : String
+  }
+
+  class RoleChangeResultDTO {
+    - outcome : ChangeOutcome
+    - message : String
+    - roles : List<RoleDTO>
+    - effectivePermissions : List<String>
+  }
+
+  class AccessDeniedException <<exception>>
+
+  class AuditEventDTO {
+    - actor : String
+    - action : String
+    - timestamp : DateTime
+    - target : String
+    - outcome : String
+  }
+}
+
+package "sescam-security" {
+  class AccessControlServiceImpl {
+    - auditService : AuditService
+    + getRoleAssignments(administratorId : String, targetUserId : String) : RoleAssignmentDTO
+    + validateRoleChange(request : RoleChangeRequestDTO) : RoleChangeResultDTO
+    + confirmRoleChange(request : RoleChangeRequestDTO) : RoleChangeResultDTO
+  }
+
+  class User {
+    - accountStatus : String
+  }
+
+  class Role {
+    - name : String
+  }
+
+  class Permission {
+    - name : String
+  }
+}
+
+package "sescam-server-app" {
+  class RoleAdministrationController {
+    - accessControlService : AccessControlService
+    + getRoleAssignments(administratorId : String, targetUserId : String) : RoleAssignmentDTO
+    + validateRoleChange(request : RoleChangeRequestDTO) : RoleChangeResultDTO
+    + confirmRoleChange(request : RoleChangeRequestDTO) : RoleChangeResultDTO
+  }
+}
+
+package "sescam-client-app (com.sescam.radiodiagnostics.client.security)" {
+  class RoleAdminViewController <<Controller>> {
+    - apiClient : RoleAdminApiClient
+    + open(model) : String  <<GET /security/roles>>
+    + lookup(form, model, actorId) : String  <<GET /security/roles/lookup>>
+    + validate(form, model, actorId) : String  <<POST /security/roles/validate>>
+    + confirm(form, model, actorId) : String  <<POST /security/roles/confirm>>
+  }
+
+  class RoleChangeForm {
+    - userId : String
+    - roleName : String
+    + validate(roleRequired : boolean) : Map<String, String>
+  }
+
+  class RoleAdminApiClient <<Component>> {
+    + getRoleAssignments(userId : String, administratorId : String) : RoleAssignmentDTO
+    + validateRoleChange(request : RoleChangeRequestDTO) : RoleChangeResultDTO
+    + confirmRoleChange(request : RoleChangeRequestDTO) : RoleChangeResultDTO
+  }
+
+  class RoleAdminClientException <<exception>> {
+    - kind : Kind
+    + canRetry() : boolean
+  }
+
+  enum "RoleAdminClientException.Kind" as RoleAdminKind {
+    FORBIDDEN
+    USER_NOT_FOUND
+    INVALID_REQUEST
+    FAILED
+    SERVER_UNREACHABLE
+  }
+
+  class "security/roles.html" as RolesView <<Thymeleaf view>> {
+    user lookup
+    current roles + account status
+    review change / confirm
+    one block per ChangeOutcome
+  }
+}
+
+AccessControlService <|.. AccessControlServiceImpl
+AccessControlServiceImpl --> "1" AuditService : auditService
+AccessControlServiceImpl ..> User
+AccessControlServiceImpl ..> Role
+
+User "0..*" -- "1..*" Role
+Role "0..*" -- "1..*" Permission
+
+AccessControlService ..> RoleAssignmentDTO
+AccessControlService ..> RoleChangeRequestDTO
+AccessControlService ..> RoleChangeResultDTO
+AuditService ..> AuditEventDTO
+AccessControlService ..> AccessDeniedException : <<throws>>
+RoleAssignmentDTO o-- "0..*" RoleDTO
+RoleChangeResultDTO o-- "0..*" RoleDTO
+RoleChangeResultDTO --> "1" ChangeOutcome : outcome
+
+RoleAdministrationController --> "1" AccessControlService : accessControlService
+RoleAdminViewController --> "1" RoleAdminApiClient : apiClient
+RoleAdminViewController ..> RoleChangeForm : binds
+RoleAdminViewController ..> RolesView : renders
+RoleAdminApiClient ..> RoleAdministrationController : REST/JSON
+RoleAdminApiClient ..> RoleAdminClientException : <<throws>>
+RoleAdminClientException --> RoleAdminKind
+RoleAdminApiClient ..> RoleAssignmentDTO
+RoleAdminApiClient ..> RoleChangeResultDTO
+
+note bottom of RoleAdminApiClient
+  Refused changes come back as RoleChangeResultDTO
+  (403 UNAUTHORIZED, 422 INVALID, 409 SAFEGUARD_REQUIRED,
+  500 SAVE_FAILED) and are shown, not thrown.
+  Thrown: 400 path mismatch, 404 unknown user, 403 on lookup,
+  unreadable answer, no connection.
+end note
+
+note right of AuditService
+  Owned by UC-ADM-03 (Alba).
+  No-op implementation until it exists.
+end note
+
+note bottom of ChangeOutcome
+  One value per flow of the spec:
+  A1 UNAUTHORIZED (requester lacks the permission
+  to manage roles; the System administrator role
+  always grants it), A2 INVALID (also when the user
+  would be left without a role),
+  A4 SAFEGUARD_REQUIRED, A3 SAVE_FAILED.
+  Safeguards for A4 are still to be defined.
+end note
+@enduml

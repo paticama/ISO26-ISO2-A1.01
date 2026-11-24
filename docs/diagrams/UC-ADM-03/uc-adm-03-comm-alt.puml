@@ -1,0 +1,33 @@
+@startuml uc-adm-03-comm-alt
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+
+title UC-ADM-03: Audit & Compliance Management\nCommunication Diagram - Alternative / Exception Flows (A1, A2, A3)
+
+actor ":Actor" as actor
+boundary ":AuditView" as ui
+control ":AuditRestController" as ctrl
+control ":AuditExceptionHandler" as handler
+control ":AuditQueryServiceImpl" as srv
+control ":AuditAccessPolicy" as policy
+database ":AuditEventRepository" as repo
+control ":AuditService" as audit
+
+actor -- ui : 1: search(from, to, filters) >\n< A1.5: "Access denied"\n< A2.4: "No audit events match"\n< A3.4: explain problem, allow refine / retry
+
+ui -- ctrl : 2: GET /api/v1/audit/events >\n< A1.4: 403 FORBIDDEN\n< A2.3: 200 NO_MATCHES (empty list)\n< A3.3: 400 INVALID_QUERY / 422 QUERY_TOO_BROAD / 503 QUERY_FAILED
+
+ctrl -- srv : 3: searchEvents(criteria, actorId, role) >
+
+srv -- policy : A1.1: canViewAuditRecords() = false >
+srv -- audit : A1.2: recordEvent(AUDIT_ACCESS_DENIED) >
+srv -- repo : A2.1: findMatching() = [] >\nA3.1: findMatching() throws / too many matches >
+
+ctrl -- handler : A1.3: UnauthorizedAuditAccessException >\nA3.2: InvalidAuditQuery / AuditQueryTooBroad / AuditQueryFailed >
+note right of srv
+  A2.2: status = NO_MATCHES
+  (an empty list is never used
+  to report an error)
+end note
+@enduml

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Integrations - SESCAM</title>
+    <style>
+        :root { --border: #d0d7de; --muted: #57606a; --error: #b42318; --ok: #1a7f37; --warn: #9a6700; --bg: #f6f8fa; }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: system-ui, sans-serif; color: #1f2328; background: #fff; }
+        header { padding: 16px; border-bottom: 1px solid var(--border); background: var(--bg); }
+        header h1 { margin: 0; font-size: 1.25rem; }
+        main { padding: 16px; max-width: 1100px; margin: 0 auto; }
+        .message { margin: 16px 0; padding: 12px; border-radius: 6px; border: 1px solid var(--border); }
+        .message.error { border-color: var(--error); color: var(--error); }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+        th, td { padding: 8px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+        th { background: var(--bg); }
+        .status { font-weight: 600; }
+        .status.CONNECTED { color: var(--ok); }
+        .status.CONNECTION_FAILED, .status.UNAVAILABLE { color: var(--error); }
+        .status.NOT_CHECKED, .status.NOT_CONFIGURED { color: var(--warn); }
+        .hint { color: var(--muted); font-size: .8rem; }
+        a { color: #0969da; }
+    </style>
+</head>
+<body>
+<header>
+    <h1>External integrations</h1>
+    <span class="hint">SSO, EHR, RIS/PACS and messaging. Credentials are never shown.</span>
+</header>
+<main>
+    <div th:if="${failure != null}" class="message error" id="failure" role="alert">
+        <strong th:text="${failure.message}"></strong>
+        <div th:if="${failure.canRetry()}"><a th:href="@{/integrations}">Retry</a></div>
+    </div>
+
+    <div th:if="${integrations != null}" class="table-wrap">
+        <table>
+            <thead>
+            <tr><th>Integration</th><th>Endpoint</th><th>Status</th><th>Last check</th><th>Credential</th><th></th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="i : ${integrations}">
+                <td th:text="${i.displayName()}"></td>
+                <td th:text="${i.endpointUrl() ?: '-'}"></td>
+                <td>
+                    <span th:class="|status ${i.status().name()}|" th:text="${i.status().name()}"></span>
+                    <div class="hint" th:text="${i.statusMessage()}"></div>
+                </td>
+                <td th:text="${i.lastCheckedAt() != null ? i.lastCheckedAt() : '-'}"></td>
+                <td th:text="${i.credentialConfigured() ? 'Stored' : 'Not set'}"></td>
+                <td><a th:href="@{/integrations/{id}(id=${i.id()})}">Configure</a></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>

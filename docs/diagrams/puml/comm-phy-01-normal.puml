@@ -1,0 +1,64 @@
+@startuml comm-phy-01-normal
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+skinparam actor {
+    BackgroundColor #E1F5FE
+    BorderColor #0288D1
+}
+
+skinparam boundary {
+    BackgroundColor #FFF9C4
+    BorderColor #FBC02D
+}
+
+skinparam control {
+    BackgroundColor #E8F5E9
+    BorderColor #388E3C
+}
+
+skinparam entity {
+    BackgroundColor #EDE7F6
+    BorderColor #512DA8
+}
+
+skinparam database {
+    BackgroundColor #FBE9E7
+    BorderColor #D84315
+}
+
+title UC-PHY-01: Order and Prescribe Diagnostic Procedure\nCommunication Diagram - Main Success Scenario (Normal Flow)
+
+actor ":Physician" as phy
+boundary ":OrderEntryUI" as ui
+control ":OrderController" as ctrl
+control ":OrderEntryService" as srv
+control ":SafetyVerificationService" as safe
+control ":CatalogueService" as cat
+entity ":DiagnosticOrder" as ord
+database ":OrderRepository" as repo
+control ":AuditService" as audit
+control ":NotificationService" as notif
+
+phy -- ui : 1: selectPatientAndExam()\n2: enterClinicalDetails(indication, priority)\n3: submitPrescription() >\n< 11: displayOrderSuccess(trackingId)
+
+ui -- ctrl : 4: postOrder(CreateOrderDTO) >\n< 10: returnOrderResponse(OrderResponseDTO)
+
+ctrl -- srv : 5: createDiagnosticOrder(dto) >\n< 9: returnOrderResult(order)
+
+srv -- cat : 5.1: getExamType(examId) >
+
+srv -- safe : 5.2: verifyPatientConstraints(patientId, examId) >
+
+srv -- ord : 5.3: create(patientId, examId, indication, priority) >
+
+srv -- repo : 5.4: save(order) >
+
+srv -- audit : 5.5: logEvent("ORDER_CREATED", orderId, physicianId) >
+
+srv -- notif : 5.6: publishOrderQueuedForScheduling(orderId) >
+
+@enduml

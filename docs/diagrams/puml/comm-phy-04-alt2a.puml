@@ -1,0 +1,39 @@
+@startuml comm-phy-04-alt2a
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+skinparam actor {
+    BackgroundColor #E1F5FE
+    BorderColor #0288D1
+}
+
+skinparam boundary {
+    BackgroundColor #FFF9C4
+    BorderColor #FBC02D
+}
+
+skinparam control {
+    BackgroundColor #E8F5E9
+    BorderColor #388E3C
+}
+
+title UC-PHY-04: Author, Edit, and Review Diagnostic Reports and Medical Images\nCommunication Diagram - Alternative Flow 2a: PACS Connection Failure
+
+actor ":Physician / Radiologist" as phy
+boundary ":ReportingWorklistUI" as ui
+control ":ReportController" as ctrl
+control ":PacsAdapter" as pacs
+control ":AuditService" as audit
+
+phy -- ui : 1: selectExecutedProcedure(procId) >\n< 6: displayErrorMessage("PACS service unavailable. DICOM images could not be retrieved.")
+
+ui -- ctrl : 2: getStudyMetadata(procId) >\n< 5: http503ServiceUnavailable(PacsConnectionErrorDTO)
+
+ctrl -- pacs : 3: queryStudy(studyUid) >\n< 3.1: timeoutConnectionException()
+
+ctrl -- audit : 4: logSystemIncident("PACS_COMMUNICATION_FAILURE", studyUid) >
+
+@enduml

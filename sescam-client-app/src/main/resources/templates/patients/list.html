@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Patients Master Index - SESCAM</title>
+    <style>
+        :root { --border: #d0d7de; --muted: #57606a; --error: #b42318; --ok: #1a7f37; --warn: #9a6700; --bg: #f6f8fa; --btn: #0969da; }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: system-ui, sans-serif; color: #1f2328; background: #fff; }
+        header { padding: 16px; border-bottom: 1px solid var(--border); background: var(--bg); display: flex; justify-content: space-between; align-items: center; }
+        header h1 { margin: 0; font-size: 1.25rem; }
+        main { padding: 16px; max-width: 1100px; margin: 0 auto; }
+        .message { margin: 16px 0; padding: 12px; border-radius: 6px; border: 1px solid var(--border); }
+        .message.error { border-color: var(--error); color: var(--error); }
+        .search-bar { display: flex; gap: 8px; margin-bottom: 16px; }
+        input[type="text"] { flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; }
+        button, .btn { padding: 8px 16px; background: var(--btn); color: #fff; border: none; border-radius: 6px; cursor: pointer; text-decoration: none; font-size: 0.9rem; }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+        th, td { padding: 8px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+        th { background: var(--bg); }
+        .status { font-weight: 600; }
+        .status.ACTIVE { color: var(--ok); }
+        .status.DISCHARGED { color: var(--error); }
+        .hint { color: var(--muted); font-size: .8rem; }
+        a { color: #0969da; }
+    </style>
+</head>
+<body>
+<header>
+    <div>
+        <h1>Patients Master Index (UC-AAD-01)</h1>
+        <span class="hint">Patient Demographic & Clinical Records Management</span>
+    </div>
+    <a th:href="@{/patients/new}" class="btn">+ New Patient Registration</a>
+</header>
+<main>
+    <div th:if="${failure != null}" class="message error" role="alert">
+        <strong th:text="${failure}"></strong>
+    </div>
+
+    <form method="get" th:action="@{/patients}" class="search-bar">
+        <input type="text" name="query" th:value="${query}" placeholder="Search by CIP, DNI, name, or phone..."/>
+        <button type="submit">Search</button>
+    </form>
+
+    <div th:if="${patients != null}" class="table-wrap">
+        <table>
+            <thead>
+            <tr>
+                <th>CIP</th>
+                <th>DNI / NIE</th>
+                <th>Full Name</th>
+                <th>Birth Date</th>
+                <th>Phone</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="p : ${patients}">
+                <td><strong th:text="${p.cip()}"></strong></td>
+                <td th:text="${p.dni()}"></td>
+                <td th:text="${p.fullName()}"></td>
+                <td th:text="${p.birthDate()}"></td>
+                <td th:text="${p.phone() ?: '-'}"></td>
+                <td>
+                    <span th:class="|status ${p.status().name()}|" th:text="${p.status().name()}"></span>
+                </td>
+                <td>
+                    <a th:href="@{/patients/{id}(id=${p.id()})}">View & Edit</a>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(patients)}">
+                <td colspan="7" class="hint" style="text-align: center; padding: 24px;">No patient records found matching query.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>

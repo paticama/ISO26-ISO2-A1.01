@@ -1,0 +1,64 @@
+@startuml comm-phy-04-normal
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+skinparam actor {
+    BackgroundColor #E1F5FE
+    BorderColor #0288D1
+}
+
+skinparam boundary {
+    BackgroundColor #FFF9C4
+    BorderColor #FBC02D
+}
+
+skinparam control {
+    BackgroundColor #E8F5E9
+    BorderColor #388E3C
+}
+
+skinparam entity {
+    BackgroundColor #EDE7F6
+    BorderColor #512DA8
+}
+
+skinparam database {
+    BackgroundColor #FBE9E7
+    BorderColor #D84315
+}
+
+title UC-PHY-04: Author, Edit, and Review Diagnostic Reports and Medical Images\nCommunication Diagram - Main Success Scenario (Normal Flow)
+
+actor ":Physician / Radiologist" as phy
+boundary ":ReportingWorklistUI" as ui
+boundary ":DicomViewer" as viewer
+control ":ReportController" as ctrl
+control ":DiagnosticReportingService" as srv
+control ":PacsAdapter" as pacs
+control ":FhirGateway" as fhir
+entity ":DiagnosticReport" as rep
+database ":ReportRepository" as repo
+control ":NotificationService" as notif
+
+phy -- ui : 1: selectExecutedProcedure(procId) >\n3: openDicomViewer(studyUid) >\n5: submitFinalReport(findings, conclusion, digitalSignature) >\n< 11: displayReportFinalizedConfirmation()
+
+ui -- ctrl : 2: getStudyMetadata(procId) >\n6: postFinalReport(ReportDTO) >\n< 10: returnResponse(ReportStatusDTO)
+
+ctrl -- pacs : 2.1: queryStudy(studyUid) >\n< 2.2: returnWadoToken(studyMetadata)
+
+ui -- viewer : 4: renderDicomImages(wadoToken) >
+
+ctrl -- srv : 7: signAndPersistReport(reportDTO) >\n< 9.4: returnSuccess()
+
+srv -- rep : 7.1: createSigned(procId, findings, conclusion, signature) >
+
+srv -- repo : 7.2: save(report) >
+
+srv -- fhir : 8: exportFhirDiagnosticReport(report) >\n< 8.1: fhirResourceSynchronized()
+
+srv -- notif : 9: publishReportAvailableEvent(patientId, reportId) >
+
+@enduml

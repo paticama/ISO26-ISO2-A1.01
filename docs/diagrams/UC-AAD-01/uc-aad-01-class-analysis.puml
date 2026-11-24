@@ -1,0 +1,86 @@
+@startuml uc-aad-01-class-analysis
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam classAttributeIconSize 0
+
+title UC-AAD-01: Manage Patient\nAnalysis Class Diagram (module C6 sescam-patients)
+
+actor "Admissions Staff" as Staff
+
+package "Boundary" {
+  class PatientsView <<boundary>>
+  class PatientRegistrationForm <<boundary>>
+  class PatientDetailsForm <<boundary>>
+}
+
+package "Control" {
+  class PatientManager <<control>>
+}
+
+package "Entity (C6 owns)" {
+  class Patient <<entity>> {
+    id : String
+    cip : String
+    dni : String
+    firstName : String
+    lastName : String
+    birthDate : LocalDate
+    gender : Gender
+    status : PatientStatus
+    version : long
+    createdAt : Instant
+    updatedAt : Instant
+  }
+  class ContactInfo <<entity>> {
+    phone : String
+    email : String
+    preferredChannel : PreferredNotificationChannel
+  }
+  class Address <<entity>> {
+    street : String
+    postalCode : String
+    city : String
+    province : String
+  }
+  class EmergencyContact <<entity>> {
+    name : String
+    relationship : String
+    phone : String
+  }
+  class ClinicalHistoryRecord <<entity>> {
+    summaryNotes : String
+    allergies : String
+  }
+}
+
+package "Other modules (through interfaces in sescam-common)" {
+  class AccessControl <<C1 security>>
+  class AuditTrail <<C1 security>>
+  class ExternalEhrGateway <<C9 integration>>
+}
+
+Staff --> PatientsView
+Staff --> PatientRegistrationForm
+Staff --> PatientDetailsForm
+
+PatientsView --> PatientManager
+PatientRegistrationForm --> PatientManager
+PatientDetailsForm --> PatientManager
+
+PatientManager --> Patient : manages lifecycle
+Patient "1" *-- "1" ContactInfo
+Patient "1" *-- "0..1" Address
+Patient "1" *-- "0..1" EmergencyContact
+Patient "1" *-- "0..1" ClinicalHistoryRecord
+
+PatientManager ..> AccessControl : <<include>> verify role permissions (A5)
+PatientManager ..> AuditTrail : <<include>> record patient audit event (FR-AAD-03)
+PatientManager ..> ExternalEhrGateway : <<extend>> synchronize clinical record (A3)
+
+note bottom of Patient
+  Unique CIP and DNI (A1 duplicate check).
+  Optimistic locking with version (A4).
+  Audit log for every registration, update, discharge.
+end note
+@enduml

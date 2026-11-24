@@ -1,0 +1,38 @@
+@startuml uc-adm-04-comm-alt
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+
+title UC-ADM-04: Communication Diagram – Alternative flows
+
+actor "System administrator" as Admin
+object ":IntegrationForm" as F
+object ":IntegrationManager" as M
+object ":AccessControl (C1)" as AC
+object ":Integration" as I
+object ":ExternalSystem" as X
+object ":AuditTrail (C1)" as AU
+
+== A1. Unauthorized administrator ==
+Admin -> F : request
+F -> M : any operation
+M -> AC : A1.1: canManageIntegrations() = false
+M -> AU : A1.2: record INTEGRATION_ACCESS_DENIED
+M --> F : A1.3: 403, no protected setting exposed or changed
+
+== A2. Invalid settings or failed connection check ==
+F -> M : updateIntegration(settings)
+M -> M : A2.1: validate settings
+M -> X : A2.2: check connection
+M -> AU : A2.3: record INTEGRATION_CONFIGURATION_REJECTED
+M --> F : A2.4: explanation; last working configuration kept (Integration not changed)
+
+== A3. External system unavailable ==
+F -> M : checkConnection(id)
+M -> X : A3.1: check connection
+M -> I : A3.2: status = UNAVAILABLE (settings and version unchanged)
+M --> F : A3.3: status visible; administrator can retry
+
+== A4. Secret handling ==
+F -> M : settings with credential (write only)
+M --> F : A4.1: results, errors and audit events never contain the credential
+@enduml

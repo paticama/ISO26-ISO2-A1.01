@@ -1,0 +1,24 @@
+@startuml uc-aad-05-comm-alt-a5
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+
+title UC-AAD-05: Book Requested Examination (C5 v1.0.0)\nCommunication Diagram - Alternative Flow A5: Concurrent Booking
+
+actor ":AdmissionsStaff" as adm
+boundary ":BookingUI" as ui
+control ":BookingController" as ctrl
+control ":BookingService" as srv
+control ":ScheduleService (C3)" as c3
+control ":AuditService (C1)" as c1
+
+adm -- ui : 1: confirmBooking(orderId, slotId, staleVersion) >\n< 7: displayConflictError("CONCURRENT_BOOKING: reload availability")
+
+ui -- ctrl : 2: postBooking(BookRequestDTO) >\n< 6: HTTP 409 (CONCURRENT_BOOKING)
+
+ctrl -- srv : 3: bookExamination(BookRequestDTO) >\n< 5: throw ConcurrentBookingException()
+
+srv -- c3 : 4: reserveSlotAtomically(slotId, staleVersion) -> [Version Mismatch / Optimistic Lock] >
+
+srv -- c1 : 4.1: recordAuditEvent("CONCURRENT_BOOKING_REJECTED", slotId) >
+@enduml

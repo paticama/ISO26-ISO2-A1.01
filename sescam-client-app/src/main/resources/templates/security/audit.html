@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Audit and compliance – SESCAM</title>
+    <style>
+        :root { --border: #d0d7de; --muted: #57606a; --error: #b42318; --ok: #1a7f37; --bg: #f6f8fa; }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: system-ui, sans-serif; color: #1f2328; background: #fff; }
+        header { padding: 16px; border-bottom: 1px solid var(--border); background: var(--bg); }
+        header h1 { margin: 0; font-size: 1.25rem; }
+        main { padding: 16px; max-width: 1200px; margin: 0 auto; }
+        form { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; align-items: end; }
+        label { display: flex; flex-direction: column; gap: 4px; font-size: .9rem; }
+        input { padding: 8px; border: 1px solid var(--border); border-radius: 6px; font: inherit; }
+        .field-error { color: var(--error); font-size: .8rem; }
+        .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        button { padding: 8px 14px; border-radius: 6px; border: 1px solid var(--border); background: #fff; font: inherit; cursor: pointer; }
+        button[type=submit] { background: #0969da; color: #fff; border-color: #0969da; }
+        .message { margin: 16px 0; padding: 12px; border-radius: 6px; border: 1px solid var(--border); }
+        .message.error { border-color: var(--error); color: var(--error); }
+        .message.empty { color: var(--muted); }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+        th, td { padding: 8px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+        th { background: var(--bg); }
+        details summary { cursor: pointer; color: #0969da; }
+        .hint { color: var(--muted); font-size: .8rem; }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Audit and compliance</h1>
+    <span class="hint">Audit records are read only. Every search is itself recorded.</span>
+</header>
+<main>
+    <form id="audit-form" method="get" th:action="@{/security/audit/search}" th:object="${form}">
+        <label>From
+            <input type="datetime-local" name="from" required th:value="*{from}">
+            <span class="field-error" th:if="${errors != null and errors['from'] != null}" th:text="${errors['from']}"></span>
+        </label>
+        <label>To
+            <input type="datetime-local" name="to" required th:value="*{to}">
+            <span class="field-error" th:if="${errors != null and errors['to'] != null}" th:text="${errors['to']}"></span>
+        </label>
+        <label>Performed by
+            <input type="text" name="performedBy" maxlength="100" th:value="*{performedBy}" placeholder="e.g. admin-1">
+            <span class="field-error" th:if="${errors != null and errors['performedBy'] != null}" th:text="${errors['performedBy']}"></span>
+        </label>
+        <label>Action
+            <input type="text" name="action" maxlength="100" th:value="*{action}" placeholder="e.g. CLINICAL_DATA_ACCESSED">
+            <span class="field-error" th:if="${errors != null and errors['action'] != null}" th:text="${errors['action']}"></span>
+        </label>
+        <label>Target
+            <input type="text" name="resourceKey" maxlength="100" th:value="*{resourceKey}" placeholder="e.g. patient-42">
+            <span class="field-error" th:if="${errors != null and errors['resourceKey'] != null}" th:text="${errors['resourceKey']}"></span>
+        </label>
+        <div class="actions">
+            <button type="submit">Search</button>
+            <button type="submit" th:formaction="@{/security/audit/export}">Export CSV</button>
+        </div>
+    </form>
+    <p class="hint" th:text="|Times in ${zone}. Maximum range: 31 days.|"></p>
+
+    <div th:if="${failure != null}" class="message error" id="failure" role="alert">
+        <strong th:text="${failure.message}"></strong>
+        <div th:if="${failure.canRefine()}">Refine the filters and search again.</div>
+        <div th:if="${failure.canRetry()}">
+            <button type="submit" form="audit-form">Retry</button>
+        </div>
+    </div>
+
+    <div th:if="${result != null and result.status().name() == 'NO_MATCHES'}" class="message empty" id="no-matches">
+        No audit events match the selected time range and filters.
+    </div>
+
+    <div th:if="${result != null and result.status().name() == 'MATCHES_FOUND'}" class="table-wrap">
+        <p id="match-count" th:text="|${result.totalMatches()} events found (oldest first).|"></p>
+        <table>
+            <thead>
+            <tr><th>Time</th><th>Actor</th><th>Action</th><th>Target</th><th>Details</th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="ev : ${result.events()}">
+                <td th:text="${#temporals.format(ev.timestamp().atZone(zone), 'yyyy-MM-dd HH:mm:ss')}"></td>
+                <td th:text="${ev.actorId()}"></td>
+                <td th:text="${ev.action()}"></td>
+                <td th:text="${ev.resourceKey() ?: '—'}"></td>
+                <td>
+                    <details>
+                        <summary>Show</summary>
+                        <div>Event: <span th:text="${ev.eventId()}"></span></div>
+                        <div th:if="${ev.previousValue() != null}">Before: <span th:text="${ev.previousValue()}"></span></div>
+                        <div th:if="${ev.newValue() != null}">After: <span th:text="${ev.newValue()}"></span></div>
+                        <div th:if="${ev.details() != null}">Outcome: <span th:text="${ev.details()}"></span></div>
+                    </details>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>

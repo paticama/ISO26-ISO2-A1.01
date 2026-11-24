@@ -1,0 +1,52 @@
+@startuml uc-aad-01-comm-alt
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+
+title UC-AAD-01: Communication Diagram – Alternative & Exception Flows
+
+actor "Admissions Staff" as Staff
+object ":PatientForm" as F
+object ":PatientManager" as M
+object ":AccessControl (C1)" as AC
+object ":PatientRepository" as R
+object ":ExternalEhrGateway (C9)" as EHR
+object ":AuditTrail (C1)" as AU
+
+== A1: Possible duplicate record ==
+Staff -> F : submit registration with existing CIP/DNI
+F -> M : registerPatient(request)
+M -> R : findByCip(cip) / findByDni(dni)
+R --> M : existing record found
+M -> AU : record PATIENT_REGISTRATION_REJECTED (DUPLICATE)
+M --> F : throw DuplicatePatientException (409)
+
+== A2: Invalid or incomplete data ==
+Staff -> F : submit invalid format (e.g. invalid DNI or future birthDate)
+F -> F : local field validation fails OR
+F -> M : register/update with invalid data
+M --> F : throw InvalidPatientDataException (400)
+
+== A3: EHR Synchronization Failure ==
+Staff -> F : valid registration / update
+F -> M : registerPatient(request)
+M -> R : save(patient)
+M -> EHR : syncPatientRecord(patient)
+EHR --> M : synchronization failed / connection timeout
+M -> AU : record PATIENT_EHR_SYNC_FAILED
+M --> F : return PatientDTO with EhrSyncStatus=FAILED_SYNC (non-blocking) or throw EhrSyncException
+
+== A4: Concurrent update conflict ==
+Staff -> F : submit update with outdated version
+F -> M : updatePatient(id, request, expectedVersion)
+M -> R : findById(id)
+R --> M : patient (stored version > expectedVersion)
+M --> F : throw ConcurrentPatientUpdateException (409)
+
+== A5: Unauthorized operation ==
+Staff -> F : perform patient operation without ADMISSIONS role
+F -> M : registerPatient / updatePatient
+M -> AC : canManagePatients(actorId, role)
+AC --> M : false
+M -> AU : record PATIENT_ACCESS_DENIED
+M --> F : throw UnauthorizedPatientAccessException (403)
+@enduml

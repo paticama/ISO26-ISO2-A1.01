@@ -1,0 +1,47 @@
+@startuml uc-adm-03-class-analysis
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+allowmixing
+
+title UC-ADM-03: Audit & Compliance Management\nAnalysis Class Diagram (C1 sescam-security)
+
+actor "Administrator or\nCompliance reviewer" as actor
+
+class AuditUI <<boundary>>
+class AuditController <<control>>
+class AuditAccessPolicy <<control>>
+class AuditEvent <<entity>> {
+  eventId
+  sequenceNumber
+  timestamp
+  actorId
+  action
+  resourceKey {target}
+  previousValue
+  newValue
+  details {outcome}
+}
+class AuditSearchCriteria <<entity>> {
+  from
+  to
+  performedBy
+  action
+  resourceKey
+}
+class AuditTrail <<entity>> {
+  append-only
+}
+
+actor -- AuditUI
+AuditUI --> AuditController : search / export
+AuditController --> AuditAccessPolicy : canViewAuditRecords
+AuditController --> AuditSearchCriteria : validate
+AuditController --> AuditTrail : findMatching
+AuditTrail "1" o-- "*" AuditEvent
+note bottom of AuditTrail
+  Other modules (catalogue, orders,
+  diagnostics...) append events through
+  AuditService. Nothing modifies or deletes them.
+end note
+@enduml

@@ -1,0 +1,91 @@
+@startuml D2-design-sequence-diagram
+title UC-ADM-02 – Design sequence diagram (main flow + A1-A4)
+actor Administrator
+participant "security/roles.html\n(client-app)" as V
+participant "RoleAdminViewController\n(client-app)" as View
+participant "RoleChangeForm\n(client-app)" as Form
+participant "RoleAdminApiClient\n(client-app)" as Client
+participant "RoleAdministrationController\n(server-app)" as Ctrl
+participant "AccessControlServiceImpl\n(sescam-security)" as Svc
+participant "AuditService\n(UC-ADM-03, no-op at first)" as Audit
+
+== Steps 1-2: current assignments ==
+Administrator -> View : GET /security/roles/lookup?userId [X-Actor-Id]
+View -> Form : validate(roleRequired = false)
+alt user id missing or not valid
+  Form --> View : errors
+  View -> V : render(errors)
+  V --> Administrator : field error (no request to the server)
+else valid
+  View -> Client : getRoleAssignments(userId, administratorId)
+  Client -> Ctrl : GET /api/security/users/{userId}/roles?administratorId
+  Ctrl -> Svc : getRoleAssignments(administratorId, targetUserId)
+  alt A1 requester lacks the permission to manage roles
+    Svc --> Ctrl : AccessDeniedException
+    Ctrl --> Client : 403 {message}
+    Client --> View : throw RoleAdminClientException(FORBIDDEN)
+    View -> V : render(failure)
+    V --> Administrator : rejected, nothing changed
+  else unknown user
+    Ctrl --> Client : 404 {message}
+    Client --> View : throw RoleAdminClientException(USER_NOT_FOUND)
+    View -> V : render(failure)
+  else authorized
+    Svc --> Ctrl : RoleAssignmentDTO
+    Ctrl --> Client : 200 RoleAssignmentDTO
+    Client --> View : RoleAssignmentDTO
+    View -> V : render(assignment)
+    V --> Administrator : current roles + account status + "Review change"
+  end
+end
+
+== Steps 3-4: validate ==
+Administrator -> View : POST /security/roles/validate (userId, roleName)
+View -> Form : validate(roleRequired = true)
+View -> Client : validateRoleChange(RoleChangeRequestDTO(administratorId, userId, roleName))
+Client -> Ctrl : POST /api/security/users/{userId}/roles/validate
+Ctrl -> Svc : validateRoleChange(request)
+alt A1 unauthorized
+  Svc --> Ctrl : RoleChangeResultDTO(UNAUTHORIZED)
+  Ctrl --> Client : 403 [result]
+else A2 invalid role or access rule (e.g. user left without a role)
+  Svc --> Ctrl : RoleChangeResultDTO(INVALID, message, current roles)
+  Ctrl --> Client : 422 [result]
+else A4 sensitive assignment
+  Svc --> Ctrl : RoleChangeResultDTO(SAFEGUARD_REQUIRED, message)
+  Ctrl --> Client : 409 [result]
+else valid
+  Svc --> Ctrl : RoleChangeResultDTO(VALID, roles, effectivePermissions)
+  Ctrl --> Client : 200 [result]
+end
+Client --> View : RoleChangeResultDTO (refusals are results, not exceptions)
+View -> V : render(result)
+V --> Administrator : outcome block; "Confirm change" only when VALID
+
+== Steps 5-6: confirm and save ==
+Administrator -> View : POST /security/roles/confirm (userId, roleName)
+View -> Client : confirmRoleChange(request)
+Client -> Ctrl : POST /api/security/users/{userId}/roles/confirm
+Ctrl -> Svc : confirmRoleChange(request)
+Svc -> Svc : save assignment
+alt A3 save failure
+  Svc --> Ctrl : RoleChangeResultDTO(SAVE_FAILED, message)
+  Ctrl --> Client : 500 [result]
+  Client --> View : RoleChangeResultDTO(SAVE_FAILED)
+  View -> V : render(result)
+  V --> Administrator : "Access has NOT changed" + Retry
+else saved
+  Svc -> Audit : record(AuditEventDTO)
+  Svc --> Ctrl : RoleChangeResultDTO(CONFIRMED, roles, effectivePermissions)
+  Ctrl --> Client : 200 [result]
+  Client --> View : RoleChangeResultDTO(CONFIRMED)
+  View -> V : render(result)
+  V --> Administrator : confirmation of effective result
+end
+
+note over Client, Ctrl
+  No connection or unreadable answer:
+  RoleAdminClientException(SERVER_UNREACHABLE | FAILED),
+  the view says no assignment was changed and offers a retry.
+end note
+@enduml

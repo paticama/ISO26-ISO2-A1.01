@@ -1,0 +1,61 @@
+@startuml comm-phy-01-alt6b
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+skinparam actor {
+    BackgroundColor #E1F5FE
+    BorderColor #0288D1
+}
+
+skinparam boundary {
+    BackgroundColor #FFF9C4
+    BorderColor #FBC02D
+}
+
+skinparam control {
+    BackgroundColor #E8F5E9
+    BorderColor #388E3C
+}
+
+skinparam entity {
+    BackgroundColor #EDE7F6
+    BorderColor #512DA8
+}
+
+skinparam database {
+    BackgroundColor #FBE9E7
+    BorderColor #D84315
+}
+
+title UC-PHY-01: Order and Prescribe Diagnostic Procedure\nCommunication Diagram - Alternative Flow 6b: Safety Constraint Detected & Clinical Override
+
+actor ":Physician" as phy
+boundary ":OrderEntryUI" as ui
+control ":OrderController" as ctrl
+control ":OrderEntryService" as srv
+control ":SafetyVerificationService" as safe
+control ":EhrAdapter" as ehr
+entity ":DiagnosticOrder" as ord
+database ":OrderRepository" as repo
+control ":AuditService" as audit
+
+phy -- ui : 1: submitPrescription(orderDTO) >\n< 6: promptContraindicationAlert(warningDetails)\n7: submitClinicalOverride(justification, digitalSignature) >\n< 13: displayOrderConfirmedWithOverride()
+
+ui -- ctrl : 2: postOrder(orderDTO) >\n< 5: http422SafetyAlert(alertDTO)\n8: postOverride(overrideDTO) >\n< 12: http200OrderSaved()
+
+ctrl -- srv : 3: createDiagnosticOrder(dto) >\n< 4.3: throw SafetyAlertException(alert)\n9: recordOverrideAndPersist(overrideDTO) >\n< 11.3: returnConfirmedOrder()
+
+srv -- safe : 3.1: verifyPatientSafety(patientId, examId) >\n< 4.2: returnContraindication(FERROMAGNETIC_IMPLANT)
+
+safe -- ehr : 3.2: queryPatientClinicalBackground(patientId) >\n< 4.1: returnAllergiesAndImplants()
+
+srv -- ord : 9.1: createOrderWithOverride(justification, signature) >
+
+srv -- repo : 9.2: save(order) >
+
+srv -- audit : 9.3: logSecurityAudit("OVERRIDE_APPROVED", physicianId, rationale, signature) >
+
+@enduml
