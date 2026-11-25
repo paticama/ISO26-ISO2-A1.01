@@ -280,6 +280,43 @@ class OrderServiceImplTest {
         verify(eventPublisher).publishOrderCreated(any());
     }
 
+    /** Service whose repository cannot store anything (e.g. the database is down). */
+    private OrderServiceImpl serviceWithFailingSave() {
+        OrderRepository failing = mock(OrderRepository.class);
+        when(failing.save(any())).thenThrow(new IllegalStateException("database down"));
+        return new OrderServiceImpl(failing, new InMemoryExamTypeService(), safetyGateway, accessControl,
+                auditService, eventPublisher, new com.sescam.radiodiagnostics.orders.internal.SafetyRules(),
+                Clock.fixed(NOW, ZoneOffset.UTC));
+    }
+
+    @Test
+    @DisplayName("If saving fails after the audit, a compensating entry for the same order is recorded (#187)")
+    void failingSaveRecordsCompensatingEntry() {
+        OrderServiceImpl failingService = serviceWithFailingSave();
+
+        assertThatThrownBy(() -> failingService.createOrder(request("XR-CHEST", null)))
+                .isInstanceOf(IllegalStateException.class).hasMessage("database down");
+
+        ArgumentCaptor<AuditEventDTO> captor = ArgumentCaptor.forClass(AuditEventDTO.class);
+        verify(auditService, org.mockito.Mockito.times(2)).recordEvent(captor.capture());
+        List<AuditEventDTO> entries = captor.getAllValues();
+        assertThat(entries).extracting(AuditEventDTO::action).containsExactly("ORDER_CREATED", "ORDER_CREATION_FAILED");
+        assertThat(entries.get(1).resourceKey()).isEqualTo(entries.get(0).resourceKey());
+        verify(eventPublisher, never()).publishOrderCreated(any());
+    }
+
+    @Test
+    @DisplayName("If the compensating entry also fails, the client still gets the storage error")
+    void failingSaveAndFailingCompensationKeepTheStorageError() {
+        OrderServiceImpl failingService = serviceWithFailingSave();
+        org.mockito.Mockito.doNothing().doThrow(new IllegalStateException("audit store down"))
+                .when(auditService).recordEvent(any());
+
+        assertThatThrownBy(() -> failingService.createOrder(request("XR-CHEST", null)))
+                .isInstanceOf(IllegalStateException.class).hasMessage("database down");
+        verify(eventPublisher, never()).publishOrderCreated(any());
+    }
+
     @Test
     @DisplayName("Constructor and request reject null collaborators")
     void nullChecks() {
