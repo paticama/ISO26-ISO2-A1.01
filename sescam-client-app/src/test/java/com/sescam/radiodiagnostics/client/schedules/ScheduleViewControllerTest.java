@@ -66,7 +66,8 @@ class ScheduleViewControllerTest {
                 new ScheduleSummaryDTO("SCH-1", "MRI-ROOM-1", "HGUCR", "MRI", START, START.plusHours(2),
                         ScheduleStatus.OPEN, 4, 1)));
 
-        mockMvc.perform(get("/schedules").param("date", "2030-03-04"))
+        mockMvc.perform(get("/schedules").param("date", "2030-03-04")
+                        .header("X-Actor-Id", "staff-1").header("X-Actor-Role", "ADMISSIONS_STAFF"))
                 .andExpect(status().isOk())
                 .andExpect(view().name(ScheduleViewController.LIST_VIEW))
                 .andExpect(content().string(containsString("MRI-ROOM-1")))
@@ -80,6 +81,24 @@ class ScheduleViewControllerTest {
                 "Not authorized"));
         mockMvc.perform(get("/schedules").header("X-Actor-Role", "PATIENT"))
                 .andExpect(content().string(containsString("Not authorized")));
+    }
+
+    @Test
+    @DisplayName("A6: without identity headers no default actor is used, so the server refuses the change")
+    void noDefaultActor() throws Exception {
+        when(apiClient.open(argThat(r -> r != null && r.actorId().isEmpty() && r.actorRole().isEmpty())))
+                .thenThrow(new ScheduleClientException("UNAUTHORIZED_OPERATION",
+                        "User '' with role '' is not authorized to open schedules (reserved to Admissions Staff)."));
+        mockMvc.perform(post("/schedules/new").param("resourceId", "MRI-ROOM-1").param("locationId", "HGUCR")
+                        .param("modality", "MRI").param("date", "2030-03-04").param("startTime", "09:00")
+                        .param("endTime", "09:30").param("slotDurationMinutes", "30").param("capacityPerSlot", "1"))
+                .andExpect(view().name(ScheduleViewController.NEW_VIEW))
+                .andExpect(model().attribute("errorCode", "UNAUTHORIZED_OPERATION"))
+                .andExpect(content().string(containsString("not authorized")));
+        verify(apiClient).open(argThat(r -> r.actorId().isEmpty() && r.actorRole().isEmpty()));
+
+        mockMvc.perform(get("/schedules"));
+        verify(apiClient).search(any(), eq(""), eq(""));
     }
 
     @Test
@@ -116,7 +135,7 @@ class ScheduleViewControllerTest {
     @DisplayName("Detail shows slots, pending rescheduling and the close form of an open schedule")
     void detail() throws Exception {
         when(apiClient.get("SCH-1", "staff-1", "ADMISSIONS_STAFF")).thenReturn(schedule(ScheduleStatus.OPEN));
-        mockMvc.perform(get("/schedules/SCH-1"))
+        mockMvc.perform(get("/schedules/SCH-1").header("X-Actor-Id", "staff-1").header("X-Actor-Role", "ADMISSIONS_STAFF"))
                 .andExpect(view().name(ScheduleViewController.DETAIL_VIEW))
                 .andExpect(content().string(containsString("09:00-09:30")))
                 .andExpect(content().string(containsString("Pending rescheduling")))

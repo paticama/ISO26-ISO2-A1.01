@@ -32,8 +32,9 @@ public class ScheduleViewController {
     static final String LIST_VIEW = "schedules/list";
     static final String NEW_VIEW = "schedules/new";
     static final String DETAIL_VIEW = "schedules/detail";
-    static final String DEFAULT_ACTOR = "staff-1";
-    static final String DEFAULT_ROLE = "ADMISSIONS_STAFF";
+    /** No default actor: a request without identity headers reaches the server unidentified and is refused (A6). */
+    static final String DEFAULT_ACTOR = "";
+    static final String DEFAULT_ROLE = "";
 
     private final ScheduleApiClient apiClient;
 
