@@ -51,11 +51,11 @@
 - Design decisions: audit events are immutable and the repository is append-only (ADR-008); each search, export or denied attempt is itself recorded as a new audit event (`AUDIT_RECORDS_QUERIED`, `AUDIT_RECORDS_EXPORTED`, `AUDIT_ACCESS_DENIED`), so existing records are never changed; an empty result is a `NO_MATCHES` status, while failures are always errors.
 
 ## Acceptance Criteria
-- [ ] Authorized actors can search or filter audit activity for a selected time range.
-- [ ] Results identify the recorded actor, action, timestamp, and relevant target or outcome where available.
-- [ ] Unauthorized actors cannot access audit records.
-- [ ] Empty results and failed queries are distinguishable.
-- [ ] Searching audit records does not alter the underlying records.
+- [x] Authorized actors can search or filter audit activity for a selected time range.
+- [x] Results identify the recorded actor, action, timestamp, and relevant target or outcome where available.
+- [x] Unauthorized actors cannot access audit records.
+- [x] Empty results and failed queries are distinguishable.
+- [x] Searching audit records does not alter the underlying records.
 
 ## Decisions (DECISIONS.md)
 - See [DECISIONS.md](../../DECISIONS.md).
