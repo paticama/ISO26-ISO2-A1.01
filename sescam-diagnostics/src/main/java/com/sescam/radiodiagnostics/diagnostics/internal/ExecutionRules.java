@@ -20,7 +20,8 @@ import java.util.Set;
  *   <li>a completed CT needs DLP and CTDIvol; a completed nuclear-medicine examination needs the activity;</li>
  *   <li>doses and volumes are not negative;</li>
  *   <li>2b: an aborted procedure needs a reason and at least one incident;</li>
- *   <li>2a: every incident needs type, severity and description.</li>
+ *   <li>2a: every incident needs type, severity and description; its time, if given, is within the examination
+ *       and not in the future.</li>
  * </ul>
  */
 public class ExecutionRules {
@@ -86,8 +87,28 @@ public class ExecutionRules {
             if (isBlank(incident.description())) {
                 invalid.add(prefix + "description");
             }
+            if (!occurredDuringExamination(incident.occurredAt(), log, now)) {
+                invalid.add(prefix + "occurredAt");
+            }
         }
         return new ArrayList<>(invalid);
+    }
+
+    /**
+     * An incident time, when given, is not in the future and lies within the examination (start to end, or to the
+     * abort time in 2b). {@code null} means the end of the execution and is always valid. When start or end is itself
+     * invalid only the future check applies, so the error is reported on that field.
+     */
+    private static boolean occurredDuringExamination(Instant occurredAt, ExecutionLogDTO log, Instant now) {
+        if (occurredAt == null) {
+            return true;
+        }
+        if (occurredAt.isAfter(now)) {
+            return false;
+        }
+        boolean afterStart = log.startedAt() == null || !occurredAt.isBefore(log.startedAt());
+        boolean beforeEnd = log.endedAt() == null || !occurredAt.isAfter(log.endedAt());
+        return afterStart && beforeEnd;
     }
 
     private static void checkNotNegative(Set<String> invalid, String field, Double value) {

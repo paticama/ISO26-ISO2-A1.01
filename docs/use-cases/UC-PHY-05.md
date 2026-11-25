@@ -5,7 +5,7 @@
 - **RF:** `FR-PHY-09`, `FR-PHY-10`, `FR-PHY-11`, `FR-PHY-17`
 - **Phase:** Elaboration
 - **Iteration:** 2
-- **Module:** `sescam-diagnostics` (C7, v1.0.0)
+- **Module:** `sescam-diagnostics` (C7, v1.0.0; v1.0.1 applies the server review points of #188)
 - **Priority:** High (ISO/IEC/IEEE 29148:2018)
 - **Dependencies:** FR-PHY-09 depends on FR-PHY-01 (UC-PHY-01) and FR-AAD-12 (UC-AAD-05).
 - **UML Relationships:**
@@ -36,7 +36,7 @@
 - [x] Analysis: [activity diagram](../diagrams/UC-PHY-05/uc-phy-05-activity.puml) (main flow + 2a, 2b), [analysis class diagram](../diagrams/UC-PHY-05/uc-phy-05-class-analysis.puml) (boundary/control/entity, entity per module), [domain class diagram](../diagrams/puml/phy-class-domain.puml) and communication diagrams ([normal](../diagrams/puml/comm-phy-05-normal.puml), [2a](../diagrams/puml/comm-phy-05-alt2a.puml), [2b](../diagrams/puml/comm-phy-05-alt2b.puml)).
 - [x] Design: contracts in `sescam-common` (see below); server [design class diagram](../diagrams/UC-PHY-05/uc-phy-05-class-design.puml) and [sequence diagram](../diagrams/UC-PHY-05/uc-phy-05-sequence-design.puml); client [design class diagram](../diagrams/UC-PHY-05/uc-phy-05-class-design-client.puml) and [sequence diagram](../diagrams/UC-PHY-05/uc-phy-05-sequence-design-client.puml).
 - [x] Implementation: server slice (`sescam-diagnostics` 1.0.0: `ProcedureExecutionServiceImpl`, `ExecutionRules`, `ProcedureExecution`, `ClinicalIncident`; `ExecutionRestController` in server-app) and client slice (`ExecutionViewController`, `ExecutionForm`, `ExecutionApiClient`, `executions/new.html`). Stand-ins until the modules exist: bookings of C5 (`InMemoryScheduledProcedureGateway`) and the subscribers of the execution event in C4/C5.
-- [x] Testing: JUnit 5 + Mockito. `sescam-diagnostics` 23 tests (rules per field, service per flow: main, 2a, 2b, abort without reason/incident, consent and CT dose missing, denied role, unknown procedure, second record, audit failure), `sescam-server-app` `ExecutionRestControllerTest` 5 (MockMvc), `sescam-client-app` 20 (form, REST client, view per flow), `sescam-common` `DiagnosticsContractsTest` 5. JaCoCo ≥ 80% in the four modules.
+- [x] Testing: JUnit 5 + Mockito. `sescam-diagnostics` 28 tests (rules per field and incident time, service per flow: main, 2a, 2b, abort without reason/incident, consent and CT dose missing, denied role, unknown procedure, second and concurrent record, audit failures and compensating entries, audited pending list), `sescam-server-app` `ExecutionRestControllerTest` 6 (MockMvc, role checked before the data), `sescam-client-app` 20 (form, REST client, view per flow), `sescam-common` `DiagnosticsContractsTest` 5. JaCoCo ≥ 80% in the four modules.
 
 ## Contracts and Interfaces
 - `com.sescam.radiodiagnostics.common.diagnostics.ProcedureExecutionService` (C7; package follows the repository convention instead of `es.uclm.esi.sescam.diagnostics.api`): `listProceduresAwaitingExecution(actorId, actorRole)`, `recordExecution(ExecutionLogDTO) : ExecutionRecordDTO`

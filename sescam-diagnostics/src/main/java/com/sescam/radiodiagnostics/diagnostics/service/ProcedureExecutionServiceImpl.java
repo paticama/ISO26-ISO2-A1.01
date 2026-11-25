@@ -70,9 +70,13 @@ public class ProcedureExecutionServiceImpl implements ProcedureExecutionService 
     @Override
     public List<ScheduledProcedureDTO> listProceduresAwaitingExecution(String actorId, String actorRole) {
         checkAccess(actorId, actorRole, null);
-        return procedureGateway.listBookedProcedures().stream()
+        List<ScheduledProcedureDTO> pending = procedureGateway.listBookedProcedures().stream()
                 .filter(p -> !executionRepository.existsByOrderId(p.orderId()))
                 .toList();
+        // Clinical-data access (patients, exams, rooms): audited, and nothing is returned if the audit fails (NFR-11).
+        audit("EXECUTION_PENDING_LIST_VIEWED", actorId, null, pending.size() + " procedures awaiting execution: "
+                + pending.stream().map(ScheduledProcedureDTO::orderId).toList());
+        return pending;
     }
 
     @Override
@@ -85,9 +89,13 @@ public class ProcedureExecutionServiceImpl implements ProcedureExecutionService 
             throw new InvalidExecutionDataException("The procedure (orderId) is mandatory.", List.of("orderId"));
         }
         String orderId = request.orderId().trim();
-        ScheduledProcedureDTO procedure = procedureGateway.findByOrderId(orderId)
-                .orElseThrow(() -> new ProcedureNotFoundException("Order '" + orderId + "' is not a booked procedure."));
+        ScheduledProcedureDTO procedure = procedureGateway.findByOrderId(orderId).orElse(null);
+        if (procedure == null) {
+            auditRefusal("EXECUTION_REJECTED", request.actorId(), orderId, "Not a booked procedure");
+            throw new ProcedureNotFoundException("Order '" + orderId + "' is not a booked procedure.");
+        }
         if (executionRepository.existsByOrderId(orderId)) {
+            auditRefusal("EXECUTION_REJECTED", request.actorId(), orderId, "Execution already recorded");
             throw new ExecutionAlreadyRecordedException("The execution of order '" + orderId + "' is already recorded.");
         }
 
@@ -118,16 +126,28 @@ public class ProcedureExecutionServiceImpl implements ProcedureExecutionService 
 
         // Audit before saving (NFR-11): if the audit store fails, nothing is stored or published,
         // so the client gets an error and a retry does not hit "already recorded" (409).
-        audit(request.aborted() ? "PROCEDURE_ABORTED" : "EXECUTION_RECORDED", request.actorId(), execution.getId(),
-                "Order " + orderId + ", patient " + execution.getPatientId() + ", status " + status
-                        + (request.aborted() ? ", reason: " + execution.getAbortReason() : ""));
-        for (ClinicalIncident incident : execution.getIncidents()) {
-            audit("CLINICAL_INCIDENT_LOGGED", request.actorId(), incident.getId(),
-                    incident.getSeverity() + " " + incident.getType() + " for patient " + incident.getPatientId()
-                            + " during order " + orderId);
+        boolean audited = false;
+        ProcedureExecution saved;
+        try {
+            audit(request.aborted() ? "PROCEDURE_ABORTED" : "EXECUTION_RECORDED", request.actorId(), execution.getId(),
+                    "Order " + orderId + ", patient " + execution.getPatientId() + ", status " + status
+                            + (request.aborted() ? ", reason: " + execution.getAbortReason() : ""));
+            audited = true;
+            for (ClinicalIncident incident : execution.getIncidents()) {
+                audit("CLINICAL_INCIDENT_LOGGED", request.actorId(), incident.getId(),
+                        incident.getSeverity() + " " + incident.getType() + " for patient " + incident.getPatientId()
+                                + " during order " + orderId);
+            }
+            // Atomic: a concurrent second request for the same order gets 409 here
+            saved = executionRepository.save(execution);
+        } catch (RuntimeException ex) {
+            if (audited) {
+                // Audit entries cannot be changed (NFR-11): record that the audited execution was not stored.
+                auditRefusal("EXECUTION_RECORD_FAILED", request.actorId(), execution.getId(),
+                        "Execution of order " + orderId + " was not stored: " + ex.getClass().getSimpleName());
+            }
+            throw ex;
         }
-
-        ProcedureExecution saved = executionRepository.save(execution);
         eventPublisher.publishExecutionRecorded(new ProcedureExecutionEvent(saved.getId(), orderId,
                 saved.getPatientId(), status, saved.getAbortReason(), now));
 
@@ -151,7 +171,10 @@ public class ProcedureExecutionServiceImpl implements ProcedureExecutionService 
                 null, null, details, clock.instant()));
     }
 
-    /** Audit of a refused request: best effort, so a failing audit store does not hide the refusal. */
+    /**
+     * Best-effort audit of a refused request or of an audited execution that was not stored: a failing audit store
+     * does not hide the refusal or the original error.
+     */
     private void auditRefusal(String action, String actorId, String resourceKey, String details) {
         try {
             audit(action, actorId, resourceKey, details);

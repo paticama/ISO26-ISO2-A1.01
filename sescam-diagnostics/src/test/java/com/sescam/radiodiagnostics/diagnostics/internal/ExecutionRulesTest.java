@@ -97,6 +97,32 @@ class ExecutionRulesTest {
     }
 
     @Test
+    void incidentTimeIsWithinTheExaminationAndNotInTheFuture() {
+        IncidentDTO during = withTime(START.plusSeconds(600));
+        IncidentDTO atStart = withTime(START);
+        IncidentDTO atEnd = withTime(END);
+        IncidentDTO before = withTime(START.minusSeconds(1));
+        IncidentDTO after = withTime(END.plusSeconds(1));
+        IncidentDTO future = withTime(NOW.plusSeconds(60));
+
+        assertThat(rules.invalidFields(log(START, END, "R", null, null, null, null, null, false, false, null,
+                INCIDENT, during, atStart, atEnd, before, after, future), procedure(ModalityType.X_RAY, false, false),
+                NOW)).containsExactly("incidents[4].occurredAt", "incidents[5].occurredAt", "incidents[6].occurredAt");
+    }
+
+    @Test
+    void incidentTimeWithInvalidStartOrEndIsOnlyCheckedAgainstNow() {
+        assertThat(rules.invalidFields(log(null, null, "R", null, null, null, null, null, false, false, null,
+                withTime(START), withTime(NOW.plusSeconds(1))), procedure(ModalityType.X_RAY, false, false), NOW))
+                .containsExactly("startedAt", "endedAt", "incidents[1].occurredAt");
+    }
+
+    private static IncidentDTO withTime(Instant occurredAt) {
+        return new IncidentDTO(IncidentType.EQUIPMENT_MALFUNCTION, IncidentSeverity.MILD, "Injector alarm", null,
+                occurredAt);
+    }
+
+    @Test
     void aNullIncidentIsRejectedWhenTheLogIsBuilt() {
         org.assertj.core.api.Assertions.assertThatNullPointerException().isThrownBy(() ->
                 log(START, END, "R", null, null, null, null, null, false, false, null, INCIDENT, null));
