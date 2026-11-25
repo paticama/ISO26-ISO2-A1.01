@@ -13,7 +13,7 @@
     </parent>
 
     <artifactId>sescam-diagnostics</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <packaging>jar</packaging>
 
     <name>SESCAM Diagnostics Module (C7)</name>

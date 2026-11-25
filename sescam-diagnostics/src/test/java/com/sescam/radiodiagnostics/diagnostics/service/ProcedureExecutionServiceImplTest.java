@@ -93,6 +93,17 @@ class ProcedureExecutionServiceImplTest {
 
         assertThat(service.listProceduresAwaitingExecution("dr-1", "PHYSICIAN"))
                 .extracting(ScheduledProcedureDTO::orderId).doesNotContain("ORD-DEMO-CT");
+        assertThat(auditActions()).containsExactly(
+                "EXECUTION_PENDING_LIST_VIEWED", "EXECUTION_RECORDED", "EXECUTION_PENDING_LIST_VIEWED");
+    }
+
+    @Test
+    @DisplayName("The pending list is clinical data: if its access cannot be audited, nothing is returned (#188)")
+    void pendingListNotReturnedWithoutAudit() {
+        doThrow(new IllegalStateException("audit store down")).when(auditService).recordEvent(any());
+
+        assertThatThrownBy(() -> service.listProceduresAwaitingExecution("dr-1", "PHYSICIAN"))
+                .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
@@ -218,16 +229,43 @@ class ProcedureExecutionServiceImplTest {
                 null, null, null, true, false, null, null, "dr-1", "PHYSICIAN")))
                 .isInstanceOfSatisfying(InvalidExecutionDataException.class,
                         ex -> assertThat(ex.getInvalidFields()).containsExactly("orderId"));
+        assertThat(auditActions()).containsExactly("EXECUTION_REJECTED", "EXECUTION_REJECTED");
     }
 
     @Test
-    @DisplayName("A procedure can only be recorded once")
+    @DisplayName("A procedure can only be recorded once; the refusal is audited")
     void rejectsSecondRecord() {
         service.recordExecution(ctLog(false, null, List.of()));
 
         assertThatThrownBy(() -> service.recordExecution(ctLog(false, null, List.of())))
                 .isInstanceOf(ExecutionAlreadyRecordedException.class);
         verify(eventPublisher).publishExecutionRecorded(any());
+        assertThat(auditActions()).containsExactly("EXECUTION_RECORDED", "EXECUTION_REJECTED");
+    }
+
+    @Test
+    @DisplayName("Two requests at the same time: the second gets 409, keeps the first and is compensated (#188)")
+    void concurrentSecondRecord() {
+        // Both requests pass existsByOrderId before either is stored
+        InMemoryExecutionRepository racy = new InMemoryExecutionRepository() {
+            @Override
+            public boolean existsByOrderId(String orderId) {
+                return false;
+            }
+        };
+        ProcedureExecutionServiceImpl racyService = new ProcedureExecutionServiceImpl(racy, gateway, accessControl,
+                auditService, eventPublisher, new ExecutionRules(), Clock.fixed(NOW, ZoneOffset.UTC));
+        ExecutionRecordDTO first = racyService.recordExecution(ctLog(false, null, List.of()));
+
+        assertThatThrownBy(() -> racyService.recordExecution(ctLog(false, null, List.of())))
+                .isInstanceOf(ExecutionAlreadyRecordedException.class);
+
+        assertThat(racy.count()).isEqualTo(1);
+        assertThat(racy.findByOrderId("ORD-DEMO-CT")).get()
+                .satisfies(e -> assertThat(e.getId()).isEqualTo(first.executionId()));
+        verify(eventPublisher).publishExecutionRecorded(any());
+        assertThat(auditActions()).containsExactly(
+                "EXECUTION_RECORDED", "EXECUTION_RECORDED", "EXECUTION_RECORD_FAILED");
     }
 
     @Test
@@ -254,6 +292,9 @@ class ProcedureExecutionServiceImplTest {
                 .isInstanceOf(IllegalStateException.class);
         assertThat(repository.count()).isZero();
         verify(eventPublisher, never()).publishExecutionRecorded(any());
+        // The execution entry already recorded is compensated (#188)
+        assertThat(auditActions()).containsExactly(
+                "EXECUTION_RECORDED", "CLINICAL_INCIDENT_LOGGED", "EXECUTION_RECORD_FAILED");
 
         ExecutionRecordDTO retry = service.recordExecution(ctLog(false, null, List.of(REACTION)));
 

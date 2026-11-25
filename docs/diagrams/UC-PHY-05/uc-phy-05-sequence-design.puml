@@ -21,11 +21,18 @@ RC -> S : listProceduresAwaitingExecution(actorId, role)
 S -> AC : canLogProcedureExecution(actorId, role)
 S -> G : listBookedProcedures()
 S -> R : existsByOrderId(orderId) for each
+S -> AU : recordEvent(EXECUTION_PENDING_LIST_VIEWED, order ids)
+note right of AU
+  Clinical-data access (NFR-11): if this audit fails,
+  the list is not returned.
+end note
 S --> RC : List<ScheduledProcedureDTO> (not executed yet)
 RC --> UI : 200
 
 == Steps 2-4 (+2a, 2b): record execution ==
 UI -> RC : POST /api/v1/executions [ExecutionLogPayload]
+RC -> RC : empty incident entry -> incident without data
+(rejected by the rules after the role check)
 RC -> S : recordExecution(ExecutionLogDTO)
 S -> AC : canLogProcedureExecution(actorId, role)
 alt actorId blank OR role not allowed
@@ -34,14 +41,17 @@ alt actorId blank OR role not allowed
 else allowed
   S -> G : findByOrderId(orderId)
   alt not booked
+    S -> AU : recordEvent(EXECUTION_REJECTED) [best effort]
     S --> RC : throw ProcedureNotFoundException (404)
   else booked
     S -> R : existsByOrderId(orderId)
     alt already recorded
+      S -> AU : recordEvent(EXECUTION_REJECTED) [best effort]
       S --> RC : throw ExecutionAlreadyRecordedException (409)
     else first record
       S -> RU : invalidFields(request, procedure, now)
-      alt invalid (times, consent, contrast batch, dose per modality,\naborted without reason or incident, incident fields)
+      alt invalid (times, consent, contrast batch, dose per modality,\naborted without reason or incident, incident fields,
+incident time outside the examination or in the future)
         S -> AU : recordEvent(EXECUTION_REJECTED) [best effort]
         S --> RC : throw InvalidExecutionDataException(fields) (400)
       else valid
@@ -59,7 +69,11 @@ else allowed
           Audited before saving (NFR-11): if the audit fails,
           nothing is stored or published and a retry is not a 409.
         end note
-        S -> R : save(ProcedureExecution)
+        S -> R : save(ProcedureExecution) [atomic: putIfAbsent]
+        opt a later audit or the save fails (e.g. a concurrent record: 409)
+          S -> AU : recordEvent(EXECUTION_RECORD_FAILED, same execution id) [best effort]
+          S --> RC : rethrow, nothing published
+        end
         S -> EV : publishExecutionRecorded(ProcedureExecutionEvent)
         note right of EV
           C4 sets the order to EXECUTED_PENDING_REPORT /

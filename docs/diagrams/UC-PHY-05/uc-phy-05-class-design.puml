@@ -127,7 +127,7 @@ package "sescam-diagnostics module (com.sescam.radiodiagnostics.diagnostics)" {
     + invalidFields(ExecutionLogDTO, ScheduledProcedureDTO, now) : List<String>
   }
   interface ExecutionRepository {
-    + save(ProcedureExecution) : ProcedureExecution
+    + save(ProcedureExecution) : ProcedureExecution {atomic, 409 if the order has one}
     + findByOrderId(String) : Optional<ProcedureExecution>
     + existsByOrderId(String) : boolean
   }

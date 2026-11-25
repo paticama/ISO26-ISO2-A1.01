@@ -1,5 +1,6 @@
 package com.sescam.radiodiagnostics.diagnostics.repository;
 
+import com.sescam.radiodiagnostics.common.diagnostics.ExecutionAlreadyRecordedException;
 import com.sescam.radiodiagnostics.diagnostics.domain.ProcedureExecution;
 
 import java.util.Map;
@@ -11,9 +12,14 @@ public class InMemoryExecutionRepository implements ExecutionRepository {
 
     private final Map<String, ProcedureExecution> byOrderId = new ConcurrentHashMap<>();
 
+    /** Atomic: of two requests for the same order at the same time, only the first is stored. */
     @Override
     public ProcedureExecution save(ProcedureExecution execution) {
-        byOrderId.put(execution.getOrderId(), execution);
+        ProcedureExecution existing = byOrderId.putIfAbsent(execution.getOrderId(), execution);
+        if (existing != null) {
+            throw new ExecutionAlreadyRecordedException(
+                    "The execution of order '" + execution.getOrderId() + "' is already recorded.");
+        }
         return execution;
     }
 

@@ -3,7 +3,6 @@ package com.sescam.radiodiagnostics.server.diagnostics;
 import com.sescam.radiodiagnostics.common.diagnostics.ExecutionLogDTO;
 import com.sescam.radiodiagnostics.common.diagnostics.ExecutionRecordDTO;
 import com.sescam.radiodiagnostics.common.diagnostics.IncidentDTO;
-import com.sescam.radiodiagnostics.common.diagnostics.InvalidExecutionDataException;
 import com.sescam.radiodiagnostics.common.diagnostics.ProcedureExecutionService;
 import com.sescam.radiodiagnostics.common.diagnostics.ScheduledProcedureDTO;
 import org.springframework.http.HttpStatus;
@@ -17,7 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * REST API for UC-PHY-05: Log Procedure Execution Details and Clinical/Operational Incidents.
@@ -46,10 +44,11 @@ public class ExecutionRestController {
             @RequestHeader(value = "X-Actor-Id", defaultValue = "") String actorId,
             @RequestHeader(value = "X-Actor-Role", defaultValue = "") String actorRole,
             @RequestBody ExecutionLogPayload payload) {
-        List<IncidentDTO> incidents = payload.incidents() == null ? List.of() : payload.incidents();
-        if (incidents.stream().anyMatch(Objects::isNull)) {
-            throw new InvalidExecutionDataException("Incident entries must not be empty.", List.of("incidents"));
-        }
+        // An empty incident entry becomes an incident without data: the service checks the role first and then
+        // rejects it as incidents[i].type/severity/description (400, audited), instead of answering here.
+        List<IncidentDTO> incidents = payload.incidents() == null ? List.of() : payload.incidents().stream()
+                .map(i -> i == null ? new IncidentDTO(null, null, null, null, null) : i)
+                .toList();
         ExecutionLogDTO request = new ExecutionLogDTO(payload.orderId(), payload.startedAt(), payload.endedAt(),
                 payload.roomEquipmentId(), payload.contrastBatch(), payload.contrastVolumeMl(), payload.doseDlp(),
                 payload.doseCtdiVol(), payload.radiotracerActivityMBq(),

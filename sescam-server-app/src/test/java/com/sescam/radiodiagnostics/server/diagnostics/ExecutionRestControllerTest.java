@@ -116,7 +116,18 @@ class ExecutionRestControllerTest {
                          "roomEquipmentId":"XR-1","incidents":[null]}
                         """))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.invalidFields", hasItem("incidents")));
+                .andExpect(jsonPath("$.invalidFields", hasItem("incidents[0].type")))
+                .andExpect(jsonPath("$.invalidFields", hasItem("incidents[0].description")));
+        verify(eventPublisher, never()).publishExecutionRecorded(any());
+    }
+
+    @Test
+    @DisplayName("The role is checked before the data: an empty incident from another role gets 403, not 400 (#188)")
+    void roleCheckedBeforeData() throws Exception {
+        mockMvc.perform(postAs("ADMINISTRATIVE_STAFF", """
+                        {"orderId":"ORD-DEMO-XR","incidents":[null]}
+                        """))
+                .andExpect(status().isForbidden());
         verify(eventPublisher, never()).publishExecutionRecorded(any());
     }
 
