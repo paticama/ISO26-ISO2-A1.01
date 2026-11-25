@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Open Schedule - SESCAM</title>
+    <style>
+        :root { --border: #d0d7de; --muted: #57606a; --error: #b42318; --ok: #1a7f37; --warn: #9a6700; --bg: #f6f8fa; --btn: #0969da; }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: system-ui, sans-serif; color: #1f2328; background: #fff; }
+        header { padding: 16px; border-bottom: 1px solid var(--border); background: var(--bg); display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+        header h1 { margin: 0; font-size: 1.25rem; }
+        main { padding: 16px; max-width: 1100px; margin: 0 auto; }
+        .message { margin: 16px 0; padding: 12px; border-radius: 6px; border: 1px solid var(--border); }
+        .message.error { border-color: var(--error); color: var(--error); }
+        .message.ok { border-color: var(--ok); color: var(--ok); }
+        .message.warn { border-color: var(--warn); color: var(--warn); }
+        form.inline { display: flex; gap: 8px; flex-wrap: wrap; align-items: end; margin-bottom: 16px; }
+        label { display: flex; flex-direction: column; font-size: .85rem; gap: 4px; }
+        input, select { padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: .9rem; }
+        button, .btn { padding: 8px 16px; background: var(--btn); color: #fff; border: none; border-radius: 6px; cursor: pointer; text-decoration: none; font-size: .9rem; }
+        button.danger { background: var(--error); }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+        th, td { padding: 8px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+        th { background: var(--bg); }
+        .status { font-weight: 600; }
+        .status.OPEN { color: var(--ok); }
+        .status.CLOSED { color: var(--error); }
+        .field-error { color: var(--error); font-size: .8rem; }
+        .hint { color: var(--muted); font-size: .8rem; }
+        fieldset { border: 1px solid var(--border); border-radius: 6px; margin: 16px 0; padding: 12px; }
+        a { color: #0969da; }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Open schedule (UC-AAD-02)</h1>
+    <a th:href="@{/schedules}">Back to schedules</a>
+</header>
+<main>
+    <div th:if="${failure != null}" class="message error" role="alert">
+        <strong th:text="${failure}"></strong>
+        <ul th:if="${conflicts != null and !#lists.isEmpty(conflicts)}">
+            <li th:each="c : ${conflicts}"
+                th:text="${c.resourceId} + ' ' + ${#temporals.format(c.start, 'yyyy-MM-dd HH:mm')} + '-' + ${#temporals.format(c.end, 'HH:mm')} + ' (' + ${c.status} + ')'"></li>
+        </ul>
+    </div>
+    <form method="post" th:action="@{/schedules/new}" th:object="${form}">
+        <fieldset>
+            <legend>Resource</legend>
+            <label>Resource (room or equipment) <input type="text" th:field="*{resourceId}" placeholder="MRI-ROOM-1"/></label>
+            <span class="field-error" th:if="${errors != null and errors['resourceId'] != null}" th:text="${errors['resourceId']}"></span>
+            <label>Location <input type="text" th:field="*{locationId}" placeholder="HGUCR"/></label>
+            <span class="field-error" th:if="${errors != null and errors['locationId'] != null}" th:text="${errors['locationId']}"></span>
+            <label>Modality <input type="text" th:field="*{modality}" placeholder="MRI"/></label>
+            <span class="field-error" th:if="${errors != null and errors['modality'] != null}" th:text="${errors['modality']}"></span>
+        </fieldset>
+        <fieldset>
+            <legend>Time window and capacity</legend>
+            <label>Date <input type="date" th:field="*{date}"/></label>
+            <span class="field-error" th:if="${errors != null and errors['date'] != null}" th:text="${errors['date']}"></span>
+            <label>Start <input type="time" th:field="*{startTime}"/></label>
+            <span class="field-error" th:if="${errors != null and errors['startTime'] != null}" th:text="${errors['startTime']}"></span>
+            <label>End <input type="time" th:field="*{endTime}"/></label>
+            <span class="field-error" th:if="${errors != null and errors['endTime'] != null}" th:text="${errors['endTime']}"></span>
+            <label>Slot duration (minutes) <input type="number" min="5" th:field="*{slotDurationMinutes}"/></label>
+            <span class="field-error" th:if="${errors != null and errors['slotDurationMinutes'] != null}" th:text="${errors['slotDurationMinutes']}"></span>
+            <label>Places per slot <input type="number" min="1" th:field="*{capacityPerSlot}"/></label>
+            <span class="field-error" th:if="${errors != null and errors['capacityPerSlot'] != null}" th:text="${errors['capacityPerSlot']}"></span>
+            <p class="hint">The maximum places per slot is set by the System Administrator.</p>
+        </fieldset>
+        <button type="submit">Open schedule</button>
+    </form>
+</main>
+</body>
+</html>

@@ -1,0 +1,68 @@
+@startuml uc-aad-02-client-class-design
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+
+title UC-AAD-02: Manage Schedules - Design Class Diagram (client slice, sescam-client-app)
+
+package "sescam-client-app :: client.schedules" {
+    class ScheduleViewController <<@Controller /schedules>> {
+        + list(date, resourceId, locationId, status): "schedules/list"
+        + newForm(): "schedules/new"
+        + open(ScheduleForm): redirect | "schedules/new"
+        + detail(id): "schedules/detail"
+        + update(id, ScheduleForm): redirect | "schedules/detail"
+        + close(id, ScheduleForm): redirect | "schedules/detail"
+        + reopen(id, ScheduleForm): redirect | "schedules/detail"
+    }
+    class ScheduleForm {
+        resourceId, locationId, modality
+        date, startTime, endTime
+        slotDurationMinutes, capacityPerSlot
+        expectedVersion, confirmAffectedAppointments, reason
+        + validateOpen(): Map
+        + validateWindow(): Map
+        + validateClose(): Map
+        + toOpenRequest(), toUpdateRequest(), toStatusChangeRequest()
+        + {static} fromDTO(ScheduleDTO)
+    }
+    interface ScheduleApiClient {
+        + search(criteria, actorId, role)
+        + get(id, actorId, role)
+        + open(OpenScheduleRequestDTO)
+        + update(UpdateScheduleRequestDTO)
+        + close(ScheduleStatusChangeRequestDTO)
+        + reopen(ScheduleStatusChangeRequestDTO)
+    }
+    class HttpScheduleApiClient <<@Component>> {
+        - restClient: RestClient
+        ~ toException(response): ScheduleClientException
+    }
+    class ScheduleClientException {
+        + getErrorCode(): String
+        + getConflictingSchedules(): List<ScheduleSummaryDTO>
+        + getAffectedAppointments(): List<AffectedAppointmentDTO>
+        + needsConfirmation(): boolean
+    }
+    ScheduleApiClient <|.. HttpScheduleApiClient
+    ScheduleViewController --> ScheduleApiClient
+    ScheduleViewController ..> ScheduleForm
+    HttpScheduleApiClient ..> ScheduleClientException : throws
+}
+
+package "templates/schedules" {
+    class "list.html" as list <<view>>
+    class "new.html" as newv <<view>>
+    class "detail.html" as detail <<view>>
+}
+
+package "sescam-common :: common.schedules" {
+    class "ScheduleDTO, ScheduleSummaryDTO, ScheduleChangeResultDTO,\nOpen/Update/StatusChange RequestDTO, AffectedAppointmentDTO" as DTOs <<record>>
+}
+
+ScheduleViewController ..> list
+ScheduleViewController ..> newv
+ScheduleViewController ..> detail
+HttpScheduleApiClient ..> DTOs
+HttpScheduleApiClient ..> "sescam-server-app\n/api/v1/schedules" : HTTP + X-Actor-Id / X-Actor-Role
+@enduml

@@ -1,0 +1,32 @@
+@startuml uc-aad-02-client-sequence-design
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+
+title UC-AAD-02: Manage Schedules - Client Sequence Diagram (close schedule with affected appointments, A2/A3)
+
+actor "Admissions Staff" as adm
+participant "detail.html" as view
+participant ":ScheduleViewController" as ctrl
+participant ":ScheduleForm" as form
+participant ":HttpScheduleApiClient" as api
+participant "sescam-server-app" as server
+
+adm -> view : fill reason, press "Close schedule"
+view -> ctrl : POST /schedules/{id}/close (expectedVersion, reason)
+ctrl -> form : validateClose()
+alt reason missing
+    ctrl --> view : detail + field error
+end
+ctrl -> api : close(toStatusChangeRequest(confirm = false))
+api -> server : POST /api/v1/schedules/{id}/close
+server --> api : 409 APPOINTMENTS_AFFECTED + affectedAppointments
+api --> ctrl : ScheduleClientException(needsConfirmation = true)
+ctrl --> view : detail + list of affected appointments + "Confirm close"
+adm -> view : press "Confirm close"
+view -> ctrl : POST /schedules/{id}/close (confirmAffectedAppointments = true)
+ctrl -> api : close(request(confirm = true))
+api -> server : POST /api/v1/schedules/{id}/close
+server --> api : 200 ScheduleChangeResultDTO (CLOSED, affected)
+api --> ctrl : result
+ctrl --> view : redirect /schedules/{id} + "handed to admissions for rescheduling"
+@enduml
