@@ -80,6 +80,10 @@ else Form valid
           does not create a duplicate order.
         end note
         S -> R : save(DiagnosticOrder)
+        opt save fails
+          S -> AU : recordEvent(ORDER_CREATION_FAILED, same order id) [best effort]
+          S --> RC : storage error (500), nothing published
+        end
         S -> EV : publishOrderCreated(OrderCreatedEvent)
         S --> RC : OrderResponseDTO
         RC --> UI : 201 Created [OrderResponseDTO]

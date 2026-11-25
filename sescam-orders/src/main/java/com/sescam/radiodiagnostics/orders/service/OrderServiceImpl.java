@@ -118,7 +118,15 @@ public class OrderServiceImpl implements OrderService {
                 "Order " + order.getOrderNumber() + " for patient " + order.getPatientId() + ", exam " + exam.code()
                         + (overridden ? ". Override: " + order.getOverrideJustification() : ""));
 
-        DiagnosticOrder saved = orderRepository.save(order);
+        DiagnosticOrder saved;
+        try {
+            saved = orderRepository.save(order);
+        } catch (RuntimeException ex) {
+            // Audit entries cannot be changed (NFR-11): record that the audited order was not stored.
+            auditRefusal("ORDER_CREATION_FAILED", request.actorId(), order.getId(),
+                    "Order " + order.getOrderNumber() + " was not stored: " + ex.getClass().getSimpleName());
+            throw ex;
+        }
         eventPublisher.publishOrderCreated(new OrderCreatedEvent(saved.getId(), saved.getOrderNumber(),
                 saved.getPatientId(), saved.getExamTypeCode(), saved.getPriority(), saved.isRequiresContrast(),
                 saved.getOrderedAt()));
@@ -156,8 +164,9 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
-     * Audit entry of a refused request (denied, rejected, safety alert). The refusal is already decided, so a failing
-     * audit store must not turn the clear answer (403, 400, 422) into a server error.
+     * Best-effort audit entry: a refused request (denied, rejected, safety alert) or an order that failed to be stored
+     * after it was audited. The outcome is already decided, so a failing audit store must not replace the clear answer
+     * (403, 400, 422) or the original storage error.
      */
     private void auditRefusal(String action, String actorId, String resourceKey, String details) {
         try {
