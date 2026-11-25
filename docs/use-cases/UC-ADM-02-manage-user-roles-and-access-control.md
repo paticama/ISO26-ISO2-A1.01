@@ -46,11 +46,11 @@
 - **Open:** the safeguards for A4 are not defined yet; the API only reports `SAFEGUARD_REQUIRED` and the change is not applied. There is no endpoint to list the available roles, so the client takes the role name as text.
 
 ## Acceptance Criteria
-- [ ] An authorized administrator can view a user's current role assignments.
-- [ ] Available roles can be assigned or changed according to access-control rules.
-- [ ] Invalid, disallowed, or unauthorized changes do not alter the existing assignment.
-- [ ] Sensitive changes receive the applicable safeguards.
-- [ ] Successful role changes are confirmed, attributable, and available for audit.
+- [x] An authorized administrator can view a user's current role assignments.
+- [x] Available roles can be assigned or changed according to access-control rules.
+- [x] Invalid, disallowed, or unauthorized changes do not alter the existing assignment.
+- [x] Sensitive changes receive the applicable safeguards.
+- [x] Successful role changes are confirmed, attributable, and available for audit.
 
 ## Decisions (DECISIONS.md)
 - See [DECISIONS.md](../../DECISIONS.md).
