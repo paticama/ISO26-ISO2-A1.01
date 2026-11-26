@@ -1,0 +1,85 @@
+@startuml uc-phy-04-sequence-design
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+
+title UC-PHY-04: Design Sequence Diagram – server (main flow, 2a, 5a, 6a)\nC7 sescam-diagnostics v1.1.0
+
+actor "Physician / Radiologist" as Phy
+participant "client-app" as UI
+participant "DiagnosticReportRestController\n(server-app)" as RC
+participant "DiagnosticReportingServiceImpl\n(sescam-diagnostics)" as S
+participant "AccessControlService\n(C1)" as AC
+participant "ExecutionRepository" as ER
+participant "PacsGateway\n(C9 / stand-in)" as PACS
+participant "ReportRepository" as RR
+participant "FhirDiagnosticReportGateway\n(C9 / stand-in)" as FHIR
+participant "ReportEventPublisher\n(C8 subscribers)" as EV
+participant "AuditService\n(C1)" as AU
+
+== Step 1: reporting worklist ==
+UI -> RC : GET /api/v1/reports/pending [X-Actor-Id, X-Actor-Role]
+RC -> S : listProceduresPendingReport(actorId, role)
+S -> AC : canAuthorDiagnosticReports(actorId, role)
+S -> ER : findAllExecutedPendingReport()
+S -> RR : findByExecutionId(executionId)
+S -> AU : recordEvent(REPORT_WORKLIST_VIEWED)
+S --> RC : List<ReportableProcedureDTO>
+RC --> UI : 200 OK
+
+== Step 2 (+2a): fetch DICOM study metadata & viewer token ==
+UI -> RC : GET /api/v1/reports/executions/{executionId}/study
+RC -> S : getDicomStudy(executionId, actorId, role)
+S -> AC : canAuthorDiagnosticReports(actorId, role)
+S -> ER : findById(executionId)
+S -> PACS : fetchStudyForExecution(execution)
+alt 2a. PACS unavailable
+  PACS --> S : throw PacsConnectionException
+  S -> AU : recordEvent(PACS_CONNECTION_FAILED)
+  S --> RC : PacsConnectionException (502)
+  RC --> UI : 502 Bad Gateway
+else study available
+  PACS --> S : DicomStudyDTO (WADO token)
+  S -> AU : recordEvent(DICOM_STUDY_ACCESSED)
+  S --> RC : DicomStudyDTO
+  RC --> UI : 200 OK
+end
+
+== Step 5a: save as draft ==
+UI -> RC : PUT /api/v1/reports/draft
+RC -> S : saveDraft(SaveReportDraftRequestDTO)
+S -> AC : canAuthorDiagnosticReports(actorId, role)
+S -> RR : save(DiagnosticReport [status=DRAFT])
+S -> AU : recordEvent(REPORT_DRAFT_SAVED)
+note right of AU
+  No FHIR sync and no patient notification event on draft (5a).
+end note
+S --> RC : ReportDTO
+RC --> UI : 200 OK
+
+== Steps 6-8: finalize & digitally sign ==
+UI -> RC : POST /api/v1/reports/finalize
+RC -> S : finalizeAndSign(FinalizeReportRequestDTO)
+S -> AC : canAuthorDiagnosticReports(actorId, role)
+S -> S : validate findings, conclusion, digitalSignature
+S -> S : transition status -> FINALIZED
+S -> FHIR : exportDiagnosticReport(reportDTO)
+S -> S : markEhrSync(SYNCED or FAILED_SYNC)
+S -> RR : save(report)
+S -> AU : recordEvent(REPORT_FINALIZED)
+S -> EV : publishReportAvailable(ReportAvailabilityEvent)
+S --> RC : ReportDTO
+RC --> UI : 200 / 201
+
+== Step 6a: issue post-signature addendum ==
+UI -> RC : POST /api/v1/reports/{reportId}/addendums
+RC -> S : issueAddendum(IssueReportAddendumRequestDTO)
+S -> AC : canAuthorDiagnosticReports(actorId, role)
+S -> RR : findById(reportId)
+S -> S : verify finalized/amended, append ReportAddendum\n(preserve original signature, status -> AMENDED)
+S -> FHIR : exportDiagnosticReport(reportDTO)
+S -> RR : save(report)
+S -> AU : recordEvent(REPORT_ADDENDUM_ISSUED)
+S -> EV : publishReportAvailable(ReportAvailabilityEvent)
+S --> RC : ReportDTO
+RC --> UI : 200 OK
+@enduml

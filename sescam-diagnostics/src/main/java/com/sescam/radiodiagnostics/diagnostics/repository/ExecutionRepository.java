@@ -2,6 +2,7 @@ package com.sescam.radiodiagnostics.diagnostics.repository;
 
 import com.sescam.radiodiagnostics.diagnostics.domain.ProcedureExecution;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface ExecutionRepository {
@@ -14,7 +15,11 @@ public interface ExecutionRepository {
      */
     ProcedureExecution save(ProcedureExecution execution);
 
+    Optional<ProcedureExecution> findById(String executionId);
+
     Optional<ProcedureExecution> findByOrderId(String orderId);
+
+    List<ProcedureExecution> findAllExecutedPendingReport();
 
     boolean existsByOrderId(String orderId);
 
