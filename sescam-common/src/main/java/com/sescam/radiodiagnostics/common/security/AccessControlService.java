@@ -63,6 +63,18 @@ public interface AccessControlService {
     }
 
     /**
+     * Checks whether the authenticated user may consult and manage their own appointments (UC-PAT-01).
+     * Only patients; staff use the booking area of UC-AAD-05 instead. Whether each appointment belongs
+     * to this patient is checked separately by the admissions module (A8).
+     */
+    default boolean canManageOwnAppointments(String actorId, String role) {
+        if (actorId == null || actorId.isBlank() || role == null || role.isBlank()) {
+            return false;
+        }
+        return role.trim().equalsIgnoreCase("PATIENT");
+    }
+
+    /**
      * Checks whether the authenticated user may view DICOM studies and author/sign diagnostic reports (UC-PHY-04).
      * Only physicians and radiologists may author, sign, or amend diagnostic reports.
      */

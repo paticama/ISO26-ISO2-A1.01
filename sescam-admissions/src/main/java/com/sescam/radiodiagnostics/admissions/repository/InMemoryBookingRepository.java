@@ -4,6 +4,7 @@ import com.sescam.radiodiagnostics.admissions.domain.Booking;
 import com.sescam.radiodiagnostics.common.admissions.BookingStatus;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -36,6 +37,15 @@ public class InMemoryBookingRepository implements BookingRepository {
                 .filter(b -> b.getPatientId().equals(patientId))
                 .filter(b -> b.getStatus() != BookingStatus.CANCELLED)
                 .filter(b -> b.getScheduledStart().toLocalDate().equals(date))
+                .toList();
+    }
+
+    @Override
+    public List<Booking> findUpcomingByPatientId(String patientId, LocalDateTime from) {
+        return store.values().stream()
+                .filter(b -> b.getPatientId().equals(patientId))
+                .filter(b -> b.getStatus() != BookingStatus.PENDING)
+                .filter(b -> !b.getScheduledStart().isBefore(from))
                 .toList();
     }
 }

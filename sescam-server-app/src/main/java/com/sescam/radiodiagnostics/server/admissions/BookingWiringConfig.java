@@ -7,15 +7,20 @@ import com.sescam.radiodiagnostics.admissions.internal.NoOpBookingEventPublisher
 import com.sescam.radiodiagnostics.admissions.internal.NoOpBookingNotificationGateway;
 import com.sescam.radiodiagnostics.admissions.repository.BookingRepository;
 import com.sescam.radiodiagnostics.admissions.repository.InMemoryBookingRepository;
+import com.sescam.radiodiagnostics.admissions.repository.InMemoryRescheduleRequestRepository;
 import com.sescam.radiodiagnostics.admissions.repository.InMemoryWorklistRepository;
+import com.sescam.radiodiagnostics.admissions.repository.RescheduleRequestRepository;
 import com.sescam.radiodiagnostics.admissions.repository.WorklistRepository;
 import com.sescam.radiodiagnostics.admissions.service.BookingServiceImpl;
+import com.sescam.radiodiagnostics.admissions.service.PatientAppointmentServiceImpl;
 import com.sescam.radiodiagnostics.common.admissions.BookingEventPublisher;
 import com.sescam.radiodiagnostics.common.admissions.BookingNotificationGateway;
 import com.sescam.radiodiagnostics.common.admissions.BookingPolicyGateway;
 import com.sescam.radiodiagnostics.common.admissions.BookingService;
+import com.sescam.radiodiagnostics.common.admissions.PatientAppointmentService;
 import com.sescam.radiodiagnostics.common.admissions.PatientEligibilityGateway;
 import com.sescam.radiodiagnostics.common.admissions.PendingOrderGateway;
+import com.sescam.radiodiagnostics.common.catalogue.ExamTypeService;
 import com.sescam.radiodiagnostics.common.schedules.ScheduleService;
 import com.sescam.radiodiagnostics.common.security.AccessControlService;
 import com.sescam.radiodiagnostics.common.security.AuditService;
@@ -76,6 +81,32 @@ public class BookingWiringConfig {
                                          BookingEventPublisher bookingEventPublisher) {
         return new BookingServiceImpl(bookingRepository, worklistRepository, scheduleService,
                 pendingOrderGateway, patientEligibilityGateway, bookingPolicyGateway,
+                bookingNotificationGateway, accessControlService, auditService, bookingEventPublisher);
+    }
+
+    @Bean
+    public RescheduleRequestRepository rescheduleRequestRepository() {
+        return new InMemoryRescheduleRequestRepository();
+    }
+
+    /**
+     * UC-PAT-01: the patient's side of the same bookings, so it shares the repositories, gateways and policy
+     * of UC-AAD-05. The examination catalogue (C2) is the ExamTypeService bean of the server.
+     */
+    @Bean
+    public PatientAppointmentService patientAppointmentService(BookingRepository bookingRepository,
+                                                               RescheduleRequestRepository rescheduleRequestRepository,
+                                                               WorklistRepository worklistRepository,
+                                                               ScheduleService scheduleService,
+                                                               PendingOrderGateway pendingOrderGateway,
+                                                               ExamTypeService examTypeService,
+                                                               BookingPolicyGateway bookingPolicyGateway,
+                                                               BookingNotificationGateway bookingNotificationGateway,
+                                                               AccessControlService accessControlService,
+                                                               AuditService auditService,
+                                                               BookingEventPublisher bookingEventPublisher) {
+        return new PatientAppointmentServiceImpl(bookingRepository, rescheduleRequestRepository, worklistRepository,
+                scheduleService, pendingOrderGateway, examTypeService, bookingPolicyGateway,
                 bookingNotificationGateway, accessControlService, auditService, bookingEventPublisher);
     }
 }

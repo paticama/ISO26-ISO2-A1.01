@@ -10,10 +10,11 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
 
-/** Examination booking aggregate (UC-AAD-05). */
+/** Examination booking aggregate (UC-AAD-05); the patient confirms or cancels it in UC-PAT-01. */
 public class Booking {
 
     private final String bookingId;
@@ -65,13 +66,50 @@ public class Booking {
                 BookingStatus.CANCELLED, previousSlotId, null, reason, actorId, now));
     }
 
+    /**
+     * The patient confirms they will attend (UC-PAT-01 step 8). Only a BOOKED or RESCHEDULED appointment can be
+     * confirmed; the slot does not change. Policy checks (deadline, version) are done before calling this.
+     */
+    public void confirm(String actorId, Instant now) {
+        if (this.status != BookingStatus.BOOKED && this.status != BookingStatus.RESCHEDULED) {
+            throw new RequestAlreadyProcessedException(
+                    "Booking '" + bookingId + "' cannot be confirmed in status " + status + ".");
+        }
+        changeStatus(BookingStatus.CONFIRMED, "Attendance confirmed by the patient", actorId, now);
+    }
+
+    /**
+     * The examination was performed. Final state, like CANCELLED (UC-PAT-01 A7). To be called when C5 receives
+     * the execution event published by C7 (UC-PHY-05).
+     */
+    public void markExecuted(String actorId, Instant now) {
+        ensureActive();
+        changeStatus(BookingStatus.EXECUTED, "Examination performed", actorId, now);
+    }
+
+    /** True if this appointment belongs to the given patient (UC-PAT-01 A8). */
+    public boolean isOwnedBy(String candidatePatientId) {
+        return candidatePatientId != null && patientId.equals(candidatePatientId.trim());
+    }
+
     public void updateNotificationStatus(NotificationStatus notificationStatus) {
         this.notificationStatus = Objects.requireNonNull(notificationStatus);
     }
 
+    /** Status change that keeps the same slot, recorded in the history with a new version. */
+    private void changeStatus(BookingStatus newStatus, String reason, String actorId, Instant now) {
+        BookingStatus previousStatus = this.status;
+        this.status = newStatus;
+        this.version++;
+        this.history.add(new BookingHistoryEntry(UUID.randomUUID().toString(), previousStatus,
+                newStatus, slotId, slotId, reason, actorId, now));
+    }
+
+    /** CANCELLED and EXECUTED are final: nothing can change the booking any more. */
     private void ensureActive() {
-        if (this.status == BookingStatus.CANCELLED) {
-            throw new RequestAlreadyProcessedException("Booking '" + bookingId + "' is already cancelled.");
+        if (this.status == BookingStatus.CANCELLED || this.status == BookingStatus.EXECUTED) {
+            throw new RequestAlreadyProcessedException(
+                    "Booking '" + bookingId + "' is already " + status.name().toLowerCase(Locale.ROOT) + ".");
         }
     }
 
@@ -95,12 +133,28 @@ public class Booking {
         return patientId;
     }
 
+    public String getModality() {
+        return modality;
+    }
+
     public String getSlotId() {
         return slotId;
     }
 
+    public String getResourceId() {
+        return resourceId;
+    }
+
+    public String getLocationId() {
+        return locationId;
+    }
+
     public LocalDateTime getScheduledStart() {
         return scheduledStart;
+    }
+
+    public LocalDateTime getScheduledEnd() {
+        return scheduledEnd;
     }
 
     public BookingStatus getStatus() {
