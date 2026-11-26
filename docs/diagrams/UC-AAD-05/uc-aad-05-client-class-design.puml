@@ -1,0 +1,53 @@
+@startuml uc-aad-05-client-class-design
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+
+title UC-AAD-05: Book Requested Examination - Client Design Class Diagram (C5 v1.0.0)
+
+package "sescam-client-app :: client.admissions" {
+    class BookingViewController {
+        - apiClient: BookingApiClient
+        + index(orderId, date, actorId, actorRole, model): String
+        + createBooking(form, actorId, actorRole, model): String
+        + detail(id, actorId, actorRole, model): String
+        + reschedule(id, newSlotId, expectedSlotVersion, expectedBookingVersion, reason, actorId, actorRole, model): String
+        + cancel(id, expectedBookingVersion, reason, actorId, actorRole, model): String
+    }
+    class BookingForm {
+        - orderId: String
+        - slotId: String
+        - expectedSlotVersion: Long
+        + validate(): Map<String, String>
+        + toPayload(): BookingApiClient.CreateBookingPayload
+    }
+    class BookingApiClient {
+        - restClient: RestClient
+        - objectMapper: ObjectMapper
+        + listPendingOrders(actorId, actorRole): List<PendingExamRequestDTO>
+        + findCompatibleSlots(orderId, actorId, actorRole): List<SlotDTO>
+        + createBooking(payload, actorId, actorRole): BookingDTO
+        + getBooking(bookingId, actorId, actorRole): BookingDTO
+        + rescheduleBooking(bookingId, payload, actorId, actorRole): BookingDTO
+        + cancelBooking(bookingId, payload, actorId, actorRole): BookingDTO
+        + listWorklist(date, actorId, actorRole): List<WorklistItemDTO>
+    }
+    class BookingClientException {
+        - code: String
+        - statusCode: int
+        - invalidFields: List<String>
+        - alternativeSlots: List<SlotDTO>
+    }
+
+    BookingViewController --> BookingApiClient
+    BookingViewController ..> BookingForm
+    BookingApiClient ..> BookingClientException
+}
+
+package "Templates (Thymeleaf)" {
+    class "bookings/index.html" as IndexView
+    class "bookings/detail.html" as DetailView
+    BookingViewController ..> IndexView
+    BookingViewController ..> DetailView
+}
+@enduml

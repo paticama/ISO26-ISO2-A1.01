@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Admissions Booking – SESCAM</title>
+    <style>
+        :root { --border: #d0d7de; --muted: #57606a; --error: #b42318; --ok: #1a7f37; --bg: #f6f8fa; }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: system-ui, sans-serif; color: #1f2328; background: #fff; }
+        header { padding: 16px; border-bottom: 1px solid var(--border); background: var(--bg); }
+        header h1 { margin: 0; font-size: 1.25rem; }
+        main { padding: 16px; max-width: 1000px; margin: 0 auto; display: grid; gap: 20px; }
+        table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+        th, td { padding: 8px; border: 1px solid var(--border); text-align: left; }
+        th { background: var(--bg); }
+        .message.error { padding: 12px; border: 1px solid var(--error); color: var(--error); border-radius: 6px; }
+        .field-error { color: var(--error); font-size: .8rem; display: block; }
+        button { padding: 6px 12px; border-radius: 6px; border: 1px solid #0969da; background: #0969da; color: #fff; cursor: pointer; }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Book Requested Examination (UC-AAD-05)</h1>
+</header>
+<main>
+    <div th:if="${failure != null}" class="message error" id="failure" role="alert">
+        <strong th:text="${failure.message}"></strong>
+        <div th:if="${!failure.alternativeSlots.isEmpty()}" id="alternative-slots">
+            <p>Available alternative slots:</p>
+            <ul>
+                <li th:each="alt : ${failure.alternativeSlots}"
+                    th:text="|${alt.slotId()} (${alt.resourceId()}, ${alt.start()} - ${alt.end()}, v${alt.version()})|"></li>
+            </ul>
+        </div>
+    </div>
+
+    <section>
+        <h2>Pending Examination Requests</h2>
+        <table>
+            <thead>
+            <tr><th>Order</th><th>Patient</th><th>Exam</th><th>Modality</th><th>Priority</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="req : ${pendingOrders}">
+                <td th:text="${req.orderId()}"></td>
+                <td th:text="${req.patientId()}"></td>
+                <td th:text="${req.examTypeName()}"></td>
+                <td th:text="${req.modality()}"></td>
+                <td th:text="${req.priority()}"></td>
+                <td><a th:href="@{/bookings(orderId=${req.orderId()})}">Find slots</a></td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section th:if="${form.orderId != null and !form.orderId.isBlank()}">
+        <h2 th:text="|Compatible Slots for ${form.orderId}|">Compatible Slots</h2>
+        <form method="post" th:action="@{/bookings}" id="booking-form">
+            <input type="hidden" name="orderId" th:value="${form.orderId}" />
+            <span class="field-error" th:if="${errors != null and errors['orderId'] != null}" th:text="${errors['orderId']}"></span>
+            <label>Slot
+                <select name="slotId">
+                    <option value="">Select slot…</option>
+                    <option th:each="s : ${slots}" th:value="${s.slotId()}"
+                            th:text="|${s.slotId()} (${s.resourceId()}, ${s.start()} - ${s.end()}, free: ${s.freeCapacity()})|"></option>
+                </select>
+                <span class="field-error" th:if="${errors != null and errors['slotId'] != null}" th:text="${errors['slotId']}"></span>
+            </label>
+            <label>Expected Slot Version
+                <input type="number" name="expectedSlotVersion" th:value="${form.expectedSlotVersion != null ? form.expectedSlotVersion : 1}" min="0" />
+                <span class="field-error" th:if="${errors != null and errors['expectedSlotVersion'] != null}" th:text="${errors['expectedSlotVersion']}"></span>
+            </label>
+            <button type="submit">Confirm booking</button>
+        </form>
+    </section>
+
+    <section>
+        <h2>Daily Worklist</h2>
+        <table>
+            <thead>
+            <tr><th>Booking</th><th>Order</th><th>Patient</th><th>Resource</th><th>Start</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="w : ${worklist}">
+                <td><a th:href="@{/bookings/{id}(id=${w.bookingId()})}" th:text="${w.bookingId()}"></a></td>
+                <td th:text="${w.orderId()}"></td>
+                <td th:text="${w.patientId()}"></td>
+                <td th:text="${w.resourceId()}"></td>
+                <td th:text="${w.scheduledStart()}"></td>
+                <td th:text="${w.status()}"></td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+</main>
+</body>
+</html>
