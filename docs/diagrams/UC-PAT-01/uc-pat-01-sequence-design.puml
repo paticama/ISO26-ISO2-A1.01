@@ -89,8 +89,8 @@ alt error code returned (A7, A5)
   S --> RC : throw RequestAlreadyProcessedException (not BOOKED / RESCHEDULED, A7)\nor ConcurrentBookingException (stale version)\nor BookingConflictException (deadline passed, A5)
   RC --> UI : 409 + code
 else allowed
+  S -> AU : recordEvent(APPOINTMENT_CONFIRMED, previous status, CONFIRMED) [before the change]
   S -> S : booking.confirm(actorId, now)\n[status CONFIRMED + BookingHistoryEntry, version + 1]
-  S -> AU : recordEvent(APPOINTMENT_CONFIRMED, previous status, CONFIRMED)
   S -> BR : save(booking)
   S -> EV : publish(BookingChangedEvent(CONFIRMED))
   S --> RC : AppointmentDetailsDTO
@@ -106,19 +106,19 @@ alt reason blank or preferred date in the past
   S --> RC : throw InvalidBookingDataException(fields)
   RC --> UI : 400 INVALID_BOOKING_DATA
 else valid data
-  S -> RR : findPendingByBookingId(id)
-  alt a PENDING_REVIEW request exists (A6)
-    S -> AU : recordEvent(APPOINTMENT_ACTION_REJECTED, DUPLICATE_PENDING_REQUEST)
-    S --> RC : throw DuplicatePendingRequestException
-    RC --> UI : 409 DUPLICATE_PENDING_REQUEST
-  else no pending request
-    S -> RU : checkReschedule(booking, now)
-    alt CANCELLED / EXECUTED or already started (A7)
-      S -> AU : recordEvent(APPOINTMENT_ACTION_REJECTED, REQUEST_ALREADY_PROCESSED)
-      S --> RC : throw RequestAlreadyProcessedException
-      RC --> UI : 409 REQUEST_ALREADY_PROCESSED
-    else allowed
-      S -> S : RescheduleRequest.pending(request, now)\n[PENDING_REVIEW; booking NOT changed]
+  S -> RU : checkReschedule(booking, now)
+  alt CANCELLED / EXECUTED (A7) or appointment already started
+    S -> AU : recordEvent(APPOINTMENT_ACTION_REJECTED, code)
+    S --> RC : throw RequestAlreadyProcessedException (A7)\nor BookingConflictException (already started)
+    RC --> UI : 409 + code
+  else active appointment
+    S -> RR : findPendingByBookingId(id)
+    alt a PENDING_REVIEW request exists (A6)
+      S -> AU : recordEvent(APPOINTMENT_ACTION_REJECTED, DUPLICATE_PENDING_REQUEST)
+      S --> RC : throw DuplicatePendingRequestException
+      RC --> UI : 409 DUPLICATE_PENDING_REQUEST
+    else no pending request
+      S -> S : RescheduleRequest.pending(bookingId, patientId,\nreason, preferredDates, now)\n[PENDING_REVIEW; booking NOT changed]
       S -> AU : recordEvent(APPOINTMENT_RESCHEDULE_REQUESTED, id)
       S -> RR : save(rescheduleRequest)
       S --> RC : RescheduleRequestStatusDTO
@@ -138,12 +138,13 @@ alt error code returned (A7, A5)
   S --> RC : throw RequestAlreadyProcessedException / ConcurrentBookingException /\nBookingConflictException (as in confirm)
   RC --> UI : 409 + code
 else allowed
-  S -> S : booking.cancel(reason, actorId, now)\n[status CANCELLED + BookingHistoryEntry, version + 1]
+  S -> PO : findByOrderId(orderId) [priority for the audit, A4]
   S -> AU : recordEvent(APPOINTMENT_CANCELLED, reason, priority,\npriorityWarningAcknowledged)
+  S -> S : booking.cancel(reason, actorId, now)\n[status CANCELLED + BookingHistoryEntry, version + 1]
   S -> BR : save(booking)
   S -> SC : releaseSlot(slotId, bookingId)
   S -> PO : markOrderPending(orderId)
-  S -> WL : save(worklist item, CANCELLED)
+  S -> WL : save(WorklistItem.forBooking(booking)) [CANCELLED]
   S -> NG : sendBookingNotification(bookingId, patientId, CANCELLED, message)
   note right of NG
     Failure -> notificationStatus PENDING_RETRY,
@@ -157,7 +158,7 @@ end
 
 note over RC, S
   Exceptions are mapped by BookingExceptionHandler (AAD-05) to HTTP status + code.
-  Cancel repeats the steps of BookingServiceImpl.cancelBooking (AAD-05 A3).
+  Cancel repeats the steps of BookingServiceImpl.cancelBooking (AAD-05 A3); changes are audited before they are applied.
   The patient's X-Actor-Id (from SSO) is their patientId (C6).
 end note
 @enduml

@@ -25,9 +25,9 @@ srv -- c1 : 4.1: canManageOwnAppointments(actorId, role) >
 
 srv -- booking : 4.2: isOwnedBy(actorId) >
 
-srv -- req : 4.3: findPending(bookingId) -> [none]\n4.6: create(bookingId, reason, preferredDates, PENDING_REVIEW) >
+srv -- req : 4.5: findPending(bookingId) -> [none]\n4.6: create(bookingId, reason, preferredDates, PENDING_REVIEW) >
 
-srv -- rules : 4.4: invalidRescheduleFields(request, today) -> [none]\n4.5: checkReschedule(booking, now) >
+srv -- rules : 4.3: invalidRescheduleFields(request, today) -> [none]\n4.4: checkReschedule(booking, now) -> [active] >
 
 srv -- audit : 4.7: recordEvent(APPOINTMENT_RESCHEDULE_REQUESTED) >
 

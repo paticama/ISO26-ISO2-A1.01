@@ -11,6 +11,7 @@ control ":PatientAppointmentController" as ctrl
 control ":PatientAppointmentService" as srv
 control ":AccessControlService (C1)" as c1
 entity ":Booking" as booking
+control ":AppointmentRules" as rules
 entity ":RescheduleRequest" as req
 control ":AuditService (C1)" as audit
 
@@ -24,9 +25,11 @@ srv -- c1 : 3.1: canManageOwnAppointments(actorId, role) >
 
 srv -- booking : 3.2: isOwnedBy(actorId) >
 
-srv -- req : 3.3: findPending(bookingId) -> [existing PENDING_REVIEW] >
+srv -- rules : 3.3: invalidRescheduleFields(request, today) -> [none]\n3.4: checkReschedule(booking, now) -> [active] >
 
-srv -- audit : 3.4: recordEvent(APPOINTMENT_ACTION_REJECTED, DUPLICATE_PENDING_REQUEST) >
+srv -- req : 3.5: findPending(bookingId) -> [existing PENDING_REVIEW] >
+
+srv -- audit : 3.6: recordEvent(APPOINTMENT_ACTION_REJECTED, DUPLICATE_PENDING_REQUEST) >
 
 note bottom of req
   No second request is stored.

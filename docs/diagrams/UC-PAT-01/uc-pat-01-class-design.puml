@@ -177,11 +177,11 @@ package "sescam-admissions module (com.sescam.radiodiagnostics.admissions)" {
     - auditService : AuditService
     - clock : Clock
     - loadOwnedBooking(bookingId, actorId, actorRole) : Booking
-    - toDetails(Booking, PendingExamRequestDTO, ExamTypeDTO, Optional<RescheduleRequest>) : AppointmentDetailsDTO
+    - toDetails(Booking) : AppointmentDetailsDTO
   }
   class AppointmentRules <<NEW>> {
-    - policyGateway : BookingPolicyGateway
-    + allowedActions(Booking, Optional<RescheduleRequest>, now) : Set<AppointmentAction>
+    - policy : BookingPolicyGateway
+    + allowedActions(Booking, hasPendingRequest, now) : Set<AppointmentAction>
     + checkConfirm(Booking, expectedVersion, now) : Optional<BookingErrorCode>
     + checkCancel(Booking, expectedVersion, now) : Optional<BookingErrorCode>
     + checkReschedule(Booking, now) : Optional<BookingErrorCode>
@@ -211,6 +211,7 @@ package "sescam-admissions module (com.sescam.radiodiagnostics.admissions)" {
     - notificationStatus : NotificationStatus
     - version : long
     + confirm(actorId, now) : void  <<NEW>>
+    + markExecuted(actorId, now) : void  <<NEW>>
     + cancel(reason, actorId, now) : void
     + isOwnedBy(patientId) : boolean  <<NEW>>
     + updateNotificationStatus(NotificationStatus) : void
@@ -222,8 +223,9 @@ package "sescam-admissions module (com.sescam.radiodiagnostics.admissions)" {
     - reason
     - preferredDates : List<LocalDate>
     - status : RescheduleRequestStatus
-    - requestedAt, reviewedBy, reviewedAt
-    + {static} pending(PatientRescheduleRequestDTO, at) : RescheduleRequest
+    - requestedAt, reviewedAt
+    + {static} pending(bookingId, patientId, reason, dates, now)
+    + isPending() : boolean
     + toStatusDTO() : RescheduleRequestStatusDTO
   }
 }
