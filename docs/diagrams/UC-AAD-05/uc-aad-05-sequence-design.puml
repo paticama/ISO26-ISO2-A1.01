@@ -1,0 +1,63 @@
+@startuml uc-aad-05-sequence-design
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+
+title UC-AAD-05: Book Requested Examination - Design Sequence Diagram (server slice, C5 v1.0.0)
+
+actor "Admissions Staff" as User
+participant "BookingRestController" as Ctrl
+participant "BookingServiceImpl" as Svc
+participant "AccessControlService (C1)" as RBAC
+participant "PendingOrderGateway (C4)" as Orders
+participant "PatientEligibilityGateway (C6)" as Patients
+participant "BookingPolicyGateway (C2)" as Policy
+participant "ScheduleService (C3)" as Schedules
+participant "BookingRepository" as Repo
+participant "WorklistRepository" as Worklist
+participant "AuditService (C1)" as Audit
+participant "BookingNotificationGateway (C8)" as Notify
+participant "BookingEventPublisher" as Events
+
+User -> Ctrl : POST /api/v1/bookings (CreateBookingPayload, X-Actor-Id, X-Actor-Role)
+Ctrl -> Svc : createBooking(CreateBookingRequestDTO)
+Svc -> RBAC : canManageBookings(actorId, actorRole)
+alt A6: unauthorized role (e.g. System Administrator)
+    Svc -> Audit : recordEvent(BOOKING_ACCESS_DENIED)
+    Svc --> Ctrl : throw UnauthorizedBookingAccessException (403)
+end
+
+Svc -> Orders : findByOrderId(orderId)
+alt order already booked or booking exists
+    Svc -> Audit : recordEvent(BOOKING_REJECTED)
+    Svc --> Ctrl : throw RequestAlreadyProcessedException (409)
+end
+
+Svc -> Patients : isPatientEligible(patientId)
+Svc -> Policy : maxBookingsPerPatientPerDay()
+
+Svc -> Schedules : reserveSlotAtomically(slotId, expectedVersion, bookingId)
+alt A1: SlotUnavailableException
+    Svc -> Schedules : findCompatibleSlots(modality, from, to)
+    Svc -> Audit : recordEvent(BOOKING_SLOT_UNAVAILABLE)
+    Svc --> Ctrl : throw SlotUnavailableBookingException(alternatives) (409)
+else A5: ConcurrentScheduleChangeException
+    Svc -> Audit : recordEvent(BOOKING_CONCURRENT_CONFLICT)
+    Svc --> Ctrl : throw ConcurrentBookingException (409)
+end
+
+Svc -> Audit : recordEvent(BOOKING_CREATED)
+Svc -> Repo : save(Booking)
+alt save fails
+    Svc -> Schedules : releaseSlot(slotId, bookingId)
+    Svc -> Audit : recordEvent(BOOKING_CREATION_FAILED)
+    Svc --> Ctrl : rethrow RuntimeException
+end
+
+Svc -> Orders : markOrderBooked(orderId)
+Svc -> Worklist : save(WorklistItem)
+Svc -> Notify : sendBookingNotification(bookingId, patientId, BOOKED, msg)
+Note right of Notify: A4: if notification fails or throws,\nbooking stays BOOKED and notificationStatus = PENDING_RETRY
+Svc -> Events : publish(BookingChangedEvent)
+Svc --> Ctrl : BookingDTO
+Ctrl --> User : 201 Created (BookingDTO)
+@enduml

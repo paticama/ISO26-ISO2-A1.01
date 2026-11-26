@@ -67,9 +67,9 @@ package "Collaborating Modules (via sescam-common interfaces)" {
         + markOrderBooked(orderId)
     }
     class "ScheduleService (C3)" as C3 <<interface>> {
-        + findCompatibleSlots(modality, priority)
-        + reserveSlotAtomically(slotId, version)
-        + releaseSlot(slotId)
+        + findCompatibleSlots(modality, from, to)
+        + reserveSlotAtomically(slotId, expectedVersion, bookingReference)
+        + releaseSlot(slotId, bookingReference)
     }
     class "PatientService (C6)" as C6 <<interface>> {
         + getPatientSummary(patientId)

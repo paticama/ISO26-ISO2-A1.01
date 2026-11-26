@@ -51,6 +51,18 @@ public interface AccessControlService {
     }
 
     /**
+     * Checks whether the authenticated user may book, reschedule, or cancel examination appointments (UC-AAD-05).
+     * By default only admissions/administrative/receptionist staff; System Administrators are denied (A6).
+     */
+    default boolean canManageBookings(String actorId, String role) {
+        if (actorId == null || actorId.isBlank() || role == null || role.isBlank()) {
+            return false;
+        }
+        String r = role.trim().toUpperCase();
+        return r.contains("ADMISSION") || r.contains("ADMINISTRATIVE") || r.contains("RECEPTIONIST");
+    }
+
+    /**
      * Checks whether the authenticated user may view DICOM studies and author/sign diagnostic reports (UC-PHY-04).
      * Only physicians and radiologists may author, sign, or amend diagnostic reports.
      */
