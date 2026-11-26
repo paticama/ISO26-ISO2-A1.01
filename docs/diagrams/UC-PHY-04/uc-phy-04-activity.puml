@@ -1,0 +1,67 @@
+@startuml uc-phy-04-activity
+title UC-PHY-04 – Activity diagram (main flow + 2a, 5a, 6a)\nC7 sescam-diagnostics v1.1.0
+skinparam shadowing false
+
+|Physician (client)|
+start
+note right
+  Preconditions: physician authenticated (SSO);
+  procedure executed in UC-PHY-05 (EXECUTED_PENDING_REPORT);
+  images archived in departmental RIS/PACS.
+end note
+|Server|
+:1. List executed procedures for reporting worklist\n(with draft/finalized report status if any);
+|Physician (client)|
+:Select executed procedure and request DICOM study;
+|Server|
+:2. Query RIS/PACS via C-FIND / WADO-RS;
+if (2a. PACS reachable?) then (no)
+  :Audit PACS_CONNECTION_FAILED;
+  |Physician (client)|
+  :Show PACS connection failure alert;
+  stop
+else (yes)
+  |Server|
+  :Return DicomStudyDTO (metadata + WADO viewer token);
+endif
+|Physician (client)|
+:3. Render image series in DICOM viewer;
+:4. Open diagnostic reporting editor;
+:5. Author findings & conclusions\n(and optional FollowUpRecommendation / critical alert);
+if (Save mode?) then (5a. Save as draft)
+  |Server|
+  :Validate physician role + draft payload;
+  :Persist report with status DRAFT\n(no EHR sync, no patient notification);
+  :Audit REPORT_DRAFT_SAVED;
+  |Physician (client)|
+  :Display draft saved confirmation;
+  stop
+elseif (6. Finalize & digitally sign) then (yes)
+  |Server|
+  :Validate role, non-blank findings/conclusion,\nand digital signature;
+  if (Valid & not already finalized?) then (no)
+    :Audit REPORT_REJECTED;
+    |Physician (client)|
+    :Show validation or state conflict error;
+    stop
+  else (yes)
+    :Persist DiagnosticReport with status FINALIZED\nand digital signature;
+    :7. Export FHIR DiagnosticReport to Hospital EHR\n(record SYNCED or FAILED_SYNC visibly);
+    :Publish ReportAvailabilityEvent (for patient notification);
+    :Audit REPORT_FINALIZED (+ EHR sync outcome);
+    |Physician (client)|
+    :8. Display finalization & EHR sync confirmation;
+    if (6a. Issue post-signature addendum?) then (yes)
+      :Enter addendum reason, content & signature;
+      |Server|
+      :Append ReportAddendum preserving original signature\n(status -> AMENDED);
+      :Re-export FHIR DiagnosticReport & publish update event;
+      :Audit REPORT_ADDENDUM_ISSUED;
+      |Physician (client)|
+      :Display addendum confirmation;
+    else (no)
+    endif
+    stop
+  endif
+endif
+@enduml

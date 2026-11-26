@@ -13,11 +13,11 @@
     </parent>
 
     <artifactId>sescam-diagnostics</artifactId>
-    <version>1.0.1</version>
+    <version>1.1.0</version>
     <packaging>jar</packaging>
 
     <name>SESCAM Diagnostics Module (C7)</name>
-    <description>C7 domain module: procedure execution, clinical incidents, reports and DICOM (UC-PHY-05)</description>
+    <description>C7 domain module: procedure execution, clinical incidents, diagnostic reports and DICOM (UC-PHY-05, UC-PHY-04)</description>
 
     <dependencies>
         <dependency>

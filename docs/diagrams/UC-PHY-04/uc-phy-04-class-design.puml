@@ -1,0 +1,131 @@
+@startuml uc-phy-04-class-design
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam classAttributeIconSize 0
+
+title UC-PHY-04: Design Class Diagram – server slice (sescam-common, sescam-diagnostics, sescam-server-app)\nC7 sescam-diagnostics v1.1.0
+
+package "sescam-common contracts (com.sescam.radiodiagnostics.common.diagnostics)" {
+  interface DiagnosticReportingService {
+    + listProceduresPendingReport(actorId, actorRole) : List<ReportableProcedureDTO>
+    + getDicomStudy(executionId, actorId, actorRole) : DicomStudyDTO
+    + getReportById(reportId, actorId, actorRole) : ReportDTO
+    + findReportByExecutionId(executionId, actorId, actorRole) : Optional<ReportDTO>
+    + saveDraft(SaveReportDraftRequestDTO) : ReportDTO
+    + finalizeAndSign(FinalizeReportRequestDTO) : ReportDTO
+    + issueAddendum(IssueReportAddendumRequestDTO) : ReportDTO
+  }
+  interface PacsGateway {
+    + fetchStudyForExecution(ExecutionRecordDTO) : DicomStudyDTO
+  }
+  interface FhirDiagnosticReportGateway {
+    + exportDiagnosticReport(ReportDTO) : EhrReportSyncStatus
+  }
+  interface ReportEventPublisher {
+    + publishReportAvailable(ReportAvailabilityEvent) : void
+  }
+
+  enum ReportStatus {
+    DRAFT
+    FINALIZED
+    AMENDED
+  }
+  enum EhrReportSyncStatus {
+    NOT_SYNCED
+    SYNCED
+    FAILED_SYNC
+  }
+
+  class ReportDTO <<record>>
+  class ReportAddendumDTO <<record>>
+  class DicomStudyDTO <<record>>
+  class ReportableProcedureDTO <<record>>
+  class SaveReportDraftRequestDTO <<record>>
+  class FinalizeReportRequestDTO <<record>>
+  class IssueReportAddendumRequestDTO <<record>>
+  class ReportAvailabilityEvent <<record>>
+
+  class UnauthorizedReportingAccessException <<exception>>
+  class InvalidReportDataException <<exception>>
+  class ReportNotFoundException <<exception>>
+  class ReportStateConflictException <<exception>>
+  class PacsConnectionException <<exception>>
+}
+
+package "sescam-common security (C1)" {
+  interface AccessControlService {
+    + canAuthorDiagnosticReports(actorId, role) : boolean <<default, NEW>>
+  }
+  interface AuditService {
+    + recordEvent(AuditEventDTO) : void
+  }
+}
+
+package "sescam-diagnostics module (com.sescam.radiodiagnostics.diagnostics)" {
+  class DiagnosticReportingServiceImpl implements DiagnosticReportingService {
+    - reportRepository : ReportRepository
+    - executionRepository : ExecutionRepository
+    - pacsGateway : PacsGateway
+    - fhirGateway : FhirDiagnosticReportGateway
+    - eventPublisher : ReportEventPublisher
+    - accessControlService : AccessControlService
+    - auditService : AuditService
+    - clock : Clock
+  }
+  interface ReportRepository {
+    + save(DiagnosticReport) : DiagnosticReport
+    + findById(String) : Optional<DiagnosticReport>
+    + findByExecutionId(String) : Optional<DiagnosticReport>
+  }
+  class InMemoryReportRepository implements ReportRepository
+  class InMemoryPacsGateway implements PacsGateway
+  class NoOpFhirDiagnosticReportGateway implements FhirDiagnosticReportGateway
+  class NoOpReportEventPublisher implements ReportEventPublisher
+
+  class DiagnosticReport <<entity>> {
+    - id, executionId, orderId, patientId
+    - studyInstanceUid, examTypeName, modality
+    - findings, conclusion
+    - criticalAlert, followUpRecommended
+    - status : ReportStatus
+    - authorPhysicianId, digitalSignature, signedAt
+    - ehrSyncStatus : EhrReportSyncStatus
+    - ehrSyncedAt, version, createdAt, updatedAt
+    - addendums : List<ReportAddendum>
+    + updateDraft(...) : void
+    + finalizeAndSign(...) : void
+    + addAddendum(...) : void
+    + markEhrSync(EhrReportSyncStatus, Instant) : void
+    + toDTO() : ReportDTO
+  }
+  class ReportAddendum <<entity>> {
+    - id, reason, content
+    - authorPhysicianId, digitalSignature, createdAt
+    + toDTO() : ReportAddendumDTO
+  }
+}
+
+package "sescam-server-app (com.sescam.radiodiagnostics.server.diagnostics)" {
+  class DiagnosticReportRestController {
+    GET /api/v1/reports/pending
+    GET /api/v1/reports/executions/{executionId}/study
+    GET /api/v1/reports/executions/{executionId}
+    GET /api/v1/reports/{reportId}
+    PUT /api/v1/reports/draft
+    POST /api/v1/reports/finalize
+    POST /api/v1/reports/{reportId}/addendums
+  }
+  class DiagnosticReportExceptionHandler
+  class DiagnosticsWiringConfig
+}
+
+DiagnosticReportRestController --> DiagnosticReportingService
+DiagnosticReportingServiceImpl --> ReportRepository
+DiagnosticReportingServiceImpl --> PacsGateway
+DiagnosticReportingServiceImpl --> FhirDiagnosticReportGateway
+DiagnosticReportingServiceImpl --> ReportEventPublisher
+DiagnosticReportingServiceImpl --> AccessControlService
+DiagnosticReportingServiceImpl --> AuditService
+DiagnosticReport "1" *-- "0..*" ReportAddendum
+@enduml
