@@ -12,7 +12,7 @@
         .card { padding: 12px; border: 1px solid var(--border); border-radius: 6px; }
         .message.error { padding: 12px; border: 1px solid var(--error); color: var(--error); border-radius: 6px; }
         label { display: block; margin-bottom: 8px; }
-        input { padding: 6px; border: 1px solid var(--border); border-radius: 4px; }
+        input, select { padding: 6px; border: 1px solid var(--border); border-radius: 4px; }
         button { padding: 6px 12px; border-radius: 6px; border: 1px solid #0969da; background: #0969da; color: #fff; cursor: pointer; }
         button.danger { background: #b42318; border-color: #b42318; }
     </style>
@@ -23,7 +23,16 @@
     <a th:href="@{/bookings}">Back to Admissions Bookings</a>
 </header>
 <main>
-    <div th:if="${failure != null}" class="message error" id="failure" role="alert" th:text="${failure.message}"></div>
+    <div th:if="${failure != null}" class="message error" id="failure" role="alert">
+        <strong th:text="${failure.message}"></strong>
+        <div th:if="${!failure.alternativeSlots.isEmpty()}" id="alternative-slots">
+            <p>Available alternative slots:</p>
+            <ul>
+                <li th:each="alt : ${failure.alternativeSlots}"
+                    th:text="|${alt.slotId()} (${alt.resourceId()}, ${alt.start()} - ${alt.end()}, v${alt.version()})|"></li>
+            </ul>
+        </div>
+    </div>
 
     <div th:if="${booking != null}" class="card" id="booking-detail">
         <div>Booking ID: <strong id="booking-id" th:text="${booking.bookingId()}"></strong></div>
@@ -39,21 +48,28 @@
                 th:text="|${h.previousStatus()} -> ${h.newStatus()} (${h.reason()}) by ${h.changedBy()}|"></li>
         </ul>
 
-        <h3>Reschedule (A2)</h3>
-        <form method="post" th:action="@{/bookings/{id}/reschedule(id=${booking.bookingId()})}">
-            <input type="hidden" name="expectedBookingVersion" th:value="${booking.version()}" />
-            <label>New Slot ID <input type="text" name="newSlotId" required /></label>
-            <label>Expected Slot Version <input type="number" name="expectedSlotVersion" value="1" min="0" required /></label>
-            <label>Reason <input type="text" name="reason" required /></label>
-            <button type="submit">Reschedule</button>
-        </form>
+        <div th:if="${booking.status().name() != 'CANCELLED'}" id="booking-actions">
+            <h3>Reschedule (A2)</h3>
+            <form method="post" th:action="@{/bookings/{id}/reschedule(id=${booking.bookingId()})}" id="reschedule-form">
+                <input type="hidden" name="expectedBookingVersion" th:value="${booking.version()}" />
+                <label>New Slot
+                    <select name="newSlotId" required>
+                        <option value="">Select compatible slot…</option>
+                        <option th:each="s : ${compatibleSlots}" th:value="${s.slotId() + '|' + s.version()}"
+                                th:text="|${s.slotId()} (${s.resourceId()}, ${s.start()} - ${s.end()}, free: ${s.freeCapacity()})|"></option>
+                    </select>
+                </label>
+                <label>Reason <input type="text" name="reason" required /></label>
+                <button type="submit">Reschedule</button>
+            </form>
 
-        <h3>Cancel (A3)</h3>
-        <form method="post" th:action="@{/bookings/{id}/cancel(id=${booking.bookingId()})}">
-            <input type="hidden" name="expectedBookingVersion" th:value="${booking.version()}" />
-            <label>Reason <input type="text" name="reason" required /></label>
-            <button type="submit" class="danger">Cancel booking</button>
-        </form>
+            <h3>Cancel (A3)</h3>
+            <form method="post" th:action="@{/bookings/{id}/cancel(id=${booking.bookingId()})}" id="cancel-form">
+                <input type="hidden" name="expectedBookingVersion" th:value="${booking.version()}" />
+                <label>Reason <input type="text" name="reason" required /></label>
+                <button type="submit" class="danger">Cancel booking</button>
+            </form>
+        </div>
     </div>
 </main>
 </body>

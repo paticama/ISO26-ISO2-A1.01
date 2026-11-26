@@ -128,7 +128,7 @@ class BookingServiceImplTest {
         assertEquals(1, service.listDailyWorklist(LocalDate.of(2026, 11, 27), "adm-1", "ADMISSIONS_STAFF").size());
         assertTrue(service.listPendingRequests("adm-1", "ADMISSIONS_STAFF").stream()
                 .noneMatch(o -> o.orderId().equals("ORD-1001")));
-        verify(auditService).recordEvent(any());
+        verify(auditService, org.mockito.Mockito.times(3)).recordEvent(any());
         verify(eventPublisher).publish(any());
     }
 
@@ -287,5 +287,51 @@ class BookingServiceImplTest {
 
         assertThrows(IllegalStateException.class, () -> service.createBooking(
                 new CreateBookingRequestDTO("ORD-1001", "SLOT-1", 1L, "adm-1", "ADMISSIONS_STAFF")));
+        verify(scheduleService).releaseSlot(eq("SLOT-1"), anyString());
+    }
+
+    @Test
+    void rejectsWrongModalityRescheduleSameSlotAndRescheduleOfCancelledBookingWithoutReserving() {
+        SlotDTO mriSlot = new SlotDTO("SLOT-MRI", "SCH-2", "MRI-1", "LOC-1", "MRI",
+                LocalDateTime.of(2026, 11, 27, 9, 0), LocalDateTime.of(2026, 11, 27, 9, 30),
+                2, 0, 1L, true);
+        when(scheduleService.reserveSlotAtomically(eq("SLOT-MRI"), eq(1L), anyString())).thenReturn(mriSlot);
+
+        assertThrows(BookingConflictException.class, () -> service.createBooking(
+                new CreateBookingRequestDTO("ORD-1001", "SLOT-MRI", 1L, "adm-1", "ADMISSIONS_STAFF")));
+        verify(scheduleService).releaseSlot(eq("SLOT-MRI"), anyString());
+
+        SlotDTO ctSlot = slot("SLOT-CT", LocalDateTime.of(2026, 11, 27, 9, 0), 1L);
+        when(scheduleService.reserveSlotAtomically(eq("SLOT-CT"), eq(1L), anyString())).thenReturn(ctSlot);
+        BookingDTO created = service.createBooking(
+                new CreateBookingRequestDTO("ORD-1001", "SLOT-CT", 1L, "adm-1", "ADMISSIONS_STAFF"));
+
+        // Rescheduling to the same slot is rejected without reserving
+        assertThrows(BookingConflictException.class, () -> service.rescheduleBooking(
+                new RescheduleBookingRequestDTO(created.bookingId(), "SLOT-CT", 1L, created.version(),
+                        "Same slot", "adm-1", "ADMISSIONS_STAFF")));
+
+        // Cancel then attempt reschedule: rejected BEFORE reserving any new slot
+        BookingDTO cancelled = service.cancelBooking(new CancelBookingRequestDTO(
+                created.bookingId(), created.version(), "Cancelled", "adm-1", "ADMISSIONS_STAFF"));
+        assertThrows(RequestAlreadyProcessedException.class, () -> service.rescheduleBooking(
+                new RescheduleBookingRequestDTO(created.bookingId(), "SLOT-OTHER", 1L, cancelled.version(),
+                        "Too late", "adm-1", "ADMISSIONS_STAFF")));
+        verify(scheduleService, org.mockito.Mockito.never())
+                .reserveSlotAtomically(eq("SLOT-OTHER"), anyLong(), anyString());
+    }
+
+    @Test
+    void readOperationsAuditAndAbortWhenAuditFails() {
+        when(scheduleService.findCompatibleSlots(eq("CT"), any(), any())).thenReturn(List.of());
+        service.findCompatibleSlots("ORD-1001", null, null, "adm-1", "ADMISSIONS_STAFF");
+        verify(auditService).recordEvent(org.mockito.ArgumentMatchers.argThat(
+                e -> "BOOKING_SLOTS_VIEWED".equals(e.action())));
+
+        doThrow(new IllegalStateException("audit down")).when(auditService).recordEvent(any());
+        assertThrows(IllegalStateException.class,
+                () -> service.listPendingRequests("adm-1", "ADMISSIONS_STAFF"));
+        assertThrows(IllegalStateException.class,
+                () -> service.listDailyWorklist(LocalDate.of(2026, 11, 27), "adm-1", "ADMISSIONS_STAFF"));
     }
 }
