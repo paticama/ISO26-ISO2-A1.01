@@ -11,6 +11,7 @@ public class BookingForm {
     private Long expectedSlotVersion;
 
     public Map<String, String> validate() {
+        resolvePackedSlotSelection();
         Map<String, String> errors = new LinkedHashMap<>();
         if (isBlank(orderId)) {
             errors.put("orderId", "Select a pending examination request.");
@@ -25,11 +26,24 @@ public class BookingForm {
     }
 
     public BookingApiClient.CreateBookingPayload toPayload() {
+        resolvePackedSlotSelection();
         return new BookingApiClient.CreateBookingPayload(
                 orderId.trim(),
                 slotId.trim(),
                 expectedSlotVersion == null ? 0L : expectedSlotVersion
         );
+    }
+
+    private void resolvePackedSlotSelection() {
+        if (slotId != null && slotId.contains("|")) {
+            String[] parts = slotId.split("\\|", 2);
+            slotId = parts[0];
+            try {
+                expectedSlotVersion = Long.parseLong(parts[1]);
+            } catch (NumberFormatException ignored) {
+                // Keep existing expectedSlotVersion if suffix is invalid.
+            }
+        }
     }
 
     private static boolean isBlank(String value) {

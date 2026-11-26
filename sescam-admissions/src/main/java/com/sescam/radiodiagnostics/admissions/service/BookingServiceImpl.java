@@ -46,10 +46,12 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
-/** Realization of UC-AAD-05: Book Requested Examination (C5 v1.0.0). */
+/** Realization of UC-AAD-05: Book Requested Examination (C5 v1.0.1). */
 public class BookingServiceImpl implements BookingService {
 
     private static final int DEFAULT_SLOT_LOOKAHEAD_DAYS = 14;
@@ -65,6 +67,7 @@ public class BookingServiceImpl implements BookingService {
     private final AuditService auditService;
     private final BookingEventPublisher eventPublisher;
     private final Clock clock;
+    private final Map<String, Object> orderLocks = new ConcurrentHashMap<>();
 
     public BookingServiceImpl(BookingRepository bookingRepository,
                               WorklistRepository worklistRepository,
@@ -108,11 +111,14 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public List<PendingExamRequestDTO> listPendingRequests(String actorId, String actorRole) {
         ensureAuthorized(actorId, actorRole, null);
-        return pendingOrderGateway.listPendingOrders().stream()
+        List<PendingExamRequestDTO> pending = pendingOrderGateway.listPendingOrders().stream()
                 .filter(o -> !bookingRepository.existsActiveByOrderId(o.orderId()))
                 .sorted(Comparator.comparingInt((PendingExamRequestDTO o) -> priorityRank(o.priority()))
                         .thenComparing(PendingExamRequestDTO::orderedAt))
                 .toList();
+        audit("BOOKING_PENDING_LIST_VIEWED", actorId, null,
+                pending.size() + " pending requests viewed");
+        return pending;
     }
 
     @Override
@@ -120,13 +126,21 @@ public class BookingServiceImpl implements BookingService {
                                              String actorId, String actorRole) {
         ensureAuthorized(actorId, actorRole, orderId);
         if (isBlank(orderId)) {
+            auditRefusal("BOOKING_REJECTED", actorId, null, "Missing orderId");
             throw new InvalidBookingDataException("orderId is mandatory.", List.of("orderId"));
         }
-        PendingExamRequestDTO order = pendingOrderGateway.findByOrderId(orderId.trim())
-                .orElseThrow(() -> new BookingNotFoundException("Order '" + orderId + "' was not found."));
+        String trimmedOrderId = orderId.trim();
+        PendingExamRequestDTO order = pendingOrderGateway.findByOrderId(trimmedOrderId).orElse(null);
+        if (order == null) {
+            auditRefusal("BOOKING_REJECTED", actorId, trimmedOrderId, "Order not found");
+            throw new BookingNotFoundException("Order '" + trimmedOrderId + "' was not found.");
+        }
         LocalDateTime windowStart = from != null ? from : LocalDateTime.now(clock);
         LocalDateTime windowEnd = to != null ? to : windowStart.plusDays(DEFAULT_SLOT_LOOKAHEAD_DAYS);
-        return scheduleService.findCompatibleSlots(order.modality(), windowStart, windowEnd);
+        List<SlotDTO> slots = scheduleService.findCompatibleSlots(order.modality(), windowStart, windowEnd);
+        audit("BOOKING_SLOTS_VIEWED", actorId, trimmedOrderId,
+                slots.size() + " compatible slots viewed for modality " + order.modality());
+        return slots;
     }
 
     @Override
@@ -136,53 +150,53 @@ public class BookingServiceImpl implements BookingService {
         validateCreate(request);
 
         String orderId = request.orderId().trim();
-        PendingExamRequestDTO order = pendingOrderGateway.findByOrderId(orderId).orElse(null);
-        if (order == null) {
-            auditRefusal("BOOKING_REJECTED", request.actorId(), orderId, "Order not found");
-            throw new BookingNotFoundException("Order '" + orderId + "' was not found.");
+        Object lock = orderLocks.computeIfAbsent(orderId, k -> new Object());
+        synchronized (lock) {
+            PendingExamRequestDTO order = pendingOrderGateway.findByOrderId(orderId).orElse(null);
+            if (order == null) {
+                auditRefusal("BOOKING_REJECTED", request.actorId(), orderId, "Order not found");
+                throw new BookingNotFoundException("Order '" + orderId + "' was not found.");
+            }
+            if (bookingRepository.existsActiveByOrderId(orderId)) {
+                auditRefusal("BOOKING_REJECTED", request.actorId(), orderId, "Order already booked");
+                throw new RequestAlreadyProcessedException("Order '" + orderId + "' already has an active booking.");
+            }
+            if (!patientEligibilityGateway.isPatientEligible(order.patientId())) {
+                auditRefusal("BOOKING_REJECTED", request.actorId(), orderId, "Patient not eligible: " + order.patientId());
+                throw new PatientNotEligibleException("Patient '" + order.patientId() + "' is not eligible for booking.");
+            }
+
+            String bookingId = "BKG-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase(Locale.ROOT);
+            SlotDTO reservedSlot = reserveSlot(bookingId, order.patientId(), order.modality(),
+                    request.slotId().trim(), request.expectedSlotVersion(), request.actorId());
+
+            validateModalityAndDailyLimit(reservedSlot, order.modality(), order.patientId(),
+                    null, bookingId, request.actorId(), orderId);
+
+            Instant now = clock.instant();
+            Booking booking = new Booking(bookingId, orderId, order.patientId(), order.modality(),
+                    reservedSlot, request.actorId(), now);
+
+            auditAndReleaseOnFailure("BOOKING_CREATED", request.actorId(), bookingId,
+                    "Order " + orderId + " booked into slot " + reservedSlot.slotId(),
+                    reservedSlot.slotId(), bookingId);
+            persistBookingWithRollback(booking, reservedSlot.slotId(), request.actorId());
+
+            pendingOrderGateway.markOrderBooked(orderId);
+            worklistRepository.save(toWorklistItem(booking, reservedSlot.resourceId(), order.modality()));
+            notifyAndUpdateStatus(booking, "Appointment booked for " + reservedSlot.start());
+            eventPublisher.publish(new BookingChangedEvent(bookingId, orderId, order.patientId(),
+                    reservedSlot.slotId(), booking.getStatus(), reservedSlot.start(), now));
+            return booking.toDTO();
         }
-        if (bookingRepository.existsActiveByOrderId(orderId)) {
-            auditRefusal("BOOKING_REJECTED", request.actorId(), orderId, "Order already booked");
-            throw new RequestAlreadyProcessedException("Order '" + orderId + "' already has an active booking.");
-        }
-        if (!patientEligibilityGateway.isPatientEligible(order.patientId())) {
-            auditRefusal("BOOKING_REJECTED", request.actorId(), orderId, "Patient not eligible: " + order.patientId());
-            throw new PatientNotEligibleException("Patient '" + order.patientId() + "' is not eligible for booking.");
-        }
-
-        String bookingId = "BKG-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase(Locale.ROOT);
-        SlotDTO reservedSlot = reserveSlot(bookingId, order.patientId(), order.modality(),
-                request.slotId().trim(), request.expectedSlotVersion(), request.actorId());
-
-        int maxPerDay = bookingPolicyGateway.maxBookingsPerPatientPerDay();
-        long sameDayCount = bookingRepository
-                .findActiveByPatientAndDate(order.patientId(), reservedSlot.start().toLocalDate()).size();
-        if (sameDayCount >= maxPerDay) {
-            scheduleService.releaseSlot(reservedSlot.slotId(), bookingId);
-            auditRefusal("BOOKING_REJECTED", request.actorId(), orderId, "Daily patient booking limit exceeded");
-            throw new BookingConflictException("Patient '" + order.patientId() + "' exceeds daily booking limit.");
-        }
-
-        Instant now = clock.instant();
-        Booking booking = new Booking(bookingId, orderId, order.patientId(), order.modality(),
-                reservedSlot, request.actorId(), now);
-
-        audit("BOOKING_CREATED", request.actorId(), bookingId,
-                "Order " + orderId + " booked into slot " + reservedSlot.slotId());
-        persistBookingWithRollback(booking, reservedSlot.slotId(), request.actorId());
-
-        pendingOrderGateway.markOrderBooked(orderId);
-        worklistRepository.save(toWorklistItem(booking, reservedSlot.resourceId(), order.modality()));
-        notifyAndUpdateStatus(booking, "Appointment booked for " + reservedSlot.start());
-        eventPublisher.publish(new BookingChangedEvent(bookingId, orderId, order.patientId(),
-                reservedSlot.slotId(), booking.getStatus(), reservedSlot.start(), now));
-        return booking.toDTO();
     }
 
     @Override
     public BookingDTO getBooking(String bookingId, String actorId, String actorRole) {
         ensureAuthorized(actorId, actorRole, bookingId);
-        return findBookingOrThrow(bookingId).toDTO();
+        Booking booking = findBookingOrThrow(bookingId, actorId);
+        audit("BOOKING_VIEWED", actorId, booking.getBookingId(), "Booking details viewed");
+        return booking.toDTO();
     }
 
     @Override
@@ -195,23 +209,44 @@ public class BookingServiceImpl implements BookingService {
         if (isBlank(request.newSlotId())) invalid.add("newSlotId");
         if (isBlank(request.reason())) invalid.add("reason");
         if (!invalid.isEmpty()) {
+            auditRefusal("BOOKING_REJECTED", request.actorId(), request.bookingId(), "Missing reschedule data: " + invalid);
             throw new InvalidBookingDataException("Missing reschedule data: " + String.join(", ", invalid), invalid);
         }
 
-        Booking booking = findBookingOrThrow(request.bookingId().trim());
+        Booking booking = findBookingOrThrow(request.bookingId().trim(), request.actorId());
+        if (booking.getStatus() == BookingStatus.CANCELLED) {
+            auditRefusal("BOOKING_REJECTED", request.actorId(), booking.getBookingId(), "Cannot reschedule cancelled booking");
+            throw new RequestAlreadyProcessedException("Booking '" + booking.getBookingId() + "' is already cancelled.");
+        }
         if (booking.getVersion() != request.expectedBookingVersion()) {
             auditRefusal("BOOKING_CONCURRENT_CONFLICT", request.actorId(), booking.getBookingId(), "Stale booking version");
             throw new ConcurrentBookingException("Booking '" + booking.getBookingId() + "' was modified concurrently.");
         }
+        String newSlotId = request.newSlotId().trim();
+        if (newSlotId.equals(booking.getSlotId())) {
+            auditRefusal("BOOKING_REJECTED", request.actorId(), booking.getBookingId(), "Reschedule to same slot rejected");
+            throw new BookingConflictException("New slot must differ from current slot '" + booking.getSlotId() + "'.");
+        }
+        if (!patientEligibilityGateway.isPatientEligible(booking.getPatientId())) {
+            auditRefusal("BOOKING_REJECTED", request.actorId(), booking.getBookingId(),
+                    "Patient not eligible: " + booking.getPatientId());
+            throw new PatientNotEligibleException("Patient '" + booking.getPatientId() + "' is not eligible for booking.");
+        }
+
         String oldSlotId = booking.getSlotId();
         String modality = booking.toDTO().modality();
         SlotDTO newSlot = reserveSlot(booking.getBookingId(), booking.getPatientId(), modality,
-                request.newSlotId().trim(), request.expectedSlotVersion(), request.actorId());
+                newSlotId, request.expectedSlotVersion(), request.actorId());
+
+        validateModalityAndDailyLimit(newSlot, modality, booking.getPatientId(),
+                booking.getBookingId(), booking.getBookingId(), request.actorId(), booking.getBookingId());
 
         Instant now = clock.instant();
+        auditAndReleaseOnFailure("BOOKING_RESCHEDULED", request.actorId(), booking.getBookingId(),
+                "Moved from slot " + oldSlotId + " to " + newSlot.slotId(),
+                newSlot.slotId(), booking.getBookingId());
+
         booking.reschedule(newSlot, request.reason().trim(), request.actorId(), now);
-        audit("BOOKING_RESCHEDULED", request.actorId(), booking.getBookingId(),
-                "Moved from slot " + oldSlotId + " to " + newSlot.slotId());
         persistBookingWithRollback(booking, newSlot.slotId(), request.actorId());
 
         scheduleService.releaseSlot(oldSlotId, booking.getBookingId());
@@ -231,10 +266,15 @@ public class BookingServiceImpl implements BookingService {
         if (isBlank(request.bookingId())) invalid.add("bookingId");
         if (isBlank(request.reason())) invalid.add("reason");
         if (!invalid.isEmpty()) {
+            auditRefusal("BOOKING_REJECTED", request.actorId(), request.bookingId(), "Missing cancellation data: " + invalid);
             throw new InvalidBookingDataException("Missing cancellation data: " + String.join(", ", invalid), invalid);
         }
 
-        Booking booking = findBookingOrThrow(request.bookingId().trim());
+        Booking booking = findBookingOrThrow(request.bookingId().trim(), request.actorId());
+        if (booking.getStatus() == BookingStatus.CANCELLED) {
+            auditRefusal("BOOKING_REJECTED", request.actorId(), booking.getBookingId(), "Booking already cancelled");
+            throw new RequestAlreadyProcessedException("Booking '" + booking.getBookingId() + "' is already cancelled.");
+        }
         if (booking.getVersion() != request.expectedBookingVersion()) {
             auditRefusal("BOOKING_CONCURRENT_CONFLICT", request.actorId(), booking.getBookingId(), "Stale booking version");
             throw new ConcurrentBookingException("Booking '" + booking.getBookingId() + "' was modified concurrently.");
@@ -247,10 +287,11 @@ public class BookingServiceImpl implements BookingService {
             throw new BookingConflictException("Booking cannot be cancelled within " + minHours + " hours of start.");
         }
 
-        String releasedSlotId = booking.getSlotId();
         Instant now = clock.instant();
-        booking.cancel(request.reason().trim(), request.actorId(), now);
         audit("BOOKING_CANCELLED", request.actorId(), booking.getBookingId(), "Reason: " + request.reason().trim());
+
+        String releasedSlotId = booking.getSlotId();
+        booking.cancel(request.reason().trim(), request.actorId(), now);
         bookingRepository.save(booking);
 
         scheduleService.releaseSlot(releasedSlotId, booking.getBookingId());
@@ -267,7 +308,32 @@ public class BookingServiceImpl implements BookingService {
     public List<WorklistItemDTO> listDailyWorklist(LocalDate date, String actorId, String actorRole) {
         ensureAuthorized(actorId, actorRole, null);
         LocalDate target = date != null ? date : LocalDate.now(clock);
-        return worklistRepository.findByDate(target).stream().map(WorklistItem::toDTO).toList();
+        List<WorklistItemDTO> items = worklistRepository.findByDate(target).stream().map(WorklistItem::toDTO).toList();
+        audit("BOOKING_WORKLIST_VIEWED", actorId, target.toString(),
+                items.size() + " worklist items viewed for " + target);
+        return items;
+    }
+
+    private void validateModalityAndDailyLimit(SlotDTO reservedSlot, String expectedModality, String patientId,
+                                               String excludedBookingId, String bookingReference,
+                                               String actorId, String auditTargetId) {
+        if (reservedSlot.modality() == null || !reservedSlot.modality().equalsIgnoreCase(expectedModality)) {
+            scheduleService.releaseSlot(reservedSlot.slotId(), bookingReference);
+            auditRefusal("BOOKING_REJECTED", actorId, auditTargetId,
+                    "Slot modality '" + reservedSlot.modality() + "' does not match '" + expectedModality + "'");
+            throw new BookingConflictException("Slot '" + reservedSlot.slotId() + "' modality '"
+                    + reservedSlot.modality() + "' does not match required modality '" + expectedModality + "'.");
+        }
+        int maxPerDay = bookingPolicyGateway.maxBookingsPerPatientPerDay();
+        long sameDayCount = bookingRepository
+                .findActiveByPatientAndDate(patientId, reservedSlot.start().toLocalDate()).stream()
+                .filter(b -> excludedBookingId == null || !b.getBookingId().equals(excludedBookingId))
+                .count();
+        if (sameDayCount >= maxPerDay) {
+            scheduleService.releaseSlot(reservedSlot.slotId(), bookingReference);
+            auditRefusal("BOOKING_REJECTED", actorId, auditTargetId, "Daily patient booking limit exceeded");
+            throw new BookingConflictException("Patient '" + patientId + "' exceeds daily booking limit.");
+        }
     }
 
     private SlotDTO reserveSlot(String bookingId, String patientId, String modality,
@@ -286,6 +352,16 @@ public class BookingServiceImpl implements BookingService {
         } catch (ScheduleNotFoundException ex) {
             auditRefusal("BOOKING_REJECTED", actorId, bookingId, "Unknown slot " + slotId + " for patient " + patientId);
             throw new BookingNotFoundException(ex.getMessage());
+        }
+    }
+
+    private void auditAndReleaseOnFailure(String action, String actorId, String targetId, String details,
+                                          String slotIdToRelease, String bookingReference) {
+        try {
+            audit(action, actorId, targetId, details);
+        } catch (RuntimeException ex) {
+            scheduleService.releaseSlot(slotIdToRelease, bookingReference);
+            throw ex;
         }
     }
 
@@ -313,12 +389,16 @@ public class BookingServiceImpl implements BookingService {
         bookingRepository.save(booking);
     }
 
-    private Booking findBookingOrThrow(String bookingId) {
+    private Booking findBookingOrThrow(String bookingId, String actorId) {
         if (isBlank(bookingId)) {
+            auditRefusal("BOOKING_REJECTED", actorId, null, "Missing bookingId");
             throw new InvalidBookingDataException("bookingId is mandatory.", List.of("bookingId"));
         }
-        return bookingRepository.findById(bookingId.trim())
-                .orElseThrow(() -> new BookingNotFoundException("Booking '" + bookingId + "' was not found."));
+        String trimmed = bookingId.trim();
+        return bookingRepository.findById(trimmed).orElseThrow(() -> {
+            auditRefusal("BOOKING_NOT_FOUND", actorId, trimmed, "Booking not found");
+            return new BookingNotFoundException("Booking '" + bookingId + "' was not found.");
+        });
     }
 
     private void ensureAuthorized(String actorId, String actorRole, String targetId) {

@@ -15,6 +15,7 @@ import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -132,9 +133,14 @@ public class BookingApiClient {
     private static <T> T call(Supplier<T> supplier) {
         try {
             return supplier.get();
+        } catch (BookingClientException ex) {
+            throw ex;
         } catch (ResourceAccessException ex) {
             throw new BookingClientException("SERVER_UNAVAILABLE", 503,
                     "Admissions server is unreachable.", List.of(), List.of());
+        } catch (RestClientException ex) {
+            throw new BookingClientException("CLIENT_ERROR", 502,
+                    "Unexpected response from admissions server.", List.of(), List.of());
         }
     }
 
