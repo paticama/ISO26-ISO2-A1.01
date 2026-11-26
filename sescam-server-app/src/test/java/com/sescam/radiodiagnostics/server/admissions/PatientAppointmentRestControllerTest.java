@@ -7,6 +7,11 @@ import com.sescam.radiodiagnostics.common.admissions.CreateBookingRequestDTO;
 import com.sescam.radiodiagnostics.common.admissions.PendingExamRequestDTO;
 import com.sescam.radiodiagnostics.common.admissions.PendingOrderGateway;
 import com.sescam.radiodiagnostics.common.orders.PriorityLevel;
+import com.sescam.radiodiagnostics.common.patients.CreatePatientRequestDTO;
+import com.sescam.radiodiagnostics.common.patients.Gender;
+import com.sescam.radiodiagnostics.common.patients.PatientDTO;
+import com.sescam.radiodiagnostics.common.patients.PatientService;
+import com.sescam.radiodiagnostics.common.patients.PreferredNotificationChannel;
 import com.sescam.radiodiagnostics.common.schedules.OpenScheduleRequestDTO;
 import com.sescam.radiodiagnostics.common.schedules.ScheduleService;
 import com.sescam.radiodiagnostics.common.schedules.SlotDTO;
@@ -30,9 +35,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * End-to-end REST test of UC-PAT-01 with the real wiring of the server (C1, C2 stand-in, C3, C4 stand-in, C5).
- * It uses its own order, patient and room, so it does not depend on the data of the UC-AAD-05 test,
- * which shares the same Spring context.
+ * End-to-end REST test of UC-PAT-01 with the real wiring of the server (C1, C2 stand-in, C3, C4 stand-in, C5, C6).
+ * Each test registers its own patient and uses its own order and room, so it does not depend on the data of the
+ * UC-AAD-05 test, which shares the same Spring context.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -51,11 +56,13 @@ class PatientAppointmentRestControllerTest {
     private PendingOrderGateway pendingOrderGateway;
     @Autowired
     private BookingService bookingService;
+    @Autowired
+    private PatientService patientService;
 
     @Test
     void patientConsultsConfirmsAsksToMoveAndCancelsTheirAppointment() throws Exception {
-        patient = "PAT-901";
-        Booked booked = bookAnAbdominalCtFor(patient);
+        Booked booked = bookAnAbdominalCtForANewPatient();
+        patient = booked.patientId();
         String bookingId = booked.bookingId();
 
         // Steps 1-3: the patient sees their appointment with the examination name (from the order, C4).
@@ -126,12 +133,13 @@ class PatientAppointmentRestControllerTest {
 
     @Test
     void onlyThePatientCanSeeTheirAppointments() throws Exception {
-        patient = "PAT-903";
-        String bookingId = bookAnAbdominalCtFor(patient).bookingId();
+        Booked booked = bookAnAbdominalCtForANewPatient();
+        patient = booked.patientId();
+        String bookingId = booked.bookingId();
 
         // A8: another patient is denied.
         mockMvc.perform(get("/api/v1/my-appointments/{id}", bookingId)
-                        .header("X-Actor-Id", "PAT-902")
+                        .header("X-Actor-Id", "PAT-SOMEONE-ELSE")
                         .header("X-Actor-Role", "PATIENT"))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("UNAUTHORIZED_BOOKING_ACCESS"));
@@ -149,22 +157,33 @@ class PatientAppointmentRestControllerTest {
 
     // ------------------------------------------------------------------ helpers
 
-    private record Booked(String orderId, String bookingId) {
+    private record Booked(String patientId, String orderId, String bookingId) {
     }
 
-    /** Staff book a routine abdominal CT for the patient in a room used only by this test (UC-AAD-05). */
-    private Booked bookAnAbdominalCtFor(String patientId) {
-        String orderId = ORDER_PREFIX + System.nanoTime();
+    /**
+     * Registers a new active patient in C6 (UC-AAD-01), because booking checks that the patient exists and is
+     * active, and then staff book a routine abdominal CT for them in a room used only by this test (UC-AAD-05).
+     */
+    private Booked bookAnAbdominalCtForANewPatient() {
+        long unique = System.nanoTime();
+        String digits = String.format("%08d", unique % 100_000_000L);
+        PatientDTO registered = patientService.registerPatient(new CreatePatientRequestDTO(
+                "CIP-PAT01-" + unique, digits + "P", "Test", "Patient", LocalDate.of(1985, 3, 15), Gender.OTHER,
+                "600000000", "patient@example.com", null, PreferredNotificationChannel.EMAIL, null, null,
+                "adm-1", "ADMISSIONS_STAFF"));
+        String patientId = registered.id();
+
+        String orderId = ORDER_PREFIX + unique;
         ((InMemoryPendingOrderGateway) pendingOrderGateway).seed(new PendingExamRequestDTO(orderId, "PHY-PAT01",
                 patientId, "CT-ABD-C", "Abdominal CT with contrast", "CT", PriorityLevel.ROUTINE, Instant.now()));
         LocalDate day = LocalDate.now().plusDays(5);
-        String room = "RES-PAT01-" + System.nanoTime();
+        String room = "RES-PAT01-" + unique;
         SlotDTO slot = scheduleService.openSchedule(new OpenScheduleRequestDTO(room, "LOC-MAIN", "CT",
                         day.atTime(9, 0), day.atTime(9, 30), 30, 1, "adm-1", "ADMISSIONS_STAFF"))
                 .schedule().slots().get(0);
         BookingDTO booking = bookingService.createBooking(new CreateBookingRequestDTO(orderId, slot.slotId(),
                 slot.version(), "adm-1", "ADMISSIONS_STAFF"));
-        return new Booked(orderId, booking.bookingId());
+        return new Booked(patientId, orderId, booking.bookingId());
     }
 
     private ResultActions asPatient(MockHttpServletRequestBuilder request) throws Exception {

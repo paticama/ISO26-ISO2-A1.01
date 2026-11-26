@@ -106,8 +106,12 @@ public class Booking {
     }
 
     /** CANCELLED and EXECUTED are final: nothing can change the booking any more. */
+    public boolean isFinal() {
+        return status == BookingStatus.CANCELLED || status == BookingStatus.EXECUTED;
+    }
+
     private void ensureActive() {
-        if (this.status == BookingStatus.CANCELLED || this.status == BookingStatus.EXECUTED) {
+        if (isFinal()) {
             throw new RequestAlreadyProcessedException(
                     "Booking '" + bookingId + "' is already " + status.name().toLowerCase(Locale.ROOT) + ".");
         }

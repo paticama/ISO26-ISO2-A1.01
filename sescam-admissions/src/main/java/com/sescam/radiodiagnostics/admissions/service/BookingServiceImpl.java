@@ -12,7 +12,6 @@ import com.sescam.radiodiagnostics.common.admissions.BookingNotFoundException;
 import com.sescam.radiodiagnostics.common.admissions.BookingNotificationGateway;
 import com.sescam.radiodiagnostics.common.admissions.BookingPolicyGateway;
 import com.sescam.radiodiagnostics.common.admissions.BookingService;
-import com.sescam.radiodiagnostics.common.admissions.BookingStatus;
 import com.sescam.radiodiagnostics.common.admissions.CancelBookingRequestDTO;
 import com.sescam.radiodiagnostics.common.admissions.ConcurrentBookingException;
 import com.sescam.radiodiagnostics.common.admissions.CreateBookingRequestDTO;
@@ -214,9 +213,11 @@ public class BookingServiceImpl implements BookingService {
         }
 
         Booking booking = findBookingOrThrow(request.bookingId().trim(), request.actorId());
-        if (booking.getStatus() == BookingStatus.CANCELLED) {
-            auditRefusal("BOOKING_REJECTED", request.actorId(), booking.getBookingId(), "Cannot reschedule cancelled booking");
-            throw new RequestAlreadyProcessedException("Booking '" + booking.getBookingId() + "' is already cancelled.");
+        if (booking.isFinal()) {
+            auditRefusal("BOOKING_REJECTED", request.actorId(), booking.getBookingId(),
+                    "Cannot reschedule " + booking.getStatus() + " booking");
+            throw new RequestAlreadyProcessedException("Booking '" + booking.getBookingId() + "' is already "
+                    + booking.getStatus().name().toLowerCase(Locale.ROOT) + ".");
         }
         if (booking.getVersion() != request.expectedBookingVersion()) {
             auditRefusal("BOOKING_CONCURRENT_CONFLICT", request.actorId(), booking.getBookingId(), "Stale booking version");
@@ -271,9 +272,11 @@ public class BookingServiceImpl implements BookingService {
         }
 
         Booking booking = findBookingOrThrow(request.bookingId().trim(), request.actorId());
-        if (booking.getStatus() == BookingStatus.CANCELLED) {
-            auditRefusal("BOOKING_REJECTED", request.actorId(), booking.getBookingId(), "Booking already cancelled");
-            throw new RequestAlreadyProcessedException("Booking '" + booking.getBookingId() + "' is already cancelled.");
+        if (booking.isFinal()) {
+            auditRefusal("BOOKING_REJECTED", request.actorId(), booking.getBookingId(),
+                    "Booking already " + booking.getStatus());
+            throw new RequestAlreadyProcessedException("Booking '" + booking.getBookingId() + "' is already "
+                    + booking.getStatus().name().toLowerCase(Locale.ROOT) + ".");
         }
         if (booking.getVersion() != request.expectedBookingVersion()) {
             auditRefusal("BOOKING_CONCURRENT_CONFLICT", request.actorId(), booking.getBookingId(), "Stale booking version");
