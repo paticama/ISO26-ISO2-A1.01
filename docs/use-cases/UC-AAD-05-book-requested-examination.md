@@ -41,12 +41,12 @@
 ## RADIT Disciplines
 - [x] Requirements: Specify examination booking, notification, and worklist integration.
 - [x] Analysis: Define booking transaction and notification boundaries ([`docs/diagrams/UC-AAD-05/`](../diagrams/UC-AAD-05/)).
-- [x] Design: `BookingService` and DTOs/exceptions in `sescam-common` (`common.admissions`); server [design class diagram](../diagrams/UC-AAD-05/uc-aad-05-class-design.puml) and [sequence diagram](../diagrams/UC-AAD-05/uc-aad-05-sequence-design.puml).
-- [x] Implementation: Server slice (`sescam-admissions` 1.0.0: `BookingServiceImpl`, `Booking`, `BookingHistoryEntry`, `WorklistItem`; `BookingRestController`, `BookingExceptionHandler`, `BookingWiringConfig` in `sescam-server-app`). Stand-ins for pending modules: `InMemoryPendingOrderGateway` (C4), `DefaultPatientEligibilityGateway` (C6), `DefaultBookingPolicyGateway` (C2), `NoOpBookingNotificationGateway` (C8). Client slice pending.
-- [x] Testing: JUnit 5 + Mockito (`sescam-common` `BookingContractsTest`, `sescam-admissions` `BookingServiceImplTest`, `sescam-server-app` `BookingRestControllerTest` with live C3 `ScheduleService` integration).
+- [x] Design: `BookingService` and DTOs/exceptions in `sescam-common` (`common.admissions`); server [design class diagram](../diagrams/UC-AAD-05/uc-aad-05-class-design.puml) and [sequence diagram](../diagrams/UC-AAD-05/uc-aad-05-sequence-design.puml); client [design class diagram](../diagrams/UC-AAD-05/uc-aad-05-client-class-design.puml) and [sequence diagram](../diagrams/UC-AAD-05/uc-aad-05-client-sequence-design.puml).
+- [x] Implementation: Server slice (`sescam-admissions` 1.0.0: `BookingServiceImpl`, `Booking`, `BookingHistoryEntry`, `WorklistItem`; `BookingRestController`, `BookingExceptionHandler`, `BookingWiringConfig` in `sescam-server-app`) and client slice (`BookingViewController`, `BookingForm`, `BookingApiClient`, `bookings/index.html`, `bookings/detail.html` in `sescam-client-app`). Stand-ins for pending modules: `InMemoryPendingOrderGateway` (C4), `DefaultPatientEligibilityGateway` (C6), `DefaultBookingPolicyGateway` (C2), `NoOpBookingNotificationGateway` (C8).
+- [x] Testing: JUnit 5 + Mockito (`sescam-common` `BookingContractsTest`, `sescam-admissions` `BookingServiceImplTest`, `sescam-server-app` `BookingRestControllerTest`, `sescam-client-app` `BookingFormTest`, `BookingApiClientTest`, `BookingViewControllerTest`).
 
 ## Contracts and Interfaces
-- `Client:` Admissions UI for slot selection and booking confirmation (pending client slice).
+- `Client:` Admissions UI (`/bookings`, `/bookings/{id}`) in `sescam-client-app` for pending-order selection, slot booking, A1 alternatives, rescheduling (A2), cancellation (A3), and daily worklist.
 - `Server:` `com.sescam.radiodiagnostics.common.admissions.BookingService` in `sescam-admissions` (v1.0.0), REST API `/api/v1/bookings` in `sescam-server-app`.
 - `Schedule interface (C3):` Consumes `ScheduleService.findCompatibleSlots(modality, from, to)`, `reserveSlotAtomically(slotId, expectedVersion, bookingReference)`, and `releaseSlot(slotId, bookingReference)`.
 - `Outbound ports:` `PendingOrderGateway` (C4), `PatientEligibilityGateway` (C6), `BookingPolicyGateway` (C2), `BookingNotificationGateway` (C8), `BookingEventPublisher`, `AccessControlService.canManageBookings` (C1), `AuditService` (C1).
