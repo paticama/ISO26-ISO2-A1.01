@@ -49,4 +49,16 @@ public interface AccessControlService {
         String r = role.trim().toUpperCase();
         return r.contains("PHYSICIAN") || r.contains("RADIOLOGIST") || r.contains("TECHNICIAN");
     }
+
+    /**
+     * Checks whether the authenticated user may view DICOM studies and author/sign diagnostic reports (UC-PHY-04).
+     * Only physicians and radiologists may author, sign, or amend diagnostic reports.
+     */
+    default boolean canAuthorDiagnosticReports(String actorId, String role) {
+        if (role == null) {
+            return false;
+        }
+        String r = role.trim().toUpperCase();
+        return r.contains("PHYSICIAN") || r.contains("RADIOLOGIST");
+    }
 }

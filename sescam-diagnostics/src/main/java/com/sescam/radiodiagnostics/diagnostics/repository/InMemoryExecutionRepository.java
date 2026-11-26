@@ -1,8 +1,11 @@
 package com.sescam.radiodiagnostics.diagnostics.repository;
 
 import com.sescam.radiodiagnostics.common.diagnostics.ExecutionAlreadyRecordedException;
+import com.sescam.radiodiagnostics.common.diagnostics.ExecutionStatus;
 import com.sescam.radiodiagnostics.diagnostics.domain.ProcedureExecution;
 
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,8 +27,27 @@ public class InMemoryExecutionRepository implements ExecutionRepository {
     }
 
     @Override
+    public Optional<ProcedureExecution> findById(String executionId) {
+        if (executionId == null) {
+            return Optional.empty();
+        }
+        return byOrderId.values().stream()
+                .filter(e -> e.getId().equals(executionId))
+                .findFirst();
+    }
+
+    @Override
     public Optional<ProcedureExecution> findByOrderId(String orderId) {
         return orderId == null ? Optional.empty() : Optional.ofNullable(byOrderId.get(orderId));
+    }
+
+    @Override
+    public List<ProcedureExecution> findAllExecutedPendingReport() {
+        return byOrderId.values().stream()
+                .filter(e -> e.getStatus() == ExecutionStatus.EXECUTED_PENDING_REPORT)
+                .sorted(Comparator.comparing(ProcedureExecution::getRecordedAt)
+                        .thenComparing(ProcedureExecution::getId))
+                .toList();
     }
 
     @Override

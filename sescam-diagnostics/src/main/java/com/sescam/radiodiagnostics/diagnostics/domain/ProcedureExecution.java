@@ -80,6 +80,14 @@ public class ProcedureExecution {
         return patientId;
     }
 
+    public String getExamTypeName() {
+        return examTypeName;
+    }
+
+    public ModalityType getModality() {
+        return modality;
+    }
+
     public ExecutionStatus getStatus() {
         return status;
     }
