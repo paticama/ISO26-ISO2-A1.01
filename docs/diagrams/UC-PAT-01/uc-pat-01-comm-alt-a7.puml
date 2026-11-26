@@ -1,0 +1,45 @@
+@startuml uc-pat-01-comm-alt-a7
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+
+title UC-PAT-01: Manage My Appointments (C5 v1.1.0)\nCommunication Diagram - Alternative Flow A7: Appointment Executed or Already Cancelled
+
+actor ":Patient" as pat
+boundary ":MyAppointmentsUI" as ui
+control ":PatientAppointmentController" as ctrl
+control ":PatientAppointmentService" as srv
+control ":AccessControlService (C1)" as c1
+entity ":Booking" as booking
+control ":PendingOrderGateway (C4)" as c4
+control ":ExamTypeService (C2)" as c2e
+entity ":RescheduleRequest" as req
+control ":AppointmentRules" as rules
+control ":AuditService (C1)" as audit
+
+pat -- ui : 1: selectAppointment(bookingId)\n6: [stale page] chooseConfirm() or confirmCancellation(reason) >\n< 5: displayStatusWithActionsDisabled(EXECUTED or CANCELLED)\n< 11: displayCurrentStatus(EXECUTED or CANCELLED)
+
+ui -- ctrl : 2: GET my-appointments/{bookingId}\n7: POST my-appointments/{bookingId}/confirm or /cancel >\n< 4: HTTP 200 (AppointmentDetailsDTO, allowedActions = [])\n< 10: HTTP 409 (REQUEST_ALREADY_PROCESSED)
+
+ctrl -- srv : 3: getAppointmentDetails(bookingId, actorId, role)\n8: confirmAppointment(...) or cancelAppointment(...) >\n< 9: throw RequestAlreadyProcessedException
+
+srv -- c1 : 3.1: canManageOwnAppointments(actorId, role)\n8.1: canManageOwnAppointments(actorId, role) >
+
+srv -- booking : 3.2: isOwnedBy(actorId)\n8.2: isOwnedBy(actorId) >
+
+srv -- c4 : 3.3: findByOrderId(orderId) >
+
+srv -- c2e : 3.4: getActiveExamType(examTypeCode) >
+
+srv -- req : 3.5: findPending(bookingId) >
+
+srv -- rules : 3.6: allowedActions(booking, pendingRequest, now) -> []\n8.3: checkConfirm(...) or checkCancel(...) -> [REQUEST_ALREADY_PROCESSED] >
+
+srv -- audit : 3.7: recordEvent(APPOINTMENT_DETAILS_VIEWED)\n8.4: recordEvent(APPOINTMENT_ACTION_REJECTED, REQUEST_ALREADY_PROCESSED) >
+
+note bottom of rules
+  EXECUTED and CANCELLED are final: no action is allowed.
+  If the booking version changed meanwhile (e.g. Admissions
+  rescheduled it in UC-AAD-05): 409 CONCURRENT_BOOKING, as in AAD-05.
+end note
+@enduml

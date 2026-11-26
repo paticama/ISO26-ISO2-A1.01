@@ -1,0 +1,163 @@
+@startuml uc-pat-01-sequence-design
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+hide footbox
+
+title UC-PAT-01: Design Sequence Diagram – server (main flow, A1-A8)\nC5 sescam-admissions v1.1.0
+
+participant "client-app\n(see client diagram)" as UI
+participant "PatientAppointmentRestController\n(server-app)" as RC
+participant "PatientAppointmentServiceImpl\n(sescam-admissions)" as S
+participant "AccessControlService\n(C1)" as AC
+participant "BookingRepository" as BR
+participant "RescheduleRequestRepository" as RR
+participant "AppointmentRules" as RU
+participant "BookingPolicyGateway" as BP
+participant "PendingOrderGateway\n(C4)" as PO
+participant "ExamTypeService\n(C2)" as ET
+participant "ScheduleService\n(C3)" as SC
+participant "WorklistRepository" as WL
+participant "BookingNotificationGateway\n(C8)" as NG
+participant "AuditService\n(C1)" as AU
+participant "BookingEventPublisher\n(C4, C8 subscribe)" as EV
+
+== Steps 1-3: list my appointments (+A1) ==
+UI -> RC : GET /api/v1/my-appointments [X-Actor-Id, X-Actor-Role]
+RC -> S : listMyAppointments(actorId, role)
+S -> AC : canManageOwnAppointments(actorId, role)
+alt actorId blank or role is not PATIENT
+  S -> AU : recordEvent(APPOINTMENT_ACCESS_DENIED)
+  S --> RC : throw UnauthorizedBookingAccessException
+  RC --> UI : 403 UNAUTHORIZED_BOOKING_ACCESS
+else allowed
+  S -> BR : findUpcomingByPatientId(actorId, today)
+  loop each booking
+    S -> PO : findByOrderId(orderId)
+  end
+  S -> AU : recordEvent(APPOINTMENTS_VIEWED, number of results)
+  S --> RC : List<AppointmentSummaryDTO> sorted by scheduledStart
+  RC --> UI : 200 OK (empty list = A1)
+end
+
+group loadOwnedBooking(bookingId, actorId, role): first step of every operation on one appointment
+  S -> AC : canManageOwnAppointments(actorId, role)
+  alt actorId blank or role is not PATIENT
+    S -> AU : recordEvent(APPOINTMENT_ACCESS_DENIED)
+    S --> RC : throw UnauthorizedBookingAccessException (403)
+  else allowed
+    S -> BR : findById(bookingId)
+    alt not found
+      S --> RC : throw BookingNotFoundException (404)
+    else !booking.isOwnedBy(actorId) (A8)
+      S -> AU : recordEvent(APPOINTMENT_ACCESS_DENIED, bookingId)
+      S --> RC : throw UnauthorizedBookingAccessException (403)
+    end
+  end
+end
+
+== Steps 4-6: details, preparation instructions and allowed actions (+A7, A8) ==
+UI -> RC : GET /api/v1/my-appointments/{id}
+RC -> S : getAppointmentDetails(id, actorId, role)
+S -> S : loadOwnedBooking(id, actorId, role)
+S -> PO : findByOrderId(orderId)
+PO --> S : PendingExamRequestDTO (examTypeCode, examTypeName, priority)
+S -> ET : getActiveExamType(examTypeCode)
+ET --> S : ExamTypeDTO (preparationGuide, fasting, contrast, informed consent)
+S -> RR : findPendingByBookingId(id)
+S -> RU : allowedActions(booking, pendingRequest, now)
+RU -> BP : minHoursBeforeConfirmation()
+RU -> BP : minHoursBeforeCancellation()
+note right of RU
+  CANCELLED / EXECUTED -> no actions (A7)
+  pending request -> no REQUEST_RESCHEDULE (A6)
+  deadline passed -> no CONFIRM / CANCEL (A5)
+end note
+S -> RU : serviceContact()
+RU -> BP : serviceContact()
+S -> AU : recordEvent(APPOINTMENT_DETAILS_VIEWED, id)
+S --> RC : AppointmentDetailsDTO (summary, priority, ConsentAndPreparationDTO,\nallowedActions, pendingRequest, serviceContact, version)
+RC --> UI : 200 OK
+
+== Steps 7-9: confirm (+A5, A7) ==
+UI -> RC : POST /api/v1/my-appointments/{id}/confirm [expectedBookingVersion]
+RC -> S : confirmAppointment(ConfirmAppointmentRequestDTO)
+S -> S : loadOwnedBooking(id, actorId, role)
+S -> RU : checkConfirm(booking, expectedBookingVersion, now)
+RU -> BP : minHoursBeforeConfirmation()
+alt error code returned (A7, A5)
+  S -> AU : recordEvent(APPOINTMENT_ACTION_REJECTED, code)
+  S --> RC : throw RequestAlreadyProcessedException (not BOOKED / RESCHEDULED, A7)\nor ConcurrentBookingException (stale version)\nor BookingConflictException (deadline passed, A5)
+  RC --> UI : 409 + code
+else allowed
+  S -> S : booking.confirm(actorId, now)\n[status CONFIRMED + BookingHistoryEntry, version + 1]
+  S -> AU : recordEvent(APPOINTMENT_CONFIRMED, previous status, CONFIRMED)
+  S -> BR : save(booking)
+  S -> EV : publish(BookingChangedEvent(CONFIRMED))
+  S --> RC : AppointmentDetailsDTO
+  RC --> UI : 200 OK
+end
+
+== A2: request rescheduling (+A6, A7) ==
+UI -> RC : POST /api/v1/my-appointments/{id}/reschedule-requests [reason, preferredDates]
+RC -> S : requestRescheduling(PatientRescheduleRequestDTO)
+S -> S : loadOwnedBooking(id, actorId, role)
+S -> RU : invalidRescheduleFields(request, today)
+alt reason blank or preferred date in the past
+  S --> RC : throw InvalidBookingDataException(fields)
+  RC --> UI : 400 INVALID_BOOKING_DATA
+else valid data
+  S -> RR : findPendingByBookingId(id)
+  alt a PENDING_REVIEW request exists (A6)
+    S -> AU : recordEvent(APPOINTMENT_ACTION_REJECTED, DUPLICATE_PENDING_REQUEST)
+    S --> RC : throw DuplicatePendingRequestException
+    RC --> UI : 409 DUPLICATE_PENDING_REQUEST
+  else no pending request
+    S -> RU : checkReschedule(booking, now)
+    alt CANCELLED / EXECUTED or already started (A7)
+      S -> AU : recordEvent(APPOINTMENT_ACTION_REJECTED, REQUEST_ALREADY_PROCESSED)
+      S --> RC : throw RequestAlreadyProcessedException
+      RC --> UI : 409 REQUEST_ALREADY_PROCESSED
+    else allowed
+      S -> S : RescheduleRequest.pending(request, now)\n[PENDING_REVIEW; booking NOT changed]
+      S -> AU : recordEvent(APPOINTMENT_RESCHEDULE_REQUESTED, id)
+      S -> RR : save(rescheduleRequest)
+      S --> RC : RescheduleRequestStatusDTO
+      RC --> UI : 201 Created
+    end
+  end
+end
+
+== A3 / A4: cancel (+A5, A7) ==
+UI -> RC : POST /api/v1/my-appointments/{id}/cancel\n[reason, priorityWarningAcknowledged, expectedBookingVersion]
+RC -> S : cancelAppointment(CancelAppointmentRequestDTO)
+S -> S : loadOwnedBooking(id, actorId, role)
+S -> RU : checkCancel(booking, expectedBookingVersion, now)
+RU -> BP : minHoursBeforeCancellation()
+alt error code returned (A7, A5)
+  S -> AU : recordEvent(APPOINTMENT_ACTION_REJECTED, code)
+  S --> RC : throw RequestAlreadyProcessedException / ConcurrentBookingException /\nBookingConflictException (as in confirm)
+  RC --> UI : 409 + code
+else allowed
+  S -> S : booking.cancel(reason, actorId, now)\n[status CANCELLED + BookingHistoryEntry, version + 1]
+  S -> AU : recordEvent(APPOINTMENT_CANCELLED, reason, priority,\npriorityWarningAcknowledged)
+  S -> BR : save(booking)
+  S -> SC : releaseSlot(slotId, bookingId)
+  S -> PO : markOrderPending(orderId)
+  S -> WL : save(worklist item, CANCELLED)
+  S -> NG : sendBookingNotification(bookingId, patientId, CANCELLED, message)
+  note right of NG
+    Failure -> notificationStatus PENDING_RETRY,
+    the cancellation stays done (as AAD-05 A4).
+  end note
+  S -> BR : save(booking) [notificationStatus]
+  S -> EV : publish(BookingChangedEvent(CANCELLED))
+  S --> RC : AppointmentDetailsDTO
+  RC --> UI : 200 OK
+end
+
+note over RC, S
+  Exceptions are mapped by BookingExceptionHandler (AAD-05) to HTTP status + code.
+  Cancel repeats the steps of BookingServiceImpl.cancelBooking (AAD-05 A3).
+  The patient's X-Actor-Id (from SSO) is their patientId (C6).
+end note
+@enduml

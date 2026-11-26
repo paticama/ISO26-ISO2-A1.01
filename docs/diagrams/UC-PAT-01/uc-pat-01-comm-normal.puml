@@ -1,0 +1,59 @@
+@startuml uc-pat-01-comm-normal
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+
+title UC-PAT-01: Manage My Appointments (C5 v1.1.0)\nCommunication Diagram - Main Success Scenario (Normal Flow)
+
+actor ":Patient" as pat
+boundary ":MyAppointmentsUI" as ui
+control ":PatientAppointmentController" as ctrl
+control ":PatientAppointmentService" as srv
+control ":AppointmentRules" as rules
+entity ":Booking" as booking
+entity ":RescheduleRequest" as req
+control ":AccessControlService (C1)" as c1
+control ":PendingOrderGateway (C4)" as c4
+control ":ExamTypeService (C2)" as c2e
+control ":BookingPolicyGateway" as bp
+control ":AuditService (C1)" as audit
+control ":BookingEventPublisher" as ev
+
+pat -- ui : 1: openMyAppointments()\n6: selectAppointment(bookingId)\n11: chooseConfirm() >\n< 5: displayInChronologicalOrder(appointments)\n< 10: displayDetailsInstructionsAndActions(details)\n< 15: displayConfirmation(CONFIRMED)
+
+ui -- ctrl : 2: GET my-appointments\n7: GET my-appointments/{bookingId}\n12: POST my-appointments/{bookingId}/confirm (expectedBookingVersion) >\n< 4: HTTP 200 (list of AppointmentSummaryDTO)\n< 9: HTTP 200 (AppointmentDetailsDTO)\n< 14: HTTP 200 (AppointmentDetailsDTO, CONFIRMED)
+
+ctrl -- srv : 3: listMyAppointments(actorId, role)\n8: getAppointmentDetails(bookingId, actorId, role)\n13: confirmAppointment(ConfirmAppointmentRequestDTO) >
+
+srv -- c1 : 3.1: canManageOwnAppointments(actorId, role)\n8.1: canManageOwnAppointments(actorId, role)\n13.1: canManageOwnAppointments(actorId, role) >
+
+srv -- booking : 3.2: *[patientId = actorId, upcoming] read()\n8.2: isOwnedBy(actorId)\n13.2: isOwnedBy(actorId)\n13.4: confirm(actorId, now) >
+
+srv -- c4 : 3.3: *[each booking] findByOrderId(orderId)\n8.3: findByOrderId(orderId) >
+
+srv -- c2e : 8.4: getActiveExamType(examTypeCode) >
+
+srv -- req : 8.5: findPending(bookingId) >
+
+srv -- rules : 8.6: allowedActions(booking, pendingRequest, now)\n8.7: serviceContact()\n13.3: checkConfirm(booking, expectedBookingVersion, now) >
+
+rules -- bp : 8.6.1: minHoursBeforeConfirmation()\n8.6.2: minHoursBeforeCancellation()\n8.7.1: serviceContact()\n13.3.1: minHoursBeforeConfirmation() >
+
+srv -- audit : 3.4: recordEvent(APPOINTMENTS_VIEWED)\n8.8: recordEvent(APPOINTMENT_DETAILS_VIEWED)\n13.5: recordEvent(APPOINTMENT_CONFIRMED) >
+
+srv -- ev : 13.6: publish(BookingChangedEvent CONFIRMED) >
+
+note bottom of booking
+  13.4: status BOOKED / RESCHEDULED -> CONFIRMED,
+  BookingHistoryEntry added, version + 1.
+end note
+
+note bottom of c4
+  3.3 / 8.3: the order gives examTypeCode,
+  examTypeName and priority (not stored in Booking).
+end note
+
+note bottom of ev
+  Subscribers: C8 (UC-PAT-03), C4 (UC-PHY-03).
+end note
+@enduml

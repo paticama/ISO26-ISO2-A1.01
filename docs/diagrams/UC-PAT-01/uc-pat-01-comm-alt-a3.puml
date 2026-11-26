@@ -1,0 +1,54 @@
+@startuml uc-pat-01-comm-alt-a3
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+
+title UC-PAT-01: Manage My Appointments (C5 v1.1.0)\nCommunication Diagram - Alternative Flow A3: Cancel Appointment (at step 7)
+
+actor ":Patient" as pat
+boundary ":MyAppointmentsUI" as ui
+control ":PatientAppointmentController" as ctrl
+control ":PatientAppointmentService" as srv
+control ":AccessControlService (C1)" as c1
+entity ":Booking" as booking
+control ":AppointmentRules" as rules
+control ":BookingPolicyGateway" as bp
+control ":AuditService (C1)" as audit
+control ":ScheduleService (C3)" as c3
+control ":PendingOrderGateway (C4)" as c4
+entity ":WorklistItem" as wl
+control ":BookingNotificationGateway (C8)" as c8
+control ":BookingEventPublisher" as ev
+
+pat -- ui : 1: chooseCancel()\n3: confirmCancellation(reason) >\n< 2: askExplicitConfirmationAndReason()\n< 8: displayCancellation(CANCELLED)
+
+ui -- ctrl : 4: POST my-appointments/{bookingId}/cancel (reason, expectedBookingVersion) >\n< 7: HTTP 200 (AppointmentDetailsDTO, CANCELLED)
+
+ctrl -- srv : 5: cancelAppointment(CancelAppointmentRequestDTO) >\n< 6: AppointmentDetailsDTO
+
+srv -- c1 : 5.1: canManageOwnAppointments(actorId, role) >
+
+srv -- booking : 5.2: isOwnedBy(actorId)\n5.4: cancel(reason, actorId, now) >
+
+srv -- rules : 5.3: checkCancel(booking, expectedBookingVersion, now) >
+
+rules -- bp : 5.3.1: minHoursBeforeCancellation() >
+
+srv -- audit : 5.5: recordEvent(APPOINTMENT_CANCELLED, reason) >
+
+srv -- c3 : 5.6: releaseSlot(slotId, bookingId) >
+
+srv -- c4 : 5.7: markOrderPending(orderId) >
+
+srv -- wl : 5.8: update(bookingId, CANCELLED) >
+
+srv -- c8 : 5.9: sendBookingNotification(bookingId, patientId, CANCELLED, message) >
+
+srv -- ev : 5.10: publish(BookingChangedEvent CANCELLED) >
+
+note bottom of srv
+  Same steps (5.4 - 5.10) as the staff cancellation of UC-AAD-05 (A3),
+  so Admissions sees the cancelled booking and the free slot,
+  and the order goes back to pending.
+end note
+@enduml

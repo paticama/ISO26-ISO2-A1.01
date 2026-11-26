@@ -1,0 +1,333 @@
+@startuml uc-pat-01-class-design
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam classAttributeIconSize 0
+set separator none
+left to right direction
+
+title UC-PAT-01: Design Class Diagram (sescam-common, sescam-admissions, sescam-server-app)\nC5 sescam-admissions v1.1.0 – <<NEW>> = added by PAT-01, the rest exists since UC-AAD-05
+
+package "sescam-common contracts (com.sescam.radiodiagnostics.common.admissions)" {
+  interface PatientAppointmentService <<NEW>> {
+    + listMyAppointments(actorId, actorRole) : List<AppointmentSummaryDTO>
+    + getAppointmentDetails(bookingId, actorId, actorRole) : AppointmentDetailsDTO
+    + confirmAppointment(ConfirmAppointmentRequestDTO) : AppointmentDetailsDTO
+    + requestRescheduling(PatientRescheduleRequestDTO) : RescheduleRequestStatusDTO
+    + cancelAppointment(CancelAppointmentRequestDTO) : AppointmentDetailsDTO
+  }
+
+  class AppointmentSummaryDTO <<record, NEW>> {
+    + bookingId : String
+    + scheduledStart : LocalDateTime
+    + scheduledEnd : LocalDateTime
+    + examTypeName : String
+    + modality : String
+    + locationId : String
+    + resourceId : String
+    + status : BookingStatus
+  }
+  class AppointmentDetailsDTO <<record, NEW>> {
+    + summary : AppointmentSummaryDTO
+    + examTypeCode : String
+    + priority : PriorityLevel
+    + preparation : ConsentAndPreparationDTO
+    + allowedActions : Set<AppointmentAction>
+    + pendingRequest : RescheduleRequestStatusDTO
+    + serviceContact : String
+    + version : long
+  }
+  class ConfirmAppointmentRequestDTO <<record, NEW>> {
+    + bookingId : String
+    + expectedBookingVersion : long
+    + actorId : String
+    + actorRole : String
+  }
+  class PatientRescheduleRequestDTO <<record, NEW>> {
+    + bookingId : String
+    + reason : String
+    + preferredDates : List<LocalDate>
+    + actorId : String
+    + actorRole : String
+  }
+  class CancelAppointmentRequestDTO <<record, NEW>> {
+    + bookingId : String
+    + expectedBookingVersion : long
+    + reason : String
+    + priorityWarningAcknowledged : boolean
+    + actorId : String
+    + actorRole : String
+  }
+  class RescheduleRequestStatusDTO <<record, NEW>> {
+    + requestId : String
+    + bookingId : String
+    + status : RescheduleRequestStatus
+    + reason : String
+    + preferredDates : List<LocalDate>
+    + requestedAt : Instant
+    + reviewedAt : Instant
+  }
+
+  enum BookingStatus {
+    PENDING
+    BOOKED
+    RESCHEDULED
+    CANCELLED
+    .. NEW ..
+    CONFIRMED
+    EXECUTED
+  }
+  enum AppointmentAction <<NEW>> {
+    CONFIRM
+    REQUEST_RESCHEDULE
+    CANCEL
+  }
+  enum RescheduleRequestStatus <<NEW>> {
+    PENDING_REVIEW
+    ACCEPTED
+    REJECTED
+  }
+  enum BookingErrorCode {
+    INVALID_BOOKING_DATA
+    UNAUTHORIZED_BOOKING_ACCESS
+    BOOKING_NOT_FOUND
+    REQUEST_ALREADY_PROCESSED
+    BOOKING_CONFLICT
+    CONCURRENT_BOOKING
+    (other AAD-05 codes)
+    .. NEW ..
+    DUPLICATE_PENDING_REQUEST
+  }
+
+  abstract class BookingException <<exception>> {
+    - code : BookingErrorCode
+    + getCode() : BookingErrorCode
+  }
+  class BookingNotFoundException <<exception>>
+  class UnauthorizedBookingAccessException <<exception>>
+  class RequestAlreadyProcessedException <<exception>>
+  class BookingConflictException <<exception>>
+  class ConcurrentBookingException <<exception>>
+  class InvalidBookingDataException <<exception>> {
+    + getInvalidFields() : List<String>
+  }
+  class DuplicatePendingRequestException <<exception, NEW>>
+
+  interface BookingPolicyGateway {
+    + maxBookingsPerPatientPerDay() : int
+    + minHoursBeforeCancellation() : int
+    + minHoursBeforeConfirmation() : int  <<NEW>>
+    + serviceContact() : String  <<NEW>>
+  }
+  interface PendingOrderGateway {
+    + findByOrderId(orderId) : Optional<PendingExamRequestDTO>
+    + markOrderPending(orderId) : void
+  }
+  interface BookingNotificationGateway {
+    + sendBookingNotification(bookingId, patientId, status, message) : NotificationStatus
+  }
+  interface BookingEventPublisher {
+    + publish(BookingChangedEvent) : void
+  }
+  class PendingExamRequestDTO <<record>> {
+    + orderId, patientId
+    + examTypeCode, examTypeName, modality
+    + priority : PriorityLevel
+  }
+  class BookingChangedEvent <<record>> {
+    + bookingId, orderId, patientId, slotId
+    + status : BookingStatus
+    + scheduledStart, occurredAt
+  }
+}
+
+package "sescam-common (other packages)" {
+  class "ConsentAndPreparationDTO\n(common.orders)" as CPD <<record>>
+  enum "PriorityLevel\n(common.orders)" as PL {
+    STAT_URGENT
+    PREFERENTIAL
+    ROUTINE
+  }
+  interface "ExamTypeService\n(common.catalogue, C2)" as ETS {
+    + getActiveExamType(code) : ExamTypeDTO
+  }
+  interface "ScheduleService\n(common.schedules, C3)" as SS {
+    + releaseSlot(slotId, bookingReference) : void
+  }
+  interface "AccessControlService\n(common.security, C1)" as ACS {
+    + canManageOwnAppointments(actorId, role) : boolean  <<default, NEW>>
+  }
+  interface "AuditService\n(common.security, C1)" as AUS {
+    + recordEvent(AuditEventDTO) : void
+  }
+}
+
+package "sescam-admissions module (com.sescam.radiodiagnostics.admissions)" {
+  class PatientAppointmentServiceImpl <<NEW>> {
+    - bookingRepository : BookingRepository
+    - rescheduleRequestRepository : RescheduleRequestRepository
+    - worklistRepository : WorklistRepository
+    - rules : AppointmentRules
+    - pendingOrderGateway : PendingOrderGateway
+    - examTypeService : ExamTypeService
+    - scheduleService : ScheduleService
+    - notificationGateway : BookingNotificationGateway
+    - eventPublisher : BookingEventPublisher
+    - accessControlService : AccessControlService
+    - auditService : AuditService
+    - clock : Clock
+    - loadOwnedBooking(bookingId, actorId, actorRole) : Booking
+    - toDetails(Booking, PendingExamRequestDTO, ExamTypeDTO, Optional<RescheduleRequest>) : AppointmentDetailsDTO
+  }
+  class AppointmentRules <<NEW>> {
+    - policyGateway : BookingPolicyGateway
+    + allowedActions(Booking, Optional<RescheduleRequest>, now) : Set<AppointmentAction>
+    + checkConfirm(Booking, expectedVersion, now) : Optional<BookingErrorCode>
+    + checkCancel(Booking, expectedVersion, now) : Optional<BookingErrorCode>
+    + checkReschedule(Booking, now) : Optional<BookingErrorCode>
+    + invalidRescheduleFields(PatientRescheduleRequestDTO, today) : List<String>
+    + serviceContact() : String
+  }
+  interface BookingRepository {
+    + save(Booking) : Booking
+    + findById(String) : Optional<Booking>
+    + findUpcomingByPatientId(patientId, from) : List<Booking>  <<NEW>>
+  }
+  interface RescheduleRequestRepository <<NEW>> {
+    + save(RescheduleRequest) : RescheduleRequest
+    + findPendingByBookingId(String) : Optional<RescheduleRequest>
+  }
+  interface WorklistRepository {
+    + save(WorklistItem) : WorklistItem
+  }
+  class InMemoryRescheduleRequestRepository <<NEW>>
+  class DefaultBookingPolicyGateway
+
+  class Booking <<entity>> {
+    - bookingId, orderId, patientId, modality
+    - slotId, resourceId, locationId
+    - scheduledStart, scheduledEnd
+    - status : BookingStatus
+    - notificationStatus : NotificationStatus
+    - version : long
+    + confirm(actorId, now) : void  <<NEW>>
+    + cancel(reason, actorId, now) : void
+    + isOwnedBy(patientId) : boolean  <<NEW>>
+    + updateNotificationStatus(NotificationStatus) : void
+    + toDTO() : BookingDTO
+  }
+  class BookingHistoryEntry <<entity>>
+  class RescheduleRequest <<entity, NEW>> {
+    - id, bookingId, patientId
+    - reason
+    - preferredDates : List<LocalDate>
+    - status : RescheduleRequestStatus
+    - requestedAt, reviewedBy, reviewedAt
+    + {static} pending(PatientRescheduleRequestDTO, at) : RescheduleRequest
+    + toStatusDTO() : RescheduleRequestStatusDTO
+  }
+}
+
+package "sescam-server-app (com.sescam.radiodiagnostics.server.admissions)" {
+  class PatientAppointmentRestController <<NEW>> {
+    - service : PatientAppointmentService
+    GET /api/v1/my-appointments
+    GET /api/v1/my-appointments/{id}
+    POST /api/v1/my-appointments/{id}/confirm
+    POST /api/v1/my-appointments/{id}/reschedule-requests
+    POST /api/v1/my-appointments/{id}/cancel
+  }
+  class BookingExceptionHandler {
+    assignableTypes += PatientAppointmentRestController
+    + DuplicatePendingRequestException -> 409
+  }
+  class BookingWiringConfig {
+    + patientAppointmentService(...)  <<NEW bean>>
+    + rescheduleRequestRepository()  <<NEW bean>>
+  }
+}
+
+PatientAppointmentRestController --> PatientAppointmentService
+BookingExceptionHandler ..> BookingException
+BookingWiringConfig ..> PatientAppointmentServiceImpl : creates
+
+PatientAppointmentServiceImpl ..|> PatientAppointmentService
+PatientAppointmentServiceImpl --> BookingRepository
+PatientAppointmentServiceImpl --> RescheduleRequestRepository
+PatientAppointmentServiceImpl --> WorklistRepository
+PatientAppointmentServiceImpl --> AppointmentRules
+PatientAppointmentServiceImpl --> PendingOrderGateway
+PatientAppointmentServiceImpl --> ETS
+PatientAppointmentServiceImpl --> SS
+PatientAppointmentServiceImpl --> BookingNotificationGateway
+PatientAppointmentServiceImpl --> BookingEventPublisher
+PatientAppointmentServiceImpl --> ACS
+PatientAppointmentServiceImpl --> AUS
+PatientAppointmentServiceImpl ..> RescheduleRequest : creates
+AppointmentRules --> BookingPolicyGateway
+RescheduleRequestRepository <|.. InMemoryRescheduleRequestRepository
+BookingPolicyGateway <|.. DefaultBookingPolicyGateway
+
+Booking "1" *-- "1..*" BookingHistoryEntry
+InMemoryRescheduleRequestRepository o-- RescheduleRequest
+
+AppointmentDetailsDTO o-- AppointmentSummaryDTO
+AppointmentDetailsDTO o-- "0..1" RescheduleRequestStatusDTO
+AppointmentDetailsDTO --> CPD
+AppointmentDetailsDTO --> PL
+
+BookingException <|-- BookingNotFoundException
+BookingException <|-- UnauthorizedBookingAccessException
+BookingException <|-- RequestAlreadyProcessedException
+BookingException <|-- BookingConflictException
+BookingException <|-- ConcurrentBookingException
+BookingException <|-- InvalidBookingDataException
+BookingException <|-- DuplicatePendingRequestException
+BookingException --> BookingErrorCode
+
+' Layout only: stack the contracts so the diagram stays narrow
+PatientAppointmentService -[hidden]down- AppointmentSummaryDTO
+AppointmentSummaryDTO -[hidden]right- AppointmentDetailsDTO
+AppointmentSummaryDTO -[hidden]down- ConfirmAppointmentRequestDTO
+ConfirmAppointmentRequestDTO -[hidden]right- PatientRescheduleRequestDTO
+PatientRescheduleRequestDTO -[hidden]right- CancelAppointmentRequestDTO
+ConfirmAppointmentRequestDTO -[hidden]down- BookingStatus
+BookingStatus -[hidden]right- AppointmentAction
+AppointmentAction -[hidden]right- RescheduleRequestStatus
+BookingStatus -[hidden]down- BookingException
+
+note bottom of AppointmentRules
+  CONFIRM only from BOOKED / RESCHEDULED;
+  REQUEST_RESCHEDULE and CANCEL from BOOKED / RESCHEDULED / CONFIRMED;
+  nothing for CANCELLED / EXECUTED (A7).
+  Window: hours between now and scheduledStart >= policy hours (A5),
+  as BookingServiceImpl.cancelBooking does (UC-AAD-05).
+end note
+
+note bottom of DefaultBookingPolicyGateway
+  Today it returns fixed values (AAD-05).
+  The values should come from C2 PolicyService:
+  booking.cancellation.min.hours (exists),
+  booking.confirmation.min.hours and service.contact.info (NEW).
+  To agree with the C5 owner.
+end note
+
+note top of PatientAppointmentServiceImpl
+  The patient's X-Actor-Id (from SSO) is their patientId (C6).
+  Ownership check: booking.isOwnedBy(actorId) (A8).
+  Cancel follows the same steps as BookingServiceImpl.cancelBooking:
+  audit, save, releaseSlot, markOrderPending, worklist,
+  notification, BookingChangedEvent.
+end note
+
+note bottom of BookingErrorCode
+  Spec error -> code used:
+  APPOINTMENT_NOT_FOUND -> BOOKING_NOT_FOUND (404)
+  ACCESS_DENIED -> UNAUTHORIZED_BOOKING_ACCESS (403)
+  INVALID_APPOINTMENT_STATE -> REQUEST_ALREADY_PROCESSED (409)
+  (stale version -> CONCURRENT_BOOKING, 409)
+  ACTION_OUTSIDE_POLICY_WINDOW -> BOOKING_CONFLICT (409)
+  DUPLICATE_PENDING_REQUEST -> DUPLICATE_PENDING_REQUEST (409)
+  invalid reason / dates -> INVALID_BOOKING_DATA (400)
+end note
+@enduml

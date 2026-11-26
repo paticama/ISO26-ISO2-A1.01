@@ -1,0 +1,35 @@
+@startuml uc-pat-01-comm-alt-a1
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+
+title UC-PAT-01: Manage My Appointments (C5 v1.1.0)\nCommunication Diagram - Alternative Flow A1: No Scheduled Appointments
+
+actor ":Patient" as pat
+boundary ":MyAppointmentsUI" as ui
+boundary ":FollowUpsUI (UC-PAT-04)" as fu
+control ":PatientAppointmentController" as ctrl
+control ":PatientAppointmentService" as srv
+control ":AccessControlService (C1)" as c1
+entity ":Booking" as booking
+control ":AuditService (C1)" as audit
+
+pat -- ui : 1: openMyAppointments()\n6: chooseSeePlannedFollowUps() [optional] >\n< 5: displayNoUpcomingAppointments() & offerFollowUps()
+
+ui -- ctrl : 2: GET my-appointments >\n< 4: HTTP 200 (empty list)
+
+ctrl -- srv : 3: listMyAppointments(actorId, role) >
+
+srv -- c1 : 3.1: canManageOwnAppointments(actorId, role) >
+
+srv -- booking : 3.2: *[patientId = actorId, upcoming] read() -> [none] >
+
+srv -- audit : 3.3: recordEvent(APPOINTMENTS_VIEWED, 0 results) >
+
+ui -- fu : 7: openPlannedFollowUps() >
+
+note bottom of fu
+  UC-PAT-04 is planned for It4 (C4 orders).
+  Until then the link shows "not available yet".
+end note
+@enduml

@@ -1,0 +1,36 @@
+@startuml uc-pat-01-comm-alt-a6
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+
+title UC-PAT-01: Manage My Appointments (C5 v1.1.0)\nCommunication Diagram - Alternative Flow A6: Pending Request Already Exists
+
+actor ":Patient" as pat
+boundary ":MyAppointmentsUI" as ui
+control ":PatientAppointmentController" as ctrl
+control ":PatientAppointmentService" as srv
+control ":AccessControlService (C1)" as c1
+entity ":Booking" as booking
+entity ":RescheduleRequest" as req
+control ":AuditService (C1)" as audit
+
+pat -- ui : 1: requestRescheduling(reason, preferredDates) >\n< 6: displayExistingRequestStatus(PENDING_REVIEW)
+
+ui -- ctrl : 2: POST my-appointments/{bookingId}/reschedule-requests >\n< 5: HTTP 409 (DUPLICATE_PENDING_REQUEST)
+
+ctrl -- srv : 3: requestRescheduling(PatientRescheduleRequestDTO) >\n< 4: throw DuplicatePendingRequestException
+
+srv -- c1 : 3.1: canManageOwnAppointments(actorId, role) >
+
+srv -- booking : 3.2: isOwnedBy(actorId) >
+
+srv -- req : 3.3: findPending(bookingId) -> [existing PENDING_REVIEW] >
+
+srv -- audit : 3.4: recordEvent(APPOINTMENT_ACTION_REJECTED, DUPLICATE_PENDING_REQUEST) >
+
+note bottom of req
+  No second request is stored.
+  The UI reloads the details (step 5), which show
+  the status of the existing request.
+end note
+@enduml

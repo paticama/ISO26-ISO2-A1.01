@@ -1,0 +1,193 @@
+@startuml uc-pat-01-class-analysis
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam classAttributeIconSize 0
+allowmixing
+
+title UC-PAT-01: Manage My Appointments\nAnalysis Class Diagram (module C5 sescam-admissions v1.1.0)
+
+' Entity placement (ADR-014): Booking (= appointment), its history and the worklist
+' belong to C5 and already exist (UC-AAD-05, C5 v1.0.0). RescheduleRequest is new
+' and also belongs to C5, because Admissions Staff process it (UC-AAD-05).
+
+actor "Patient" as Pat
+actor "Admissions Staff" as Staff
+
+package "Boundary (client)" {
+  class MyAppointmentsView <<boundary>> {
+    upcoming appointments in chronological order
+    "no upcoming appointments" + link to follow-ups (A1)
+  }
+  class AppointmentDetailsView <<boundary>> {
+    details + preparation instructions
+    allowed actions (Confirm, Request rescheduling, Cancel)
+    status of a pending request (A2, A6)
+    service contact (A5)
+  }
+  class RescheduleRequestForm <<boundary>> {
+    reason
+    preferred dates (optional)
+  }
+  class CancellationDialog <<boundary>> {
+    explicit confirmation
+    reason (optional)
+    clinical priority warning (A4)
+  }
+}
+
+package "Control" {
+  class PatientAppointmentController <<control>> {
+    list / details / confirm
+    request rescheduling / cancel
+  }
+  class PatientAppointmentService <<control>> {
+    only the patient's own appointments (A8)
+    applies Confirmed and Cancelled
+    stores rescheduling requests
+  }
+  class AppointmentRules <<control>> {
+    allowed actions per status (A7)
+    confirmation / cancellation window (A5)
+    one pending request per appointment (A6)
+  }
+}
+
+package "Entity (C5 owns)" {
+  class Booking <<entity>> {
+    bookingId
+    orderId
+    patientId
+    modality
+    slotId
+    resourceId
+    locationId
+    scheduledStart
+    scheduledEnd
+    status : BookingStatus
+    notificationStatus
+    version
+    + confirm(actorId, at)
+    + cancel(reason, actorId, at)
+    + isOwnedBy(patientId)
+  }
+  class BookingHistoryEntry <<entity>> {
+    previousStatus
+    newStatus
+    previousSlotId
+    newSlotId
+    reason
+    changedBy
+    changedAt
+  }
+  class WorklistItem <<entity>> {
+    bookingId
+    status
+  }
+  class RescheduleRequest <<entity>> {
+    requestId
+    bookingId
+    patientId
+    reason
+    preferredDates
+    status : RescheduleRequestStatus
+    requestedAt
+    reviewedBy
+    reviewedAt
+  }
+  enum BookingStatus {
+    PENDING
+    BOOKED
+    RESCHEDULED
+    CANCELLED
+    .. new in PAT-01 ..
+    CONFIRMED
+    EXECUTED
+  }
+  enum RescheduleRequestStatus {
+    PENDING_REVIEW
+    ACCEPTED
+    REJECTED
+  }
+}
+
+package "Other modules (through interfaces in sescam-common)" {
+  class "AccessControlService (C1)" as AC <<interface>> {
+    + canManageOwnAppointments(actorId, role)
+  }
+  class "AuditService (C1)" as AU <<interface>> {
+    + recordEvent(auditEvent)
+  }
+  class "PendingOrderGateway (C4)" as PO <<interface>> {
+    + findByOrderId(orderId)
+    + markOrderPending(orderId)
+  }
+  class "ExamTypeService (C2)" as ET <<interface>> {
+    + getActiveExamType(code)
+  }
+  class "BookingPolicyGateway (C2 policies)" as BP <<interface>> {
+    + minHoursBeforeConfirmation()
+    + minHoursBeforeCancellation()
+    + serviceContact()
+  }
+  class "ScheduleService (C3)" as SC <<interface>> {
+    + releaseSlot(slotId, bookingReference)
+  }
+  class "BookingNotificationGateway (C8)" as NG <<interface>> {
+    + sendBookingNotification(...)
+  }
+  class "BookingEventPublisher" as EV <<interface>> {
+    + publish(bookingChangedEvent)
+  }
+}
+
+Pat --> MyAppointmentsView
+Pat --> AppointmentDetailsView
+Pat --> RescheduleRequestForm
+Pat --> CancellationDialog
+
+MyAppointmentsView --> PatientAppointmentController
+AppointmentDetailsView --> PatientAppointmentController
+RescheduleRequestForm --> PatientAppointmentController
+CancellationDialog --> PatientAppointmentController
+
+PatientAppointmentController --> PatientAppointmentService
+PatientAppointmentService --> AppointmentRules : checks actions
+PatientAppointmentService --> Booking : reads, confirms, cancels
+PatientAppointmentService --> RescheduleRequest : creates (Pending Review)
+PatientAppointmentService --> WorklistItem : updates on cancel
+
+Booking "1" *-- "1..*" BookingHistoryEntry : preserves history
+Booking "1" -- "0..*" RescheduleRequest : rescheduling requests\n(at most one PENDING_REVIEW)
+Booking --> BookingStatus
+RescheduleRequest --> RescheduleRequestStatus
+Staff ..> RescheduleRequest : reviews (UC-AAD-05)
+
+PatientAppointmentService ..> AC : <<include>> check role and ownership (A8)
+PatientAppointmentService ..> AU : <<include>> record audit event (NFR-11)
+PatientAppointmentService ..> PO : reads exam type and priority; order back to pending (A3)
+PatientAppointmentService ..> ET : reads preparation instructions
+AppointmentRules ..> BP : reads policy windows and service contact (A5)
+PatientAppointmentService ..> SC : releases the slot (A3)
+PatientAppointmentService ..> NG : cancellation notice (A3)
+PatientAppointmentService ..> EV : booking changed
+
+note bottom of Booking
+  Booking, BookingHistoryEntry and WorklistItem already exist (UC-AAD-05).
+  PAT-01 adds confirm() and two states:
+  CONFIRMED = the patient confirmed attendance (BOOKED = staff booked it),
+  EXECUTED = set by C5 when C7 publishes ProcedureExecutionEvent (PHY-05).
+  The examination type, name and priority are read from the order (C4).
+end note
+
+note bottom of RescheduleRequest
+  The appointment is NOT changed until Admissions
+  processes the request in UC-AAD-05 (ACCEPTED / REJECTED).
+end note
+
+note bottom of EV
+  BookingChangedEvent (CONFIRMED / CANCELLED), as in UC-AAD-05.
+  Subscribers: C8 (UC-PAT-03), C4 order status (UC-PHY-03, A4).
+  No-op until those use cases are built (ADR-014).
+end note
+@enduml
