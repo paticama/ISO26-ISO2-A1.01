@@ -122,6 +122,14 @@ class OrderRestControllerTest {
         mockMvc.perform(post("/api/v1/orders")
                         .header("X-Actor-Id", DOCTOR).header("X-Actor-Role", ROLE)
                         .contentType(MediaType.APPLICATION_JSON).content(json("MR-BRAIN", "MR-conditional device")))
+                .andExpect(status().isUnprocessableEntity());
+
+        String ackBody = """
+                {"patientId":"PAT-1","examTypeCode":"MR-BRAIN","clinicalIndication":"Indication","clinicalJustification":"Justification","priority":"ROUTINE","overrideJustification":"MR-conditional device","acknowledgedConstraintIds":["c-1"]}
+                """;
+        mockMvc.perform(post("/api/v1/orders")
+                        .header("X-Actor-Id", DOCTOR).header("X-Actor-Role", ROLE)
+                        .contentType(MediaType.APPLICATION_JSON).content(ackBody))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.overrideApproved", is(true)))
                 .andExpect(jsonPath("$.overrideJustification", is("MR-conditional device")));

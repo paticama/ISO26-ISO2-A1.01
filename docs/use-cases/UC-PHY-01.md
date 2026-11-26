@@ -5,7 +5,7 @@
 - **RF:** `FR-PHY-01`, `FR-PHY-02`, `FR-PHY-03`
 - **Phase:** Elaboration
 - **Iteration:** 2
-- **Module:** `sescam-orders` (C4, v1.0.0; v1.0.1 audits the order before storing it; v1.0.2 records `ORDER_CREATION_FAILED` if storing fails after the audit)
+- **Module:** `sescam-orders` (C4, v1.0.0; v1.0.1 audits the order before storing it; v1.0.2 records `ORDER_CREATION_FAILED` if storing fails after the audit; v1.0.3 requires explicit acknowledgement of the displayed constraint IDs on safety override, fixing #183)
 - **Priority:** High (ISO/IEC/IEEE 29148:2018)
 - **UML Relationships:**
   - `<<include>>` Verify Patient Safety Constraints & Contrast Allergies
