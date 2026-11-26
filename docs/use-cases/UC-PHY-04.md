@@ -44,19 +44,19 @@
 
 ## RADIT Disciplines
 - [x] Requirements: Specify DICOM study retrieval, viewer rendering, reporting editor, HL7/FHIR sync, and patient notification.
-- [ ] Analysis: Hexagonal adapters for DICOM and HL7/FHIR integration.
-- [ ] Design: Diagnostic reporting service interfaces and DTOs.
-- [ ] Implementation: Draft saving, report signing, and FHIR resource builder.
-- [ ] Testing: Tests for report lifecycle (Draft -> Finalized) and notification triggering.
+- [x] Analysis: Hexagonal adapters for DICOM and HL7/FHIR integration.
+- [x] Design: Diagnostic reporting service interfaces and DTOs.
+- [x] Implementation: Draft saving, report signing, and FHIR resource builder.
+- [x] Testing: Tests for report lifecycle (Draft -> Finalized) and notification triggering.
 
 ## Contracts and Interfaces
-- `es.uclm.esi.sescam.diagnostics.api.DiagnosticReportingService`
-- `ReportDTO`, `DicomStudyDTO`
+- `com.sescam.radiodiagnostics.common.diagnostics.DiagnosticReportingService`
+- `ReportDTO`, `DicomStudyDTO`, `ReportableProcedureDTO`, `SaveReportDraftRequestDTO`, `FinalizeReportRequestDTO`, `IssueReportAddendumRequestDTO`
 
 ## Acceptance Criteria
-- [ ] DICOM medical images rendered in viewer.
-- [ ] Finalized reports synchronized with hospital EHR via FHIR `DiagnosticReport`.
-- [ ] Draft reports do not trigger patient notifications or EHR sync.
+- [x] DICOM medical images rendered in viewer.
+- [x] Finalized reports synchronized with hospital EHR via FHIR `DiagnosticReport`.
+- [x] Draft reports do not trigger patient notifications or EHR sync.
 
 ## Decisions (DECISIONS.md)
 - Complies with **ADR-003**, **ADR-007** (DICOM, HL7, FHIR), and **ADR-008**.

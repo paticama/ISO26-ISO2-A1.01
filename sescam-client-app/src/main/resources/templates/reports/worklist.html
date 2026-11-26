@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Diagnostic Reporting Worklist – SESCAM</title>
+    <style>
+        :root { --border: #d0d7de; --muted: #57606a; --error: #b42318; --ok: #1a7f37; --warn: #9a6700; --bg: #f6f8fa; }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: system-ui, sans-serif; color: #1f2328; background: #fff; }
+        header { padding: 16px; border-bottom: 1px solid var(--border); background: var(--bg); }
+        header h1 { margin: 0; font-size: 1.25rem; }
+        main { padding: 16px; max-width: 960px; margin: 0 auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+        th, td { padding: 10px; border-bottom: 1px solid var(--border); text-align: left; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .8rem; border: 1px solid var(--border); }
+        .badge.draft { color: var(--warn); border-color: var(--warn); }
+        .badge.finalized, .badge.amended { color: var(--ok); border-color: var(--ok); }
+        .message.error { margin: 16px 0; padding: 12px; border-radius: 6px; border: 1px solid var(--error); color: var(--error); }
+        .hint { color: var(--muted); font-size: .85rem; }
+        a.action { color: #0969da; text-decoration: none; font-weight: 600; }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Diagnostic Reporting Worklist</h1>
+    <span class="hint">Executed procedures ready for DICOM image review and radiological reporting (UC-PHY-04).</span>
+</header>
+<main>
+    <div th:if="${worklistFailure != null}" class="message error" id="worklist-failure" role="alert"
+         th:text="${worklistFailure}"></div>
+
+    <p th:if="${procedures != null and procedures.isEmpty() and worklistFailure == null}" id="no-procedures" class="hint">
+        No executed procedures are currently awaiting radiological reporting.
+    </p>
+
+    <table th:if="${procedures != null and !procedures.isEmpty()}" id="worklist-table">
+        <thead>
+        <tr>
+            <th>Execution</th>
+            <th>Order</th>
+            <th>Patient</th>
+            <th>Examination</th>
+            <th>Modality</th>
+            <th>Executed</th>
+            <th>Report Status</th>
+            <th>Action</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="p : ${procedures}">
+            <td th:text="${p.executionId()}"></td>
+            <td th:text="${p.orderId()}"></td>
+            <td th:text="${p.patientId()}"></td>
+            <td th:text="${p.examTypeName()}"></td>
+            <td th:text="${p.modality()}"></td>
+            <td th:text="${#temporals.format(p.executedAt().atZone(zone), 'yyyy-MM-dd HH:mm')}"></td>
+            <td>
+                <span th:if="${p.reportStatus() == null}" class="badge">PENDING</span>
+                <span th:if="${p.reportStatus() != null}" class="badge"
+                      th:classappend="${p.reportStatus().name().toLowerCase()}"
+                      th:text="${p.reportStatus()}"></span>
+            </td>
+            <td>
+                <a class="action" th:href="@{/reports/executions/{id}(id=${p.executionId()})}">Open DICOM &amp; Report</a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+</body>
+</html>
