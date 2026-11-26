@@ -205,17 +205,37 @@ class OrderServiceImplTest {
     }
 
     @Test
-    @DisplayName("A6b: with a justification the order is stored with the override and the override is audited")
+    @DisplayName("A6b: with a justification and acknowledged constraint IDs the order is stored with the override")
     void safetyOverrideIsStoredAndAudited() {
         when(safetyGateway.getActiveConstraints("PAT-1")).thenReturn(List.of(IMPLANT));
 
-        OrderResponseDTO order = service.createOrder(request("MR-BRAIN", "  MR-conditional pacemaker, cardiology OK "));
+        OrderResponseDTO order = service.createOrder(new CreateOrderDTO(
+                "PAT-1", "MR-BRAIN", "Headache", "Rule out lesion", PriorityLevel.PREFERENTIAL,
+                "  MR-conditional pacemaker, cardiology OK ", List.of(IMPLANT.constraintId()), "dr-1", "PHYSICIAN"));
 
         assertThat(order.overrideApproved()).isTrue();
         assertThat(order.overrideJustification()).isEqualTo("MR-conditional pacemaker, cardiology OK");
         assertThat(order.status()).isEqualTo(OrderStatus.PENDING_SCHEDULING);
         assertThat(lastAuditAction()).isEqualTo("ORDER_OVERRIDE_APPROVED");
         verify(eventPublisher).publishOrderCreated(any());
+    }
+
+    @Test
+    @DisplayName("A6b (#183): override is rejected if a new incompatible constraint was not seen by the physician")
+    void safetyOverrideRejectsUnseenConstraints() {
+        SafetyConstraintDTO newAlert = new SafetyConstraintDTO("SC-NEW", ConstraintType.FERROMAGNETIC_IMPLANT, true, "Cochlear implant");
+        when(safetyGateway.getActiveConstraints("PAT-1")).thenReturn(List.of(IMPLANT, newAlert));
+
+        CreateOrderDTO staleAck = new CreateOrderDTO(
+                "PAT-1", "MR-BRAIN", "Headache", "Rule out lesion", PriorityLevel.PREFERENTIAL,
+                "MR-conditional pacemaker, cardiology OK", List.of(IMPLANT.constraintId()), "dr-1", "PHYSICIAN");
+
+        assertThatThrownBy(() -> service.createOrder(staleAck))
+                .isInstanceOfSatisfying(SafetyAlertException.class, ex ->
+                        assertThat(ex.getConstraints()).containsExactly(IMPLANT, newAlert));
+        assertThat(repository.count()).isZero();
+        assertThat(lastAuditAction()).isEqualTo("ORDER_SAFETY_ALERT");
+        verify(eventPublisher, never()).publishOrderCreated(any());
     }
 
     @Test

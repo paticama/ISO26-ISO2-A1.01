@@ -112,6 +112,8 @@
             <span class="field-error" id="priority-error" th:if="${errors != null and errors['priority'] != null}" th:text="${errors['priority']}"></span>
         </label>
         <label th:if="${failure != null and failure.safetyAlert}">Clinical override justification
+            <input type="hidden" name="acknowledgedConstraintIds"
+                   th:each="c : ${failure.constraints}" th:value="${c.constraintId()}" />
             <textarea name="overrideJustification" id="overrideJustification" maxlength="2000" th:text="${form.overrideJustification}"></textarea>
             <span class="field-error" th:if="${errors != null and errors['overrideJustification'] != null}" th:text="${errors['overrideJustification']}"></span>
         </label>

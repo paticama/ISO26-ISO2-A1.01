@@ -49,7 +49,7 @@ public class OrderRestController {
             @RequestBody CreateOrderPayload payload) {
         CreateOrderDTO request = new CreateOrderDTO(payload.patientId(), payload.examTypeCode(),
                 payload.clinicalIndication(), payload.clinicalJustification(), payload.priority(),
-                payload.overrideJustification(), actorId, actorRole);
+                payload.overrideJustification(), payload.acknowledgedConstraintIds(), actorId, actorRole);
         return ResponseEntity.status(HttpStatus.CREATED).body(orderService.createOrder(request));
     }
 
@@ -60,7 +60,14 @@ public class OrderRestController {
             String clinicalIndication,
             String clinicalJustification,
             PriorityLevel priority,
-            String overrideJustification
+            String overrideJustification,
+            List<String> acknowledgedConstraintIds
     ) {
+        public CreateOrderPayload(String patientId, String examTypeCode, String clinicalIndication,
+                                  String clinicalJustification, PriorityLevel priority,
+                                  String overrideJustification) {
+            this(patientId, examTypeCode, clinicalIndication, clinicalJustification, priority,
+                    overrideJustification, List.of());
+        }
     }
 }

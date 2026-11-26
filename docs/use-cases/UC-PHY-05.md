@@ -12,7 +12,7 @@
   - Extended by: Record Adverse Contrast Reaction & Clinical Complications [Extension Point: ClinicalComplication]
 - **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
 - **GitHub Issue:** [#23](https://github.com/paticama/ISO26-ISO2-A1.01/issues/23)
-- **Actor:** Physician
+- **Actor:** Physician, Radiologist, Radiology Technician
 - **Secondary Actors:** Departmental RIS/PACS, Administrative / Admissions System
 - **Description:** Allows the physician to record radiological procedure execution details and document clinical or operational incidents occurring during the examination.
 - **Preconditions:**

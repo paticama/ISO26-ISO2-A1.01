@@ -73,8 +73,14 @@ public class OrderApiClient {
             String clinicalIndication,
             String clinicalJustification,
             String priority,
-            String overrideJustification
+            String overrideJustification,
+            List<String> acknowledgedConstraintIds
     ) {
+        public OrderPayload(String patientId, String examTypeCode, String clinicalIndication,
+                            String clinicalJustification, String priority, String overrideJustification) {
+            this(patientId, examTypeCode, clinicalIndication, clinicalJustification, priority,
+                    overrideJustification, List.of());
+        }
     }
 
     private static <T> T call(Supplier<T> request) {

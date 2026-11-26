@@ -23,9 +23,11 @@ import com.sescam.radiodiagnostics.orders.repository.OrderRepository;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -87,7 +89,10 @@ public class OrderServiceImpl implements OrderService {
         // include: Verify Patient Safety Constraints and Contrast Allergies
         List<SafetyConstraintDTO> incompatible = safetyRules.incompatibleConstraints(
                 exam, patientSafetyGateway.getActiveConstraints(request.patientId().trim()));
-        boolean overridden = !incompatible.isEmpty() && !isBlank(request.overrideJustification());
+        Set<String> acknowledged = new HashSet<>(request.acknowledgedConstraintIds());
+        boolean allAcknowledged = !incompatible.isEmpty()
+                && incompatible.stream().allMatch(c -> c.constraintId() != null && acknowledged.contains(c.constraintId()));
+        boolean overridden = allAcknowledged && !isBlank(request.overrideJustification());
         if (!incompatible.isEmpty() && !overridden) {
             auditRefusal("ORDER_SAFETY_ALERT", request.actorId(), request.patientId(),
                     "Exam " + exam.code() + " incompatible with " + incompatible.stream().map(c -> c.type().name()).toList());

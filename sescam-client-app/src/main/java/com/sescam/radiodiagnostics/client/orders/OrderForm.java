@@ -2,7 +2,9 @@ package com.sescam.radiodiagnostics.client.orders;
 
 import com.sescam.radiodiagnostics.common.orders.PriorityLevel;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -19,6 +21,7 @@ public class OrderForm {
     private String clinicalJustification;
     private PriorityLevel priority;
     private String overrideJustification;
+    private List<String> acknowledgedConstraintIds = new ArrayList<>();
 
     /** Field name → error message; empty when the form is valid. */
     public Map<String, String> validate() {
@@ -52,7 +55,8 @@ public class OrderForm {
     public OrderApiClient.OrderPayload toPayload() {
         return new OrderApiClient.OrderPayload(patientId.trim(), examTypeCode.trim(), clinicalIndication.trim(),
                 clinicalJustification.trim(), priority.name(),
-                isBlank(overrideJustification) ? null : overrideJustification.trim());
+                isBlank(overrideJustification) ? null : overrideJustification.trim(),
+                acknowledgedConstraintIds == null ? List.of() : List.copyOf(acknowledgedConstraintIds));
     }
 
     private static boolean isBlank(String value) {
@@ -105,5 +109,13 @@ public class OrderForm {
 
     public void setOverrideJustification(String overrideJustification) {
         this.overrideJustification = overrideJustification;
+    }
+
+    public List<String> getAcknowledgedConstraintIds() {
+        return acknowledgedConstraintIds;
+    }
+
+    public void setAcknowledgedConstraintIds(List<String> acknowledgedConstraintIds) {
+        this.acknowledgedConstraintIds = acknowledgedConstraintIds == null ? new ArrayList<>() : acknowledgedConstraintIds;
     }
 }
