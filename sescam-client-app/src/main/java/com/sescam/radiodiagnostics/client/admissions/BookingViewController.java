@@ -1,6 +1,7 @@
 package com.sescam.radiodiagnostics.client.admissions;
 
 import com.sescam.radiodiagnostics.common.admissions.BookingDTO;
+import com.sescam.radiodiagnostics.common.admissions.BookingStatus;
 import com.sescam.radiodiagnostics.common.admissions.PendingExamRequestDTO;
 import com.sescam.radiodiagnostics.common.admissions.WorklistItemDTO;
 import com.sescam.radiodiagnostics.common.schedules.SlotDTO;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -79,6 +81,11 @@ public class BookingViewController {
         try {
             BookingDTO booking = apiClient.getBooking(id, actorId, actorRole);
             model.addAttribute("booking", booking);
+            if (booking.status() != BookingStatus.CANCELLED) {
+                loadCompatibleSlotsSafe(booking, actorId, actorRole, model);
+            } else {
+                model.addAttribute("compatibleSlots", List.of());
+            }
         } catch (BookingClientException ex) {
             model.addAttribute("failure", ex);
         }
@@ -89,22 +96,31 @@ public class BookingViewController {
     public String reschedule(
             @PathVariable("id") String id,
             @RequestParam("newSlotId") String newSlotId,
-            @RequestParam("expectedSlotVersion") long expectedSlotVersion,
+            @RequestParam(value = "expectedSlotVersion", required = false) Long expectedSlotVersion,
             @RequestParam("expectedBookingVersion") long expectedBookingVersion,
             @RequestParam("reason") String reason,
             @RequestHeader(value = "X-Actor-Id", defaultValue = "") String actorId,
             @RequestHeader(value = "X-Actor-Role", defaultValue = "") String actorRole,
-            Model model) {
-        try {
-            BookingDTO updated = apiClient.rescheduleBooking(id,
-                    new BookingApiClient.ReschedulePayload(newSlotId, expectedSlotVersion, expectedBookingVersion, reason),
-                    actorId, actorRole);
-            model.addAttribute("booking", updated);
-        } catch (BookingClientException ex) {
-            model.addAttribute("failure", ex);
-            loadBookingSafe(id, actorId, actorRole, model);
+            RedirectAttributes redirectAttributes) {
+        String resolvedSlotId = newSlotId;
+        long resolvedVersion = expectedSlotVersion != null ? expectedSlotVersion : 0L;
+        if (newSlotId != null && newSlotId.contains("|")) {
+            String[] parts = newSlotId.split("\\|", 2);
+            resolvedSlotId = parts[0];
+            try {
+                resolvedVersion = Long.parseLong(parts[1]);
+            } catch (NumberFormatException ignored) {
+                // Keep provided version.
+            }
         }
-        return DETAIL_VIEW;
+        try {
+            apiClient.rescheduleBooking(id,
+                    new BookingApiClient.ReschedulePayload(resolvedSlotId, resolvedVersion, expectedBookingVersion, reason),
+                    actorId, actorRole);
+        } catch (BookingClientException ex) {
+            redirectAttributes.addFlashAttribute("failure", ex);
+        }
+        return "redirect:/bookings/" + id;
     }
 
     @PostMapping("/{id}/cancel")
@@ -114,22 +130,22 @@ public class BookingViewController {
             @RequestParam("reason") String reason,
             @RequestHeader(value = "X-Actor-Id", defaultValue = "") String actorId,
             @RequestHeader(value = "X-Actor-Role", defaultValue = "") String actorRole,
-            Model model) {
+            RedirectAttributes redirectAttributes) {
         try {
-            BookingDTO cancelled = apiClient.cancelBooking(id,
+            apiClient.cancelBooking(id,
                     new BookingApiClient.CancelPayload(expectedBookingVersion, reason),
                     actorId, actorRole);
-            model.addAttribute("booking", cancelled);
         } catch (BookingClientException ex) {
-            model.addAttribute("failure", ex);
-            loadBookingSafe(id, actorId, actorRole, model);
+            redirectAttributes.addFlashAttribute("failure", ex);
         }
-        return DETAIL_VIEW;
+        return "redirect:/bookings/" + id;
     }
 
     private void prepareIndex(Model model, BookingForm form, String orderId, LocalDate date,
                               String actorId, String actorRole) {
+        LocalDate effectiveDate = date != null ? date : LocalDate.now();
         model.addAttribute("form", form);
+        model.addAttribute("selectedDate", effectiveDate);
         try {
             List<PendingExamRequestDTO> pending = apiClient.listPendingOrders(actorId, actorRole);
             model.addAttribute("pendingOrders", pending);
@@ -147,11 +163,14 @@ public class BookingViewController {
         }
     }
 
-    private void loadBookingSafe(String id, String actorId, String actorRole, Model model) {
+    private void loadCompatibleSlotsSafe(BookingDTO booking, String actorId, String actorRole, Model model) {
         try {
-            model.addAttribute("booking", apiClient.getBooking(id, actorId, actorRole));
-        } catch (BookingClientException ignored) {
-            // Original failure is already attached to model.
+            List<SlotDTO> slots = apiClient.findCompatibleSlots(booking.orderId(), actorId, actorRole).stream()
+                    .filter(s -> !s.slotId().equals(booking.slotId()))
+                    .toList();
+            model.addAttribute("compatibleSlots", slots);
+        } catch (BookingClientException ex) {
+            model.addAttribute("compatibleSlots", List.of());
         }
     }
 }

@@ -17,6 +17,7 @@
         .message.error { padding: 12px; border: 1px solid var(--error); color: var(--error); border-radius: 6px; }
         .field-error { color: var(--error); font-size: .8rem; display: block; }
         button { padding: 6px 12px; border-radius: 6px; border: 1px solid #0969da; background: #0969da; color: #fff; cursor: pointer; }
+        .filter-form { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -48,7 +49,7 @@
                 <td th:text="${req.examTypeName()}"></td>
                 <td th:text="${req.modality()}"></td>
                 <td th:text="${req.priority()}"></td>
-                <td><a th:href="@{/bookings(orderId=${req.orderId()})}">Find slots</a></td>
+                <td><a th:href="@{/bookings(orderId=${req.orderId()},date=${selectedDate})}">Find slots</a></td>
             </tr>
             </tbody>
         </table>
@@ -60,16 +61,12 @@
             <input type="hidden" name="orderId" th:value="${form.orderId}" />
             <span class="field-error" th:if="${errors != null and errors['orderId'] != null}" th:text="${errors['orderId']}"></span>
             <label>Slot
-                <select name="slotId">
+                <select name="slotId" id="slot-select">
                     <option value="">Select slot…</option>
-                    <option th:each="s : ${slots}" th:value="${s.slotId()}"
+                    <option th:each="s : ${slots}" th:value="${s.slotId() + '|' + s.version()}"
                             th:text="|${s.slotId()} (${s.resourceId()}, ${s.start()} - ${s.end()}, free: ${s.freeCapacity()})|"></option>
                 </select>
                 <span class="field-error" th:if="${errors != null and errors['slotId'] != null}" th:text="${errors['slotId']}"></span>
-            </label>
-            <label>Expected Slot Version
-                <input type="number" name="expectedSlotVersion" th:value="${form.expectedSlotVersion != null ? form.expectedSlotVersion : 1}" min="0" />
-                <span class="field-error" th:if="${errors != null and errors['expectedSlotVersion'] != null}" th:text="${errors['expectedSlotVersion']}"></span>
             </label>
             <button type="submit">Confirm booking</button>
         </form>
@@ -77,6 +74,11 @@
 
     <section>
         <h2>Daily Worklist</h2>
+        <form method="get" th:action="@{/bookings}" class="filter-form" id="worklist-filter-form">
+            <input type="hidden" name="orderId" th:if="${form.orderId != null and !form.orderId.isBlank()}" th:value="${form.orderId}" />
+            <label>Date <input type="date" name="date" th:value="${selectedDate}" /></label>
+            <button type="submit">Filter</button>
+        </form>
         <table>
             <thead>
             <tr><th>Booking</th><th>Order</th><th>Patient</th><th>Resource</th><th>Start</th><th>Status</th></tr>

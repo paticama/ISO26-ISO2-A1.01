@@ -1,7 +1,6 @@
 package com.sescam.radiodiagnostics.server.admissions;
 
 import com.sescam.radiodiagnostics.admissions.internal.DefaultBookingPolicyGateway;
-import com.sescam.radiodiagnostics.admissions.internal.DefaultPatientEligibilityGateway;
 import com.sescam.radiodiagnostics.admissions.internal.InMemoryPendingOrderGateway;
 import com.sescam.radiodiagnostics.admissions.internal.NoOpBookingEventPublisher;
 import com.sescam.radiodiagnostics.admissions.internal.NoOpBookingNotificationGateway;
@@ -21,6 +20,9 @@ import com.sescam.radiodiagnostics.common.admissions.PatientAppointmentService;
 import com.sescam.radiodiagnostics.common.admissions.PatientEligibilityGateway;
 import com.sescam.radiodiagnostics.common.admissions.PendingOrderGateway;
 import com.sescam.radiodiagnostics.common.catalogue.ExamTypeService;
+import com.sescam.radiodiagnostics.common.patients.PatientNotFoundException;
+import com.sescam.radiodiagnostics.common.patients.PatientService;
+import com.sescam.radiodiagnostics.common.patients.PatientStatus;
 import com.sescam.radiodiagnostics.common.schedules.ScheduleService;
 import com.sescam.radiodiagnostics.common.security.AccessControlService;
 import com.sescam.radiodiagnostics.common.security.AuditService;
@@ -49,8 +51,18 @@ public class BookingWiringConfig {
     }
 
     @Bean
-    public PatientEligibilityGateway patientEligibilityGateway() {
-        return new DefaultPatientEligibilityGateway();
+    public PatientEligibilityGateway patientEligibilityGateway(PatientService patientService) {
+        return patientId -> {
+            if (patientId == null || patientId.isBlank()) {
+                return false;
+            }
+            try {
+                return patientService.getPatientById(patientId, "admissions-system", "ADMISSIONS_STAFF")
+                        .status() == PatientStatus.ACTIVE;
+            } catch (PatientNotFoundException ex) {
+                return false;
+            }
+        };
     }
 
     @Bean
