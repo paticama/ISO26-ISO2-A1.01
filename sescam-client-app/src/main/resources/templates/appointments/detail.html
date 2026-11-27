@@ -47,7 +47,10 @@
             <p>Status: <strong th:text="${appointment.pendingRequest().status()}"></strong></p>
             <p th:text="${appointment.pendingRequest().reason()}"></p>
         </section>
-        <p th:if="${appointment.allowedActions().isEmpty()}" class="message">No actions are available for this appointment. <span th:if="${appointment.serviceContact() != null}" th:text="|Contact: ${appointment.serviceContact()}|"></span></p>
+        <p th:if="${appointment.allowedActions().isEmpty()}" class="message">
+            No actions are available for this appointment.
+            <span th:if="${appointment.serviceContact() != null}" th:text="|Contact: ${appointment.serviceContact()}|"></span>
+        </p>
 
         <form th:if="${canConfirm}" method="post" th:action="@{/appointments/{id}/confirm(id=${appointment.summary().bookingId()})}" id="confirm-form">
             <input type="hidden" name="expectedBookingVersion" th:value="${appointment.version()}" />
@@ -69,7 +72,10 @@
 
         <section th:if="${canCancel}" class="card">
             <h3>Cancel appointment</h3>
-            <p th:if="${priorityExamination}" class="warning" role="note">This examination has clinical priority. Please contact the service before cancelling.</p>
+            <p th:if="${priorityExamination}" class="warning" role="note">
+                This examination has clinical priority. Please contact the service before cancelling.
+                <span th:if="${appointment.serviceContact() != null}" th:text="|Contact: ${appointment.serviceContact()}|"></span>
+            </p>
             <form method="post" th:action="@{/appointments/{id}/cancel(id=${appointment.summary().bookingId()})}" th:object="${form}" id="cancel-form">
                 <input type="hidden" name="expectedBookingVersion" th:value="${appointment.version()}" />
                 <label>Reason (optional) <input type="text" th:field="*{reason}" maxlength="500" /></label>

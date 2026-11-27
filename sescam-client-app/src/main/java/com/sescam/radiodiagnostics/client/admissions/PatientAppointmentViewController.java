@@ -75,6 +75,10 @@ public class PatientAppointmentViewController {
             redirect.addFlashAttribute("failure", "Sign in as a patient to confirm an appointment.");
             return "redirect:/appointments/" + id;
         }
+        if (expectedBookingVersion < 0) {
+            redirect.addFlashAttribute("failure", "The appointment version is invalid. Reload and try again.");
+            return "redirect:/appointments/" + id;
+        }
         try {
             apiClient.confirm(id, expectedBookingVersion, actorId, actorRole);
             redirect.addFlashAttribute("success", "Your appointment has been confirmed.");
@@ -90,21 +94,22 @@ public class PatientAppointmentViewController {
                                       @RequestHeader(value = "X-Actor-Id", defaultValue = "") String actorId,
                                       @RequestHeader(value = "X-Actor-Role", defaultValue = "") String actorRole,
                                       Model model, RedirectAttributes redirect) {
-        Map<String, String> errors = form.validateReschedule();
-        if (!errors.isEmpty()) {
-            model.addAttribute("errors", errors);
-            loadDetails(id, actorId, actorRole, model);
-            model.addAttribute("form", form);
-            return DETAIL_VIEW;
-        }
         if (!isPatient(actorId, actorRole)) {
             redirect.addFlashAttribute("failure", "Sign in as a patient to request a reschedule.");
             return "redirect:/appointments/" + id;
+        }
+        Map<String, String> errors = form.validateReschedule();
+        if (!errors.isEmpty()) {
+            model.addAttribute("errors", errors);
+            model.addAttribute("form", form);
+            loadDetails(id, actorId, actorRole, model);
+            return DETAIL_VIEW;
         }
         try {
             apiClient.requestRescheduling(id, form.getReason().trim(), form.parsedPreferredDates(), actorId, actorRole);
             redirect.addFlashAttribute("success", "Your rescheduling request was sent to Admissions; your appointment has not changed.");
         } catch (BookingClientException ex) {
+            // Redirecting reloads details so a duplicate request (A6) shows its existing status.
             redirect.addFlashAttribute("failure", ex.getMessage());
         }
         return "redirect:/appointments/" + id;
@@ -120,6 +125,10 @@ public class PatientAppointmentViewController {
             redirect.addFlashAttribute("failure", "Sign in as a patient to cancel an appointment.");
             return "redirect:/appointments/" + id;
         }
+        if (expectedBookingVersion < 0) {
+            redirect.addFlashAttribute("failure", "The appointment version is invalid. Reload and try again.");
+            return "redirect:/appointments/" + id;
+        }
         try {
             AppointmentDetailsDTO details = apiClient.get(id, actorId, actorRole);
             boolean priority = isPriority(details.priority());
@@ -127,8 +136,7 @@ public class PatientAppointmentViewController {
             if (!errors.isEmpty()) {
                 model.addAttribute("errors", errors);
                 model.addAttribute("form", form);
-                model.addAttribute("appointment", details);
-                model.addAttribute("priorityExamination", priority);
+                addDetailsToModel(details, model);
                 return DETAIL_VIEW;
             }
             apiClient.cancel(id, expectedBookingVersion, form.getReason(),
@@ -142,15 +150,18 @@ public class PatientAppointmentViewController {
 
     private void loadDetails(String id, String actorId, String actorRole, Model model) {
         try {
-            AppointmentDetailsDTO details = apiClient.get(id, actorId, actorRole);
-            model.addAttribute("appointment", details);
-            model.addAttribute("priorityExamination", isPriority(details.priority()));
-            model.addAttribute("canConfirm", details.allowedActions().contains(AppointmentAction.CONFIRM));
-            model.addAttribute("canReschedule", details.allowedActions().contains(AppointmentAction.REQUEST_RESCHEDULE));
-            model.addAttribute("canCancel", details.allowedActions().contains(AppointmentAction.CANCEL));
+            addDetailsToModel(apiClient.get(id, actorId, actorRole), model);
         } catch (BookingClientException ex) {
             model.addAttribute("failure", ex.getMessage());
         }
+    }
+
+    private static void addDetailsToModel(AppointmentDetailsDTO details, Model model) {
+        model.addAttribute("appointment", details);
+        model.addAttribute("priorityExamination", isPriority(details.priority()));
+        model.addAttribute("canConfirm", details.allowedActions().contains(AppointmentAction.CONFIRM));
+        model.addAttribute("canReschedule", details.allowedActions().contains(AppointmentAction.REQUEST_RESCHEDULE));
+        model.addAttribute("canCancel", details.allowedActions().contains(AppointmentAction.CANCEL));
     }
 
     private static boolean isPatient(String actorId, String actorRole) {
