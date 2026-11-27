@@ -53,7 +53,7 @@ public class PatientAppointmentViewController {
     }
 
     @GetMapping("/{id}")
-    public String detail(@PathVariable String id,
+    public String detail(@PathVariable("id") String id,
                          @RequestHeader(value = "X-Actor-Id", defaultValue = "") String actorId,
                          @RequestHeader(value = "X-Actor-Role", defaultValue = "") String actorRole,
                          Model model) {
@@ -67,7 +67,8 @@ public class PatientAppointmentViewController {
     }
 
     @PostMapping("/{id}/confirm")
-    public String confirm(@PathVariable String id, @RequestParam long expectedBookingVersion,
+    public String confirm(@PathVariable("id") String id,
+                          @RequestParam("expectedBookingVersion") long expectedBookingVersion,
                           @RequestHeader(value = "X-Actor-Id", defaultValue = "") String actorId,
                           @RequestHeader(value = "X-Actor-Role", defaultValue = "") String actorRole,
                           RedirectAttributes redirect) {
@@ -89,7 +90,7 @@ public class PatientAppointmentViewController {
     }
 
     @PostMapping("/{id}/reschedule-requests")
-    public String requestRescheduling(@PathVariable String id,
+    public String requestRescheduling(@PathVariable("id") String id,
                                       @ModelAttribute("form") PatientAppointmentForm form,
                                       @RequestHeader(value = "X-Actor-Id", defaultValue = "") String actorId,
                                       @RequestHeader(value = "X-Actor-Role", defaultValue = "") String actorRole,
@@ -116,7 +117,8 @@ public class PatientAppointmentViewController {
     }
 
     @PostMapping("/{id}/cancel")
-    public String cancel(@PathVariable String id, @RequestParam long expectedBookingVersion,
+    public String cancel(@PathVariable("id") String id,
+                         @RequestParam("expectedBookingVersion") long expectedBookingVersion,
                          @ModelAttribute("form") PatientAppointmentForm form,
                          @RequestHeader(value = "X-Actor-Id", defaultValue = "") String actorId,
                          @RequestHeader(value = "X-Actor-Role", defaultValue = "") String actorRole,

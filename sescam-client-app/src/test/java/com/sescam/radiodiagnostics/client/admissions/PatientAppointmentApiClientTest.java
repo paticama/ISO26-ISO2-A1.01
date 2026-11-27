@@ -1,6 +1,8 @@
 package com.sescam.radiodiagnostics.client.admissions;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.sescam.radiodiagnostics.common.admissions.AppointmentDetailsDTO;
 import com.sescam.radiodiagnostics.common.admissions.AppointmentSummaryDTO;
 import com.sescam.radiodiagnostics.common.admissions.BookingStatus;
@@ -12,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
@@ -38,8 +41,15 @@ class PatientAppointmentApiClientTest {
 
     @BeforeEach
     void setUp() {
-        mapper = new ObjectMapper().findAndRegisterModules();
+        mapper = JsonMapper.builder()
+                .findAndAddModules()
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+                .build();
         RestClient.Builder builder = RestClient.builder();
+        builder.messageConverters(converters -> converters.stream()
+                .filter(MappingJackson2HttpMessageConverter.class::isInstance)
+                .map(MappingJackson2HttpMessageConverter.class::cast)
+                .forEach(converter -> converter.setObjectMapper(mapper)));
         server = MockRestServiceServer.bindTo(builder).build();
         client = new PatientAppointmentApiClient(builder, mapper, "http://localhost:8080");
     }

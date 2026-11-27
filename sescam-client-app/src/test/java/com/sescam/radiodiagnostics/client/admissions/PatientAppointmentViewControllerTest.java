@@ -60,12 +60,12 @@ class PatientAppointmentViewControllerTest {
     }
 
     @Test
-    void a1ShowsEmptyStateAndOffersFollowUps() throws Exception {
+    void a1ShowsEmptyStateWithoutPlannedFollowUpsLink() throws Exception {
         when(apiClient.list("PAT-1", "PATIENT")).thenReturn(List.of());
         mockMvc.perform(get("/appointments").header("X-Actor-Id", "PAT-1").header("X-Actor-Role", "PATIENT"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("no upcoming appointments")))
-                .andExpect(content().string(containsString("/follow-ups")));
+                .andExpect(content().string(not(containsString("/follow-ups"))));
     }
 
     @Test

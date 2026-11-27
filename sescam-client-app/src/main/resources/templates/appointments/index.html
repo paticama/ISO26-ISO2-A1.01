@@ -23,8 +23,7 @@
     <p th:if="${failure != null}" class="message error" role="alert" th:text="${failure}"></p>
     <p th:if="${success != null}" class="message" role="status" th:text="${success}"></p>
     <p th:if="${empty != null and empty}" id="no-appointments">
-        You have no upcoming appointments. You can review your planned follow-ups from your
-        <a th:href="@{/follow-ups}">care plan</a>.
+        You have no upcoming appointments.
     </p>
     <table th:if="${appointments != null and !appointments.isEmpty()}" id="appointment-list">
         <thead><tr><th>Date and time</th><th>Examination</th><th>Modality</th><th>Location</th><th>Status</th><th>Details</th></tr></thead>
