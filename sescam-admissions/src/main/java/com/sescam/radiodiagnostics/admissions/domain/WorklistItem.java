@@ -33,6 +33,13 @@ public class WorklistItem {
         this.status = Objects.requireNonNull(status);
     }
 
+    /** Worklist entry that reflects the current slot and status of the booking (same id format as UC-AAD-05). */
+    public static WorklistItem forBooking(Booking booking) {
+        return new WorklistItem("WL-" + booking.getBookingId(), booking.getBookingId(), booking.getOrderId(),
+                booking.getPatientId(), booking.getResourceId(), booking.getModality(),
+                booking.getScheduledStart(), booking.getScheduledEnd(), booking.getStatus());
+    }
+
     public String getBookingId() {
         return bookingId;
     }

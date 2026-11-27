@@ -4,6 +4,7 @@ import com.sescam.radiodiagnostics.common.admissions.BookingConflictException;
 import com.sescam.radiodiagnostics.common.admissions.BookingException;
 import com.sescam.radiodiagnostics.common.admissions.BookingNotFoundException;
 import com.sescam.radiodiagnostics.common.admissions.ConcurrentBookingException;
+import com.sescam.radiodiagnostics.common.admissions.DuplicatePendingRequestException;
 import com.sescam.radiodiagnostics.common.admissions.InvalidBookingDataException;
 import com.sescam.radiodiagnostics.common.admissions.PatientNotEligibleException;
 import com.sescam.radiodiagnostics.common.admissions.RequestAlreadyProcessedException;
@@ -17,8 +18,11 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.List;
 
-/** Maps UC-AAD-05 booking exceptions to explicit HTTP status codes and payloads. */
-@RestControllerAdvice(assignableTypes = BookingRestController.class)
+/**
+ * Maps the booking exceptions of C5 to explicit HTTP status codes and payloads, for the staff API (UC-AAD-05)
+ * and the patient API (UC-PAT-01), which share the same exceptions.
+ */
+@RestControllerAdvice(assignableTypes = {BookingRestController.class, PatientAppointmentRestController.class})
 public class BookingExceptionHandler {
 
     @ExceptionHandler(InvalidBookingDataException.class)
@@ -48,7 +52,8 @@ public class BookingExceptionHandler {
     @ExceptionHandler({
             RequestAlreadyProcessedException.class,
             BookingConflictException.class,
-            ConcurrentBookingException.class
+            ConcurrentBookingException.class,
+            DuplicatePendingRequestException.class
     })
     public ResponseEntity<BookingErrorResponse> handleConflict(BookingException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)

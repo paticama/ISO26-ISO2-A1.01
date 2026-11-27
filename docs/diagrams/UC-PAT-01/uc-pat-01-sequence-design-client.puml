@@ -1,0 +1,111 @@
+@startuml uc-pat-01-sequence-design-client
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+hide footbox
+
+title UC-PAT-01: Design Sequence Diagram – client slice (sescam-client-app)\nC5 sescam-admissions v1.1.0
+
+actor Patient
+participant "MyAppointmentsViewController\n(client-app)" as VC
+participant "RescheduleRequestForm /\nCancellationForm" as F
+participant "AppointmentApiClient\n(client-app)" as API
+participant "PatientAppointmentRestController\n(server-app, see server diagram)" as RC
+
+== Steps 1-3: list (+A1) ==
+Patient -> VC : GET /my-appointments
+VC -> API : listMyAppointments(actorId, actorRole)
+API -> RC : GET /api/v1/my-appointments [X-Actor-Id, X-Actor-Role]
+RC --> API : 200 List<AppointmentSummaryDTO>
+API --> VC : appointments
+alt empty list (A1)
+  VC --> Patient : my-appointments/list.html\n"no upcoming appointments" + link to planned follow-ups (UC-PAT-04)
+else appointments
+  VC --> Patient : my-appointments/list.html (chronological order)
+end
+
+== Steps 4-6: details (+A7) ==
+Patient -> VC : GET /my-appointments/{id}
+VC -> API : getDetails(id, actorId, actorRole)
+API -> RC : GET /api/v1/my-appointments/{id}
+RC --> API : 200 AppointmentDetailsDTO
+API --> VC : details
+VC --> Patient : my-appointments/detail.html\ndetails + preparation instructions + one button per allowedAction\n(no buttons and current status if CANCELLED / EXECUTED, A7)\n(pending request status if any, A2 / A6)
+
+== Steps 7-9: confirm (+A5, A7) ==
+Patient -> VC : POST /my-appointments/{id}/confirm [version]
+VC -> API : confirm(id, version, actorId, actorRole)
+API -> RC : POST /api/v1/my-appointments/{id}/confirm
+alt 200 OK
+  RC --> API : AppointmentDetailsDTO (CONFIRMED)
+  API --> VC : details
+  VC --> Patient : redirect to detail.html + "Appointment confirmed"
+else 409 BOOKING_CONFLICT (A5)
+  API --> VC : throw BookingClientException(BOOKING_CONFLICT)
+  VC --> Patient : detail.html + "deadline passed" + serviceContact
+else 409 REQUEST_ALREADY_PROCESSED / CONCURRENT_BOOKING (A7)
+  API --> VC : throw BookingClientException(code)
+  VC --> Patient : detail.html reloaded with the current status
+end
+
+== A2: request rescheduling (+A6) ==
+Patient -> VC : GET /my-appointments/{id}/reschedule
+VC --> Patient : my-appointments/reschedule.html
+Patient -> VC : POST /my-appointments/{id}/reschedule [reason, preferredDates]
+VC -> F : RescheduleRequestForm.validate(today)
+alt reason blank or preferred date in the past
+  VC --> Patient : reschedule.html + field errors (nothing sent)
+else valid
+  VC -> F : toPayload()
+  VC -> API : requestReschedule(id, ReschedulePayload, actorId, actorRole)
+  API -> RC : POST /api/v1/my-appointments/{id}/reschedule-requests
+  alt 201 Created
+    RC --> API : RescheduleRequestStatusDTO (PENDING_REVIEW)
+    API --> VC : request status
+    VC --> Patient : redirect to detail.html + "Request sent: Pending Review"
+  else 409 DUPLICATE_PENDING_REQUEST (A6)
+    API --> VC : throw BookingClientException(DUPLICATE_PENDING_REQUEST)
+    VC --> Patient : detail.html reloaded with the status of the existing request
+  end
+end
+
+== A3 / A4: cancel with explicit confirmation (+A5, A7) ==
+Patient -> VC : GET /my-appointments/{id}/cancel
+VC -> API : getDetails(id, actorId, actorRole)
+API -> RC : GET /api/v1/my-appointments/{id}
+RC --> API : 200 AppointmentDetailsDTO
+API --> VC : details
+alt priority STAT_URGENT or PREFERENTIAL (A4)
+  VC --> Patient : my-appointments/cancel.html\n"Are you sure?" + reason + clinical priority warning\n+ serviceContact + acknowledge checkbox
+else ROUTINE (A3)
+  VC --> Patient : my-appointments/cancel.html\n"Are you sure?" + reason
+end
+Patient -> VC : POST /my-appointments/{id}/cancel [confirmed, reason, acknowledged, version]
+VC -> F : CancellationForm.validate(priority)
+alt not confirmed, or warning not acknowledged (A4)
+  VC --> Patient : cancel.html + error (nothing sent)
+else valid
+  VC -> F : toPayload()
+  VC -> API : cancel(id, CancelPayload, actorId, actorRole)
+  API -> RC : POST /api/v1/my-appointments/{id}/cancel
+  alt 200 OK
+    RC --> API : AppointmentDetailsDTO (CANCELLED)
+    API --> VC : details
+    VC --> Patient : redirect to detail.html + "Appointment cancelled"
+  else 409 BOOKING_CONFLICT (A5) / REQUEST_ALREADY_PROCESSED (A7)
+    API --> VC : throw BookingClientException(code)
+    VC --> Patient : detail.html + explanation (serviceContact or current status)
+  end
+end
+
+== Errors common to every request (A8) ==
+alt 403 UNAUTHORIZED_BOOKING_ACCESS (A8)
+  API --> VC : throw BookingClientException(UNAUTHORIZED_BOOKING_ACCESS)
+  VC --> Patient : "Access denied" (no appointment data shown)
+else 404 BOOKING_NOT_FOUND
+  API --> VC : throw BookingClientException(BOOKING_NOT_FOUND)
+  VC --> Patient : back to list.html + "Appointment not found"
+else no connection / 5xx
+  API --> VC : throw BookingClientException(server unreachable / failed)
+  VC --> Patient : "Try again later" (nothing is shown as done)
+end
+@enduml

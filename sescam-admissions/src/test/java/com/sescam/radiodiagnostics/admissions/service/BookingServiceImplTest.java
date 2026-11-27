@@ -334,4 +334,26 @@ class BookingServiceImplTest {
         assertThrows(IllegalStateException.class,
                 () -> service.listDailyWorklist(LocalDate.of(2026, 11, 27), "adm-1", "ADMISSIONS_STAFF"));
     }
+
+    @Test
+    void anExecutedBookingIsFinalLikeACancelledOne() {
+        // UC-PAT-01 adds EXECUTED: staff must not cancel or move an examination that was already performed.
+        SlotDTO ctSlot = slot("SLOT-CT", LocalDateTime.of(2026, 11, 27, 9, 0), 1L);
+        when(scheduleService.reserveSlotAtomically(eq("SLOT-CT"), eq(1L), anyString())).thenReturn(ctSlot);
+        BookingDTO created = service.createBooking(
+                new CreateBookingRequestDTO("ORD-1001", "SLOT-CT", 1L, "adm-1", "ADMISSIONS_STAFF"));
+        bookingRepository.findById(created.bookingId()).orElseThrow().markExecuted("SYSTEM", NOW);
+        long version = bookingRepository.findById(created.bookingId()).orElseThrow().getVersion();
+
+        assertThrows(RequestAlreadyProcessedException.class, () -> service.cancelBooking(new CancelBookingRequestDTO(
+                created.bookingId(), version, "Too late", "adm-1", "ADMISSIONS_STAFF")));
+        assertThrows(RequestAlreadyProcessedException.class, () -> service.rescheduleBooking(
+                new RescheduleBookingRequestDTO(created.bookingId(), "SLOT-OTHER", 1L, version,
+                        "Too late", "adm-1", "ADMISSIONS_STAFF")));
+
+        verify(auditService, org.mockito.Mockito.never()).recordEvent(org.mockito.ArgumentMatchers.argThat(
+                e -> "BOOKING_CANCELLED".equals(e.action())));
+        verify(scheduleService, org.mockito.Mockito.never())
+                .reserveSlotAtomically(eq("SLOT-OTHER"), anyLong(), anyString());
+    }
 }

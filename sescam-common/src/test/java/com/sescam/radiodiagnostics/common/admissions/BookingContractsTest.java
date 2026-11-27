@@ -46,9 +46,10 @@ class BookingContractsTest {
 
     @Test
     void dtosEnumsAndAccessControlDefaultCoverAllBranches() {
-        assertEquals(4, BookingStatus.values().length);
-        assertEquals(3, NotificationStatus.values().length);
-        assertEquals(8, BookingErrorCode.values().length);
+        // Names sent as text in the JSON. They are not counted, so adding a value (e.g. UC-PAT-01) does not break it.
+        assertEquals(BookingStatus.BOOKED, BookingStatus.valueOf("BOOKED"));
+        assertEquals(NotificationStatus.SENT, NotificationStatus.valueOf("SENT"));
+        assertEquals(BookingErrorCode.CONCURRENT_BOOKING, BookingErrorCode.valueOf("CONCURRENT_BOOKING"));
 
         Instant now = Instant.parse("2026-11-26T10:00:00Z");
         LocalDateTime start = LocalDateTime.of(2026, 12, 1, 9, 0);

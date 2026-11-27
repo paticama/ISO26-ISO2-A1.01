@@ -1,0 +1,34 @@
+@startuml uc-pat-01-comm-alt-a8
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+
+title UC-PAT-01: Manage My Appointments (C5 v1.1.0)\nCommunication Diagram - Alternative Flow A8: Appointment Not Owned by the Patient
+
+actor ":Patient" as pat
+boundary ":MyAppointmentsUI" as ui
+control ":PatientAppointmentController" as ctrl
+control ":PatientAppointmentService" as srv
+control ":AccessControlService (C1)" as c1
+entity ":Booking" as booking
+control ":AuditService (C1)" as audit
+
+pat -- ui : 1: selectAppointment(otherBookingId) [e.g. edited URL] >\n< 6: displayAccessDenied()
+
+ui -- ctrl : 2: GET my-appointments/{otherBookingId} >\n< 5: HTTP 403 (UNAUTHORIZED_BOOKING_ACCESS)
+
+ctrl -- srv : 3: getAppointmentDetails(otherBookingId, actorId, role) >\n< 4: throw UnauthorizedBookingAccessException
+
+srv -- c1 : 3.1: canManageOwnAppointments(actorId, role) -> true >
+
+srv -- booking : 3.2: isOwnedBy(actorId) -> false >
+
+srv -- audit : 3.3: recordEvent(APPOINTMENT_ACCESS_DENIED, otherBookingId) >
+
+note bottom of srv
+  Same check for confirm, reschedule request and cancel.
+  Role is not PATIENT (3.1 -> false): also 403 + audit.
+  Booking does not exist: 404 BOOKING_NOT_FOUND.
+  No data of the other patient is returned.
+end note
+@enduml

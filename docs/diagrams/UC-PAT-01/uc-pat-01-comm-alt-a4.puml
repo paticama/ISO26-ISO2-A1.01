@@ -1,0 +1,44 @@
+@startuml uc-pat-01-comm-alt-a4
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+
+title UC-PAT-01: Manage My Appointments (C5 v1.1.0)\nCommunication Diagram - Alternative Flow A4: Cancellation of an Urgent/Stat or Preferential Examination
+
+actor ":Patient" as pat
+boundary ":MyAppointmentsUI" as ui
+control ":PatientAppointmentController" as ctrl
+control ":PatientAppointmentService" as srv
+entity ":Booking" as booking
+control ":AuditService (C1)" as audit
+control ":PendingOrderGateway (C4)" as c4
+control ":BookingEventPublisher" as ev
+
+pat -- ui : 1: chooseCancel()\n3: acknowledgeWarningAndConfirm(reason) >\n< 2: showClinicalPriorityWarning(priority, serviceContact)\n< 8: displayCancellation(CANCELLED)
+
+ui -- ctrl : 4: POST my-appointments/{bookingId}/cancel\n(reason, priorityWarningAcknowledged = true, expectedBookingVersion) >\n< 7: HTTP 200 (AppointmentDetailsDTO, CANCELLED)
+
+ctrl -- srv : 5: cancelAppointment(CancelAppointmentRequestDTO) >\n< 6: AppointmentDetailsDTO
+
+srv -- booking : 5.1: [checks of A3 pass] cancel(reason, actorId, now) >
+
+srv -- audit : 5.2: recordEvent(APPOINTMENT_CANCELLED, priority, warning acknowledged) >
+
+srv -- c4 : 5.3: markOrderPending(orderId) >
+
+srv -- ev : 5.4: publish(BookingChangedEvent CANCELLED) >
+
+note bottom of ui
+  2: the UI knows the priority from the details (step 6):
+  STAT_URGENT or PREFERENTIAL -> warning and "contact the service".
+  If the patient does not proceed, nothing is sent.
+end note
+
+note bottom of c4
+  The ordering physician sees the order back in
+  PENDING_SCHEDULING and the cancellation event
+  in the order status (UC-PHY-03, It3).
+  The other steps of A3 (slot, worklist, notification)
+  are the same and are not repeated here.
+end note
+@enduml
