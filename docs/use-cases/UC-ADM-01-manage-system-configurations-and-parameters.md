@@ -32,10 +32,10 @@
 
 ## RADIT Disciplines
 - [x] Requirements
-- [x] Analysis
-- [ ] Design
-- [ ] Implementation
-- [ ] Testing
+- [x] Analysis: communication diagrams ([normal](../diagrams/UC-ADM-01/uc-adm-01-comm-normal.puml), [alternatives](../diagrams/UC-ADM-01/uc-adm-01-comm-alt.puml))
+- [x] Design: [design class diagram](../diagrams/UC-ADM-01/uc-adm-01-class-design.puml)
+- [x] Implementation
+- [x] Testing
 
 ## Contracts and Interfaces
 - **System:** sescam-catalogue.
@@ -43,11 +43,11 @@
 - **Outputs:** Current and updated values, validation or save result, and whether a change is active or pending.
 
 ## Acceptance Criteria
-- [ ] An authorized administrator can view current system configuration parameters.
-- [ ] Valid parameter changes can be saved and their activation status is communicated.
-- [ ] Invalid values and unauthorized changes are rejected without modifying saved configuration.
-- [ ] Concurrent changes are not silently overwritten.
-- [ ] Changes are attributable to the administrator and available for audit.
+- [x] An authorized administrator can view current system configuration parameters.
+- [x] Valid parameter changes can be saved and their activation status is communicated.
+- [x] Invalid values and unauthorized changes are rejected without modifying saved configuration.
+- [x] Concurrent changes are not silently overwritten.
+- [x] Changes are attributable to the administrator and available for audit.
 
 ## Decisions (DECISIONS.md)
 - See [DECISIONS.md](../../DECISIONS.md).

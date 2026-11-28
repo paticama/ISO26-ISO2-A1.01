@@ -1,0 +1,40 @@
+@startuml uc-pat-01-comm-alt-a5
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+
+title UC-PAT-01: Manage My Appointments (C5 v1.1.0)\nCommunication Diagram - Alternative Flow A5: Action Outside the Policy Window
+
+actor ":Patient" as pat
+boundary ":MyAppointmentsUI" as ui
+control ":PatientAppointmentController" as ctrl
+control ":PatientAppointmentService" as srv
+control ":AccessControlService (C1)" as c1
+entity ":Booking" as booking
+control ":AppointmentRules" as rules
+control ":BookingPolicyGateway" as bp
+control ":AuditService (C1)" as audit
+
+pat -- ui : 1: chooseConfirm() or confirmCancellation(reason) >\n< 6: displayRejectionAndServiceContact(serviceContact)
+
+ui -- ctrl : 2: POST my-appointments/{bookingId}/confirm or /cancel >\n< 5: HTTP 409 (BOOKING_CONFLICT)
+
+ctrl -- srv : 3: confirmAppointment(...) or cancelAppointment(...) >\n< 4: throw BookingConflictException
+
+srv -- c1 : 3.1: canManageOwnAppointments(actorId, role) >
+
+srv -- booking : 3.2: isOwnedBy(actorId) >
+
+srv -- rules : 3.3: checkConfirm(...) or checkCancel(...) -> [deadline passed] >
+
+rules -- bp : 3.3.1: minHoursBeforeConfirmation() or minHoursBeforeCancellation() >
+
+srv -- audit : 3.4: recordEvent(APPOINTMENT_ACTION_REJECTED, outside policy window) >
+
+note bottom of booking
+  The appointment is not changed.
+  Normally the button is already hidden by allowedActions (step 5);
+  this is the server check when the deadline passes while the page is open.
+  The UI shows the serviceContact it received in the details (step 6).
+end note
+@enduml

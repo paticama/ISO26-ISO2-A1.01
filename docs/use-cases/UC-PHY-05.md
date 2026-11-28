@@ -5,14 +5,14 @@
 - **RF:** `FR-PHY-09`, `FR-PHY-10`, `FR-PHY-11`, `FR-PHY-17`
 - **Phase:** Elaboration
 - **Iteration:** 2
-- **Module:** `sescam-diagnostics` (C7, v1.0.0)
+- **Module:** `sescam-diagnostics` (C7, v1.0.0; v1.0.1 applies the server review points of #188)
 - **Priority:** High (ISO/IEC/IEEE 29148:2018)
 - **Dependencies:** FR-PHY-09 depends on FR-PHY-01 (UC-PHY-01) and FR-AAD-12 (UC-AAD-05).
 - **UML Relationships:**
   - Extended by: Record Adverse Contrast Reaction & Clinical Complications [Extension Point: ClinicalComplication]
 - **Minutes:** [Meeting #4 Minutes](https://github.com/paticama/ISO26-ISO2-A1.01/wiki/Minutes-of-meetings#meeting-4-extraordinary-meeting--requisites-and-use-cases-restructuring)
 - **GitHub Issue:** [#23](https://github.com/paticama/ISO26-ISO2-A1.01/issues/23)
-- **Actor:** Physician
+- **Actor:** Physician, Radiologist, Radiology Technician
 - **Secondary Actors:** Departmental RIS/PACS, Administrative / Admissions System
 - **Description:** Allows the physician to record radiological procedure execution details and document clinical or operational incidents occurring during the examination.
 - **Preconditions:**
@@ -33,18 +33,25 @@
 
 ## RADIT Disciplines
 - [x] Requirements: Specify execution logs (contrast lot, equipment, consent) and incident tracking.
-- [ ] Analysis: Incident logging audit model.
-- [ ] Design: Execution service contracts.
-- [ ] Implementation: Incident logging endpoints and rescheduling event dispatch.
-- [ ] Testing: Tests for aborted procedures and rescheduling alerts.
+- [x] Analysis: [activity diagram](../diagrams/UC-PHY-05/uc-phy-05-activity.puml) (main flow + 2a, 2b), [analysis class diagram](../diagrams/UC-PHY-05/uc-phy-05-class-analysis.puml) (boundary/control/entity, entity per module), [domain class diagram](../diagrams/puml/phy-class-domain.puml) and communication diagrams ([normal](../diagrams/puml/comm-phy-05-normal.puml), [2a](../diagrams/puml/comm-phy-05-alt2a.puml), [2b](../diagrams/puml/comm-phy-05-alt2b.puml)).
+- [x] Design: contracts in `sescam-common` (see below); server [design class diagram](../diagrams/UC-PHY-05/uc-phy-05-class-design.puml) and [sequence diagram](../diagrams/UC-PHY-05/uc-phy-05-sequence-design.puml); client [design class diagram](../diagrams/UC-PHY-05/uc-phy-05-class-design-client.puml) and [sequence diagram](../diagrams/UC-PHY-05/uc-phy-05-sequence-design-client.puml).
+- [x] Implementation: server slice (`sescam-diagnostics` 1.0.0: `ProcedureExecutionServiceImpl`, `ExecutionRules`, `ProcedureExecution`, `ClinicalIncident`; `ExecutionRestController` in server-app) and client slice (`ExecutionViewController`, `ExecutionForm`, `ExecutionApiClient`, `executions/new.html`). Stand-ins until the modules exist: bookings of C5 (`InMemoryScheduledProcedureGateway`) and the subscribers of the execution event in C4/C5.
+- [x] Testing: JUnit 5 + Mockito. `sescam-diagnostics` 28 tests (rules per field and incident time, service per flow: main, 2a, 2b, abort without reason/incident, consent and CT dose missing, denied role, unknown procedure, second and concurrent record, audit failures and compensating entries, audited pending list), `sescam-server-app` `ExecutionRestControllerTest` 6 (MockMvc, role checked before the data), `sescam-client-app` 20 (form, REST client, view per flow), `sescam-common` `DiagnosticsContractsTest` 5. JaCoCo ≥ 80% in the four modules.
 
 ## Contracts and Interfaces
-- `es.uclm.esi.sescam.diagnostics.api.ProcedureExecutionService`
-- `ExecutionLogDTO`, `IncidentDTO`
+- `com.sescam.radiodiagnostics.common.diagnostics.ProcedureExecutionService` (C7; package follows the repository convention instead of `es.uclm.esi.sescam.diagnostics.api`): `listProceduresAwaitingExecution(actorId, actorRole)`, `recordExecution(ExecutionLogDTO) : ExecutionRecordDTO`
+- DTOs and enums in `common.diagnostics`: `ExecutionLogDTO` (execution + incidents + abort in one request), `IncidentDTO`, `ExecutionRecordDTO`, `ClinicalIncidentDTO`, `ScheduledProcedureDTO`, `ProcedureExecutionEvent`, `ExecutionStatus`, `IncidentType`, `IncidentSeverity`
+- Exceptions: `InvalidExecutionDataException` (400, with invalid fields), `UnauthorizedExecutionAccessException` (403), `ProcedureNotFoundException` (404), `ExecutionAlreadyRecordedException` (409)
+- Outbound ports: `ScheduledProcedureGateway` (booked procedures, to be implemented by C5), `ProcedureEventPublisher` (C4 order status, C5 rescheduling), `AccessControlService.canLogProcedureExecution` (physician, radiologist, technician), `AuditService`
+- REST API (server-app): `GET /api/v1/executions/pending`, `POST /api/v1/executions` (201; 400, 403, 404, 409). Client view: `/executions/new`.
+- Decision: `ClinicalIncident` (C7, during an examination) is a different entity from `PatientIncident` (C8, PAT-05). Open decision #1 of `PLAN18-11.md` §9, to confirm at the team meeting.
 
 ## Acceptance Criteria
-- [ ] Execution details logged with timestamp and room utilization.
-- [ ] Aborted procedures trigger rescheduling notification to Admissions.
+- [x] Execution details logged with timestamp and room utilization.
+- [x] Execution metrics captured: contrast batch and volume, radiation dose (DLP, CTDIvol, mandatory for CT), radiotracer activity (mandatory for nuclear medicine). *(issue #23)*
+- [x] Clinical incidents and adverse reactions documented with severity grading. *(issue #23)*
+- [ ] Incident report linked to patient clinical history and flagged for audit. *(issue #23) Linked by `patientId` and audited (`CLINICAL_INCIDENT_LOGGED`); showing it in the history is PAT-02 (It3).*
+- [ ] Aborted procedures trigger rescheduling notification to Admissions. *`ProcedureExecutionEvent` with `requiresRescheduling()` is published; nothing consumes it until C5 subscribes.*
 
 ## Decisions (DECISIONS.md)
 - Complies with **ADR-003** and **ADR-008**.

@@ -41,27 +41,26 @@
 ## RADIT Disciplines
 - [x] Requirements: Specify examination booking, notification, and worklist integration.
 - [x] Analysis: Define booking transaction and notification boundaries ([`docs/diagrams/UC-AAD-05/`](../diagrams/UC-AAD-05/)).
-- [ ] Design: Define booking DTOs, state transitions, and slot-validation contracts.
-- [ ] Implementation: Implement booking, notification, and worklist update services.
-- [ ] Testing: Test occupied slots, priority, state transitions, cancellation, rescheduling, and concurrency.
+- [x] Design: `BookingService` and DTOs/exceptions in `sescam-common` (`common.admissions`); server [design class diagram](../diagrams/UC-AAD-05/uc-aad-05-class-design.puml) and [sequence diagram](../diagrams/UC-AAD-05/uc-aad-05-sequence-design.puml); client [design class diagram](../diagrams/UC-AAD-05/uc-aad-05-client-class-design.puml) and [sequence diagram](../diagrams/UC-AAD-05/uc-aad-05-client-sequence-design.puml).
+- [x] Implementation: Server slice (`sescam-admissions` 1.0.0: `BookingServiceImpl`, `Booking`, `BookingHistoryEntry`, `WorklistItem`; `BookingRestController`, `BookingExceptionHandler`, `BookingWiringConfig` in `sescam-server-app`) and client slice (`BookingViewController`, `BookingForm`, `BookingApiClient`, `bookings/index.html`, `bookings/detail.html` in `sescam-client-app`). Stand-ins for pending modules: `InMemoryPendingOrderGateway` (C4), `DefaultPatientEligibilityGateway` (C6), `DefaultBookingPolicyGateway` (C2), `NoOpBookingNotificationGateway` (C8).
+- [x] Testing: JUnit 5 + Mockito (`sescam-common` `BookingContractsTest`, `sescam-admissions` `BookingServiceImplTest`, `sescam-server-app` `BookingRestControllerTest`, `sescam-client-app` `BookingFormTest`, `BookingApiClientTest`, `BookingViewControllerTest`).
 
 ## Contracts and Interfaces
-- `Client:` Admissions UI for slot selection and booking confirmation.
-- `Server:` Examination-booking service in `sescam-admissions`, REST endpoint in `sescam-server-app`.
-- `Schedule interface:` Retrieves and atomically reserves compatible capacity.
-- `Waitlist interface:` Reads priority and promotes eligible requests.
-- `Booking interface:` Creates booking and manages `Pending`, `Booked`, `Rescheduled`, and `Cancelled` states.
-- `Worklist interface:` Publishes confirmed booking changes to the daily worklist.
-- `Notification interface:` Sends patient booking, rescheduling, and cancellation notifications.
-- `Errors:` `SLOT_UNAVAILABLE`, `REQUEST_ALREADY_PROCESSED`, `PATIENT_NOT_ELIGIBLE`, `BOOKING_CONFLICT`, `NOTIFICATION_FAILED`, and `CONCURRENT_BOOKING` are returned explicitly; no partial booking is reported as successful.
+- `Client:` Admissions UI (`/bookings`, `/bookings/{id}`) in `sescam-client-app` for pending-order selection, slot booking, A1 alternatives, rescheduling (A2), cancellation (A3), and daily worklist.
+- `Server:` `com.sescam.radiodiagnostics.common.admissions.BookingService` in `sescam-admissions` (v1.0.0), REST API `/api/v1/bookings` in `sescam-server-app`.
+- `Schedule interface (C3):` Consumes `ScheduleService.findCompatibleSlots(modality, from, to)`, `reserveSlotAtomically(slotId, expectedVersion, bookingReference)`, and `releaseSlot(slotId, bookingReference)`.
+- `Outbound ports:` `PendingOrderGateway` (C4), `PatientEligibilityGateway` (C6), `BookingPolicyGateway` (C2), `BookingNotificationGateway` (C8), `BookingEventPublisher`, `AccessControlService.canManageBookings` (C1), `AuditService` (C1).
+- `Booking interface:` Creates booking and manages `PENDING`, `BOOKED`, `RESCHEDULED`, and `CANCELLED` states with immutable `BookingHistoryEntry` trail.
+- `Worklist interface:` Publishes confirmed, rescheduled, and cancelled booking changes to `WorklistRepository`.
+- `Errors:` `INVALID_BOOKING_DATA` (400), `UNAUTHORIZED_BOOKING_ACCESS` (403), `BOOKING_NOT_FOUND` (404), `SLOT_UNAVAILABLE` (409, with `alternativeSlots`), `REQUEST_ALREADY_PROCESSED` (409), `BOOKING_CONFLICT` (409), `CONCURRENT_BOOKING` (409), `PATIENT_NOT_ELIGIBLE` (422).
 
 ## Acceptance Criteria
-- [ ] A pending examination request can be booked according to priority and policy.
-- [ ] Occupied or stale slots are rejected at confirmation time.
-- [ ] A successful booking changes the request state to `Booked`.
-- [ ] Patient notification outcome is visible and auditable.
-- [ ] Rescheduling and cancellation preserve history and update the worklist.
-- [ ] A failed operation does not create a partial booking.
+- [x] A pending examination request can be booked according to priority and policy.
+- [x] Occupied or stale slots are rejected at confirmation time.
+- [x] A successful booking changes the request state to `Booked`.
+- [x] Patient notification outcome is visible and auditable.
+- [x] Rescheduling and cancellation preserve history and update the worklist.
+- [x] A failed operation does not create a partial booking.
 
 ## Decisions (DECISIONS.md)
 - See [DECISIONS.md](../../DECISIONS.md).

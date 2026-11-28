@@ -7,7 +7,7 @@
 
     <groupId>com.sescam.radiodiagnostics</groupId>
     <artifactId>sescam-parent</artifactId>
-    <version>0.1.0</version>
+    <version>0.2.0</version>
     <packaging>pom</packaging>
 
     <name>SESCAM Radiodiagnostics Parent</name>
@@ -18,7 +18,11 @@
 
         <module>sescam-security</module>
         <module>sescam-catalogue</module>
+        <module>sescam-schedules</module>
+        <module>sescam-orders</module>
+        <module>sescam-admissions</module>
         <module>sescam-patients</module>
+        <module>sescam-diagnostics</module>
         <module>sescam-integration</module>
         <!-- Not built yet in Iteration 1; add each one back when its folder exists:
              sescam-schedules, sescam-orders, sescam-admissions,

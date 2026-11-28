@@ -1,0 +1,152 @@
+@startuml uc-aad-05-class-design
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+
+title UC-AAD-05: Book Requested Examination - Design Class Diagram (server slice, C5 v1.0.0)
+
+package "sescam-common :: common.admissions" {
+    interface BookingService {
+        + listPendingRequests(actorId, actorRole): List<PendingExamRequestDTO>
+        + findCompatibleSlots(orderId, from, to, actorId, actorRole): List<SlotDTO>
+        + createBooking(CreateBookingRequestDTO): BookingDTO
+        + getBooking(bookingId, actorId, actorRole): BookingDTO
+        + rescheduleBooking(RescheduleBookingRequestDTO): BookingDTO
+        + cancelBooking(CancelBookingRequestDTO): BookingDTO
+        + listDailyWorklist(date, actorId, actorRole): List<WorklistItemDTO>
+    }
+    interface PendingOrderGateway {
+        + listPendingOrders(): List<PendingExamRequestDTO>
+        + findByOrderId(orderId): Optional<PendingExamRequestDTO>
+        + markOrderBooked(orderId): void
+        + markOrderPending(orderId): void
+    }
+    interface PatientEligibilityGateway {
+        + isPatientEligible(patientId): boolean
+    }
+    interface BookingPolicyGateway {
+        + maxBookingsPerPatientPerDay(): int
+        + minHoursBeforeCancellation(): int
+    }
+    interface BookingNotificationGateway {
+        + sendBookingNotification(bookingId, patientId, status, message): NotificationStatus
+    }
+    interface BookingEventPublisher {
+        + publish(BookingChangedEvent): void
+    }
+    enum BookingStatus {
+        PENDING
+        BOOKED
+        RESCHEDULED
+        CANCELLED
+    }
+    enum NotificationStatus {
+        SENT
+        PENDING_RETRY
+        FAILED
+    }
+    enum BookingErrorCode {
+        INVALID_BOOKING_DATA
+        UNAUTHORIZED_BOOKING_ACCESS
+        BOOKING_NOT_FOUND
+        SLOT_UNAVAILABLE
+        REQUEST_ALREADY_PROCESSED
+        PATIENT_NOT_ELIGIBLE
+        BOOKING_CONFLICT
+        CONCURRENT_BOOKING
+    }
+    abstract class BookingException {
+        + getCode(): BookingErrorCode
+    }
+    class SlotUnavailableBookingException {
+        - alternativeSlots: List<SlotDTO>
+    }
+    class "BookingDTO, BookingHistoryEntryDTO, PendingExamRequestDTO,\nWorklistItemDTO, CreateBookingRequestDTO,\nRescheduleBookingRequestDTO, CancelBookingRequestDTO,\nBookingChangedEvent" as DTOs <<record>>
+
+    BookingException --> BookingErrorCode
+    BookingException <|-- SlotUnavailableBookingException
+    BookingException <|-- "InvalidBookingData, UnauthorizedBookingAccess,\nBookingNotFound, RequestAlreadyProcessed,\nPatientNotEligible, BookingConflict, ConcurrentBooking"
+}
+
+package "sescam-admissions (C5 v1.0.0)" {
+    class BookingServiceImpl {
+        - bookingRepository: BookingRepository
+        - worklistRepository: WorklistRepository
+        - scheduleService: ScheduleService
+        - pendingOrderGateway: PendingOrderGateway
+        - patientEligibilityGateway: PatientEligibilityGateway
+        - bookingPolicyGateway: BookingPolicyGateway
+        - notificationGateway: BookingNotificationGateway
+        - accessControlService: AccessControlService
+        - auditService: AuditService
+        - eventPublisher: BookingEventPublisher
+        - clock: Clock
+    }
+    class Booking {
+        - bookingId: String
+        - orderId: String
+        - patientId: String
+        - modality: String
+        - slotId: String
+        - scheduledStart: LocalDateTime
+        - scheduledEnd: LocalDateTime
+        - status: BookingStatus
+        - notificationStatus: NotificationStatus
+        - version: long
+        - history: List<BookingHistoryEntry>
+        + reschedule(newSlot, reason, actorId, now): void
+        + cancel(reason, actorId, now): void
+        + updateNotificationStatus(status): void
+    }
+    class BookingHistoryEntry {
+        - entryId: String
+        - previousStatus: BookingStatus
+        - newStatus: BookingStatus
+        - previousSlotId: String
+        - newSlotId: String
+        - reason: String
+        - changedBy: String
+        - changedAt: Instant
+    }
+    class WorklistItem {
+        - worklistId: String
+        - bookingId: String
+        - orderId: String
+        - patientId: String
+        - resourceId: String
+        - modality: String
+        - scheduledStart: LocalDateTime
+        - scheduledEnd: LocalDateTime
+        - status: BookingStatus
+    }
+    interface BookingRepository
+    interface WorklistRepository
+
+    BookingServiceImpl ..|> BookingService
+    BookingServiceImpl --> BookingRepository
+    BookingServiceImpl --> WorklistRepository
+    BookingServiceImpl ..> PendingOrderGateway
+    BookingServiceImpl ..> PatientEligibilityGateway
+    BookingServiceImpl ..> BookingPolicyGateway
+    BookingServiceImpl ..> BookingNotificationGateway
+    BookingServiceImpl ..> BookingEventPublisher
+    Booking "1" *-- "1..*" BookingHistoryEntry
+    BookingRepository ..> Booking
+    WorklistRepository ..> WorklistItem
+}
+
+package "sescam-server-app :: server.admissions" {
+    class BookingRestController {
+        + listPending(actorId, actorRole)
+        + findCompatibleSlots(orderId, from, to, actorId, actorRole)
+        + createBooking(actorId, actorRole, payload)
+        + getBooking(id, actorId, actorRole)
+        + rescheduleBooking(id, actorId, actorRole, payload)
+        + cancelBooking(id, actorId, actorRole, payload)
+        + listWorklist(date, actorId, actorRole)
+    }
+    class BookingExceptionHandler
+    class BookingWiringConfig
+    BookingRestController --> BookingService
+}
+@enduml

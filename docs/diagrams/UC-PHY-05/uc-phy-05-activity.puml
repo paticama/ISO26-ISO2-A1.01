@@ -1,0 +1,68 @@
+@startuml uc-phy-05-activity
+title UC-PHY-05 – Activity diagram (main flow + 2a, 2b)\nC7 sescam-diagnostics v1.0.0
+skinparam shadowing false
+
+|Physician (client)|
+start
+note right
+  Preconditions: physician authenticated (SSO);
+  procedure ordered (UC-PHY-01) and booked into a slot (UC-AAD-05).
+end note
+|Server|
+:List procedures awaiting execution\n(booked orders without an execution record);
+|Physician (client)|
+:1. Select the active or recently completed procedure;
+:2. Enter execution details: actual start and end,\nroom/equipment, contrast batch and volume,\nradiation dose (DLP, CTDIvol), radiotracer activity,\ninformed consent verified;
+if (2a. Clinical or operational incident?) then (yes)
+  :Document incident: type, severity\n(mild / moderate / severe), narrative,\ntreatment given;
+  if (2b. Incident prevents completing\nthe examination?) then (yes)
+    :Mark procedure as aborted, give reason;
+  else (no)
+  endif
+else (no)
+endif
+:Validate form (mandatory fields, end after start);
+:3. Submit execution log;
+
+|Server|
+if (Actor may log executions\n(physician / radiologist / technician)?) then (no)
+  :Audit EXECUTION_ACCESS_DENIED;
+  |Physician (client)|
+  :Show "not authorized";
+  stop
+else (yes)
+endif
+|Server|
+if (Procedure exists and awaits execution?) then (no)
+  |Physician (client)|
+  :Show "procedure not found"\nor "already recorded";
+  stop
+else (yes)
+endif
+|Server|
+if (Data valid? (times, consent verified when required,\ncontrast batch with contrast, dose fields\nrequired by the modality, aborted => incident)) then (no)
+  |Physician (client)|
+  :Show invalid fields; nothing stored;
+  stop
+else (yes)
+endif
+|Server|
+if (2b. Aborted?) then (yes)
+  :Persist execution with status INCOMPLETE_INCIDENT\nand its incidents (linked to the patient);
+  :Audit PROCEDURE_ABORTED and CLINICAL_INCIDENT_LOGGED;
+  :Publish ProcedureExecutionEvent(INCOMPLETE_INCIDENT)\nfor Admissions rescheduling and Orders status;
+  |Physician (client)|
+  :Show "Procedure aborted. Rescheduling must be
+  requested to Admissions manually"
+  (until C5 subscribes to the event);
+  stop
+else (no)
+  |Server|
+  :4. Persist execution with status EXECUTED_PENDING_REPORT\n(+ incidents of 2a, linked to the patient);
+  :Audit EXECUTION_RECORDED\n(+ CLINICAL_INCIDENT_LOGGED per incident);
+  :Publish ProcedureExecutionEvent(EXECUTED_PENDING_REPORT)\nfor Orders status;
+  |Physician (client)|
+  :5. Confirm execution recording;
+  stop
+endif
+@enduml

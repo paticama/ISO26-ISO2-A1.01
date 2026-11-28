@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DICOM Viewer &amp; Diagnostic Report Editor – SESCAM</title>
+    <style>
+        :root { --border: #d0d7de; --muted: #57606a; --error: #b42318; --ok: #1a7f37; --warn: #9a6700; --bg: #f6f8fa; }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: system-ui, sans-serif; color: #1f2328; background: #fff; }
+        header { padding: 16px; border-bottom: 1px solid var(--border); background: var(--bg); display: flex; justify-content: space-between; align-items: center; }
+        header h1 { margin: 0; font-size: 1.25rem; }
+        main { padding: 16px; max-width: 960px; margin: 0 auto; display: grid; gap: 16px; }
+        section, fieldset { border: 1px solid var(--border); border-radius: 6px; padding: 12px; }
+        legend, h2 { margin: 0 0 8px 0; font-size: 1rem; font-weight: 600; }
+        .viewer { background: #0d1117; color: #e6edf3; padding: 14px; border-radius: 6px; display: grid; gap: 6px; }
+        .viewer code { color: #79c0ff; }
+        form { display: grid; gap: 12px; }
+        label { display: flex; flex-direction: column; gap: 4px; font-size: .9rem; }
+        label.inline { flex-direction: row; align-items: center; gap: 8px; }
+        input[type="text"], textarea { padding: 8px; border: 1px solid var(--border); border-radius: 6px; font: inherit; width: 100%; }
+        textarea { min-height: 90px; }
+        .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        button { padding: 8px 14px; border-radius: 6px; border: 1px solid #0969da; background: #0969da; color: #fff; font: inherit; cursor: pointer; }
+        button.secondary { background: #fff; color: #0969da; }
+        .message { padding: 12px; border-radius: 6px; border: 1px solid var(--border); }
+        .message.error { border-color: var(--error); color: var(--error); }
+        .message.warn { border-color: var(--warn); color: var(--warn); }
+        .message.ok { border-color: var(--ok); color: var(--ok); }
+        .field-error { color: var(--error); font-size: .8rem; }
+        .hint { color: var(--muted); font-size: .85rem; }
+    </style>
+</head>
+<body>
+<header>
+    <div>
+        <h1>DICOM Image Viewer &amp; Diagnostic Report</h1>
+        <span class="hint" th:text="|Execution ${executionId}|"></span>
+    </div>
+    <a th:href="@{/reports}">Back to worklist</a>
+</header>
+<main>
+    <div th:if="${pacsFailure != null}" class="message error" id="pacs-failure" role="alert">
+        <strong>RIS/PACS connection failure (2a):</strong>
+        <span th:text="${pacsFailure}"></span>
+    </div>
+
+    <div th:if="${reportLoadFailure != null}" class="message error" id="report-load-failure" role="alert"
+         th:text="${reportLoadFailure}"></div>
+
+    <div th:if="${failure != null}" class="message error" id="failure" role="alert">
+        <strong th:text="${failure.message}"></strong>
+        <div th:if="${failure.canRetry()}">You can retry submitting the form.</div>
+    </div>
+
+    <div th:if="${draftSaved}" class="message warn" id="draft-saved" role="status">
+        <strong>Draft saved (5a).</strong> No HL7/FHIR EHR synchronization or patient notification was triggered.
+    </div>
+
+    <div th:if="${finalizedSuccess}" class="message ok" id="report-finalized" role="status">
+        <strong>Diagnostic report finalized and digitally signed.</strong>
+        <div th:if="${report != null}" th:text="|EHR FHIR sync status: ${report.ehrSyncStatus()}|"></div>
+        <div th:if="${report != null and report.criticalAlert()}" id="critical-alert-banner">
+            Critical emergency finding flagged for immediate ordering clinician alert.
+        </div>
+        <div th:if="${report != null and report.followUpRecommended()}" id="follow-up-hint">
+            Follow-up surveillance recommended: <a th:href="@{/orders/new}">Order periodic follow-up (UC-PHY-02)</a>
+        </div>
+    </div>
+
+    <div th:if="${addendumSaved}" class="message ok" id="addendum-saved" role="status">
+        <strong>Addendum recorded and signed (6a).</strong> Original signature preserved; EHR FHIR report updated.
+    </div>
+
+    <section th:if="${study != null}" id="dicom-viewer">
+        <h2>Integrated DICOM Viewer (WADO-RS)</h2>
+        <div class="viewer">
+            <div th:text="|Study UID: ${study.studyInstanceUid()} · Accession: ${study.accessionNumber()}|"></div>
+            <div th:text="|Exam: ${study.examTypeName()} (${study.modality()}) — Patient ${study.patientId()}|"></div>
+            <div th:text="|Series: ${study.numberOfSeries()} · Instances: ${study.numberOfInstances()}|"></div>
+            <div>WADO Token: <code th:text="${study.wadoViewerToken()}"></code></div>
+            <div>Endpoint: <code th:text="${study.pacsEndpointUrl()}"></code></div>
+        </div>
+    </section>
+
+    <section th:if="${report == null or report.status().name() == 'DRAFT'}" id="report-editor">
+        <h2>Diagnostic Report Editor</h2>
+        <form method="post" th:action="@{/reports/executions/{id}/draft(id=${executionId})}" th:object="${reportForm}">
+            <input type="hidden" th:field="*{expectedVersion}">
+            <label>Clinical Findings
+                <textarea th:field="*{findings}" maxlength="5000"></textarea>
+                <span class="field-error" th:if="${errors != null and errors['findings'] != null}" th:text="${errors['findings']}"></span>
+            </label>
+            <label>Diagnostic Conclusion
+                <textarea th:field="*{conclusion}" maxlength="5000"></textarea>
+                <span class="field-error" th:if="${errors != null and errors['conclusion'] != null}" th:text="${errors['conclusion']}"></span>
+            </label>
+            <label class="inline">
+                <input type="checkbox" th:field="*{criticalAlert}">
+                Critical emergency finding (alert ordering clinician immediately)
+            </label>
+            <label class="inline">
+                <input type="checkbox" th:field="*{followUpRecommended}">
+                Recommend periodic follow-up surveillance (Extension point: UC-PHY-02)
+            </label>
+            <label>Digital Signature (required to finalize &amp; sign)
+                <input type="text" th:field="*{digitalSignature}" maxlength="200">
+                <span class="field-error" th:if="${errors != null and errors['digitalSignature'] != null}" th:text="${errors['digitalSignature']}"></span>
+            </label>
+            <div class="actions">
+                <button type="submit" class="secondary">Save as Draft</button>
+                <button type="submit" th:formaction="@{/reports/executions/{id}/finalize(id=${executionId})}">
+                    Finalize &amp; Digitally Sign
+                </button>
+            </div>
+        </form>
+    </section>
+
+    <section th:if="${report != null and report.status().name() != 'DRAFT'}" id="finalized-report">
+        <h2 th:text="|Signed Report (${report.status()})|"></h2>
+        <p><strong>Findings:</strong> <span th:text="${report.findings()}"></span></p>
+        <p><strong>Conclusion:</strong> <span th:text="${report.conclusion()}"></span></p>
+        <p><strong>Signed by:</strong> <span th:text="${report.authorPhysicianId()}"></span>
+            | <strong>Signature:</strong> <code th:text="${report.digitalSignature()}"></code>
+            | <strong>EHR Sync:</strong> <span th:text="${report.ehrSyncStatus()}"></span></p>
+
+        <div th:if="${!report.addendums().isEmpty()}" id="addendum-list">
+            <h3>Post-Signature Addendums</h3>
+            <ul>
+                <li th:each="a : ${report.addendums()}">
+                    <strong th:text="${a.reason()}"></strong>:
+                    <span th:text="${a.content()}"></span>
+                    <span class="hint" th:text="|(${a.authorPhysicianId()}, sig=${a.digitalSignature()})|"></span>
+                </li>
+            </ul>
+        </div>
+
+        <form method="post" th:action="@{/reports/{id}/addendums(id=${report.reportId()})}" th:object="${addendumForm}" id="addendum-form">
+            <h3>Issue Post-Signature Addendum (6a)</h3>
+            <input type="hidden" th:field="*{expectedVersion}">
+            <label>Amendment Reason
+                <input type="text" th:field="*{reason}" maxlength="300">
+                <span class="field-error" th:if="${addendumErrors != null and addendumErrors['reason'] != null}" th:text="${addendumErrors['reason']}"></span>
+            </label>
+            <label>Addendum Content
+                <textarea th:field="*{addendumContent}" maxlength="5000"></textarea>
+                <span class="field-error" th:if="${addendumErrors != null and addendumErrors['addendumContent'] != null}" th:text="${addendumErrors['addendumContent']}"></span>
+            </label>
+            <label>Addendum Digital Signature
+                <input type="text" th:field="*{digitalSignature}" maxlength="200">
+                <span class="field-error" th:if="${addendumErrors != null and addendumErrors['digitalSignature'] != null}" th:text="${addendumErrors['digitalSignature']}"></span>
+            </label>
+            <div class="actions">
+                <button type="submit">Issue Signed Addendum</button>
+            </div>
+        </form>
+    </section>
+</main>
+</body>
+</html>

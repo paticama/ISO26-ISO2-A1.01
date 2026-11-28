@@ -1,0 +1,106 @@
+@startuml uc-phy-04-class-analysis
+title UC-PHY-04 – Analysis class diagram (boundary / control / entity)\nC7 sescam-diagnostics v1.1.0
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+
+' Entity placement (ADR-014): DiagnosticReport, ReportAddendum and DicomStudyRef -> C7 diagnostics.
+' Reads ProcedureExecution (C7 UC-PHY-05). Synchronizes FHIR via outbound port (C9),
+' notifies patient via event (C8), and logs clinical revisions to AuditService (C1).
+
+actor "Physician / Radiologist" as Phy
+
+package "Client side" {
+  class ReportingWorklistUI <<boundary>> {
+    executed procedures list
+    report status badges
+  }
+  class DicomViewerUI <<boundary>> {
+    image series preview
+    WADO-RS viewer token
+  }
+  class ReportEditorUI <<boundary>> {
+    findings & conclusion
+    critical alert & follow-up flag
+    digital signature / addendum (6a)
+  }
+  class ReportFormValidation <<control>> {
+    mandatory fields on finalize
+    addendum reason & signature
+  }
+}
+
+package "Server side" {
+  class ReportController <<control>> {
+    list pending procedures
+    get DICOM study
+    save draft (5a)
+    finalize & sign
+    issue addendum (6a)
+  }
+  class ReportingRules <<control>> {
+    draft vs finalize rules
+    signature & addendum rules
+  }
+  class ProcedureExecution <<entity>> {
+    executionId
+    orderId
+    patientId
+    modality
+    status
+  }
+  class DicomStudyRef <<entity>> {
+    studyInstanceUid
+    accessionNumber
+    wadoViewerToken
+    numberOfSeries
+    numberOfInstances
+  }
+  class DiagnosticReport <<entity>> {
+    reportId
+    findings
+    conclusion
+    status
+    digitalSignature
+    signedAt
+    ehrSyncStatus
+    version
+  }
+  class ReportAddendum <<entity>> {
+    addendumId
+    reason
+    content
+    digitalSignature
+    createdAt
+  }
+  class PacsBoundary <<boundary>> {
+    C-FIND / WADO-RS (2a)
+  }
+  class EhrFhirBoundary <<boundary>> {
+    FHIR DiagnosticReport sync
+  }
+  class PatientNotificationBoundary <<boundary>> {
+    availability event
+  }
+  class AuditRecord <<entity>>
+}
+
+Phy -- ReportingWorklistUI
+Phy -- DicomViewerUI
+Phy -- ReportEditorUI
+ReportEditorUI ..> ReportFormValidation
+ReportingWorklistUI ..> ReportController : list
+DicomViewerUI ..> ReportController : fetch study
+ReportEditorUI ..> ReportController : draft / sign / addendum
+
+ReportController ..> ProcedureExecution : reads (EXECUTED_PENDING_REPORT)
+ReportController ..> PacsBoundary : queries study
+PacsBoundary ..> DicomStudyRef : returns
+ReportController ..> ReportingRules : validates
+ReportController ..> DiagnosticReport : creates / updates / signs
+DiagnosticReport "1" *-- "0..*" ReportAddendum : amends (6a)
+DiagnosticReport "0..1" --> "1" ProcedureExecution : concludes
+DiagnosticReport ..> DicomStudyRef : references
+ReportController ..> EhrFhirBoundary : exports FHIR
+ReportController ..> PatientNotificationBoundary : publishes event
+ReportController ..> AuditRecord : records (NFR-11)
+@enduml

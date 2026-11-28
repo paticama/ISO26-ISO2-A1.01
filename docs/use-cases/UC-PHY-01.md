@@ -5,7 +5,7 @@
 - **RF:** `FR-PHY-01`, `FR-PHY-02`, `FR-PHY-03`
 - **Phase:** Elaboration
 - **Iteration:** 2
-- **Module:** `sescam-orders` (C4, v1.0.0)
+- **Module:** `sescam-orders` (C4, v1.0.0; v1.0.1 audits the order before storing it; v1.0.2 records `ORDER_CREATION_FAILED` if storing fails after the audit; v1.0.3 requires explicit acknowledgement of the displayed constraint IDs on safety override, fixing #183)
 - **Priority:** High (ISO/IEC/IEEE 29148:2018)
 - **UML Relationships:**
   - `<<include>>` Verify Patient Safety Constraints & Contrast Allergies
@@ -36,20 +36,25 @@
 
 ## RADIT Disciplines
 - [x] Requirements: Elicit and specify prescription workflow with safety constraint validation.
-- [ ] Analysis: Model domain class diagram & sequence diagrams for order creation.
-- [ ] Design: Define Java interfaces (`OrderEntryService`) and DTOs (`CreateOrderDTO`).
-- [ ] Implementation: Implement service contract and REST controller in OpenJDK 17/21.
-- [ ] Testing: Unit tests (JUnit 5 + Mockito) validating safety constraint & contrast rules.
+- [x] Analysis: [activity diagram](../diagrams/UC-PHY-01/uc-phy-01-activity.puml) (main flow + 4a, 6a, 6b), [analysis class diagram](../diagrams/UC-PHY-01/uc-phy-01-class-analysis.puml) (boundary/control/entity, entity per module), [domain class diagram](../diagrams/puml/phy-class-domain.puml) and communication diagrams ([normal](../diagrams/puml/comm-phy-01-normal.puml), [4a](../diagrams/puml/comm-phy-01-alt4a.puml), [6a](../diagrams/puml/comm-phy-01-alt6a.puml), [6b](../diagrams/puml/comm-phy-01-alt6b.puml)).
+- [x] Design: interfaces and DTOs in `sescam-common` (see Contracts below); server [design class diagram](../diagrams/UC-PHY-01/uc-phy-01-class-design.puml) and [sequence diagram](../diagrams/UC-PHY-01/uc-phy-01-sequence-design.puml); client [design class diagram](../diagrams/UC-PHY-01/uc-phy-01-class-design-client.puml) and [sequence diagram](../diagrams/UC-PHY-01/uc-phy-01-sequence-design-client.puml).
+- [x] Implementation: server slice (`sescam-orders` 1.0.0, `OrderRestController`, `OrderExceptionHandler`, `OrderWiringConfig`) and client slice (`OrderViewController`, `OrderForm`, `OrderApiClient`, `orders/new.html`). Stand-ins until the modules exist: exam catalogue (C2), EHR safety gateway (C9), order subscriber (C5).
+- [x] Testing: JUnit 5 + Mockito. `sescam-orders` 26 tests (service per flow: main, 4a, 6a, 6b alert, 6b override, denied role, unknown exam, audit failure), `sescam-server-app` `OrderRestControllerTest` 7 (MockMvc), `sescam-client-app` 22 (form, REST client, view per flow). JaCoCo ≥ 80% in the three modules.
 
 ## Contracts and Interfaces
-- `es.uclm.esi.sescam.orders.api.OrderEntryService`
-- `CreateOrderDTO`, `OrderResponseDTO`
+- `com.sescam.radiodiagnostics.common.orders.OrderService` (C4; was `OrderEntryService`, renamed to the module interface of `PLAN18-11.md` §3) with `createOrder(CreateOrderDTO) : OrderResponseDTO`
+- DTOs and enums in `common.orders`: `CreateOrderDTO`, `OrderResponseDTO`, `ConsentAndPreparationDTO`, `SafetyConstraintDTO`, `OrderCreatedEvent`, `PriorityLevel`, `OrderStatus`, `ConstraintType`
+- Exceptions: `InvalidOrderDataException` (400), `UnauthorizedOrderAccessException` (403), `SafetyAlertException` (422, A6b)
+- Outbound ports: `PatientSafetyGateway` (EHR constraints, implemented by C9), `OrderEventPublisher` (order → admissions), `AccessControlService.canOrderProcedures`, `AuditService`
+- Needed from C2 (`common.catalogue`, pending owner approval): `ExamTypeService`, `ExamTypeDTO`, `ModalityType`, `ExamTypeNotFoundException`
+- REST API (server-app): `GET /api/v1/orders/exam-types`, `POST /api/v1/orders` (201; 400, 403, 404, 422)
+- Analysis and design diagrams: [`docs/diagrams/UC-PHY-01/`](../diagrams/UC-PHY-01/)
 
 ## Acceptance Criteria
 - [ ] Specification approved in accordance with team template.
-- [ ] Patient EHR safety contraindications and contrast consent verified.
-- [ ] Validated orders recorded in `Pending Scheduling` status and routed to Admissions.
-- [ ] 100% passage of automated unit tests.
+- [x] Patient EHR safety contraindications and contrast consent verified (`SafetyRules`, 6a/6b tests; EHR read through `PatientSafetyGateway`, no-op until C9 provides it).
+- [ ] Validated orders recorded in `Pending Scheduling` status and routed to Admissions. *Recorded: done. Routed: `OrderCreatedEvent` is published, but nothing consumes it until C5 (AAD-05) subscribes.*
+- [x] 100% passage of automated unit tests.
 
 ## Decisions (DECISIONS.md)
 - Complies with **ADR-001** (Unified Process), **ADR-003** (Interface-Driven Decoupling), and **ADR-007** (SSO/EHR Standards).

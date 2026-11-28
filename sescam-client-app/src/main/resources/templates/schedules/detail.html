@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Manage Schedule - SESCAM</title>
+    <style>
+        :root { --border: #d0d7de; --muted: #57606a; --error: #b42318; --ok: #1a7f37; --warn: #9a6700; --bg: #f6f8fa; --btn: #0969da; }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: system-ui, sans-serif; color: #1f2328; background: #fff; }
+        header { padding: 16px; border-bottom: 1px solid var(--border); background: var(--bg); display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+        header h1 { margin: 0; font-size: 1.25rem; }
+        main { padding: 16px; max-width: 1100px; margin: 0 auto; }
+        .message { margin: 16px 0; padding: 12px; border-radius: 6px; border: 1px solid var(--border); }
+        .message.error { border-color: var(--error); color: var(--error); }
+        .message.ok { border-color: var(--ok); color: var(--ok); }
+        .message.warn { border-color: var(--warn); color: var(--warn); }
+        form.inline { display: flex; gap: 8px; flex-wrap: wrap; align-items: end; margin-bottom: 16px; }
+        label { display: flex; flex-direction: column; font-size: .85rem; gap: 4px; }
+        input, select { padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: .9rem; }
+        button, .btn { padding: 8px 16px; background: var(--btn); color: #fff; border: none; border-radius: 6px; cursor: pointer; text-decoration: none; font-size: .9rem; }
+        button.danger { background: var(--error); }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+        th, td { padding: 8px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+        th { background: var(--bg); }
+        .status { font-weight: 600; }
+        .status.OPEN { color: var(--ok); }
+        .status.CLOSED { color: var(--error); }
+        .field-error { color: var(--error); font-size: .8rem; }
+        .hint { color: var(--muted); font-size: .8rem; }
+        fieldset { border: 1px solid var(--border); border-radius: 6px; margin: 16px 0; padding: 12px; }
+        a { color: #0969da; }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Manage schedule (UC-AAD-02)</h1>
+    <a th:href="@{/schedules}">Back to schedules</a>
+</header>
+<main>
+    <div th:if="${success != null}" class="message ok" role="status" th:text="${success}"></div>
+    <div th:if="${rescheduling != null and !#lists.isEmpty(rescheduling)}" class="message warn">
+        <strong>Appointments handed to admissions for rescheduling:</strong>
+        <ul><li th:each="a : ${rescheduling}" th:text="${a.bookingReference} + ' - ' + ${#temporals.format(a.slotStart, 'yyyy-MM-dd HH:mm')} + ' (' + ${a.reason} + ')'"></li></ul>
+    </div>
+    <div th:if="${failure != null}" class="message error" role="alert">
+        <strong th:text="${failure}"></strong>
+        <ul th:if="${conflicts != null and !#lists.isEmpty(conflicts)}">
+            <li th:each="c : ${conflicts}"
+                th:text="${c.resourceId} + ' ' + ${#temporals.format(c.start, 'yyyy-MM-dd HH:mm')} + '-' + ${#temporals.format(c.end, 'HH:mm')} + ' (' + ${c.status} + ')'"></li>
+        </ul>
+    </div>
+
+    <!-- A2: list affected appointments and ask for confirmation before availability is reduced -->
+    <div th:if="${needsConfirmation != null and needsConfirmation}" class="message warn" id="affected">
+        <strong>These appointments are affected. Confirm to continue:</strong>
+        <ul><li th:each="a : ${affected}" th:text="${a.bookingReference} + ' - ' + ${#temporals.format(a.slotStart, 'yyyy-MM-dd HH:mm')} + ' (' + ${a.reason} + ')'"></li></ul>
+        <form method="post" th:if="${pendingAction == 'update'}" th:action="@{/schedules/{id}/update(id=${form.scheduleId})}" th:object="${form}">
+            <input type="hidden" th:field="*{date}"/><input type="hidden" th:field="*{startTime}"/><input type="hidden" th:field="*{endTime}"/>
+            <input type="hidden" th:field="*{slotDurationMinutes}"/><input type="hidden" th:field="*{capacityPerSlot}"/>
+            <input type="hidden" th:field="*{expectedVersion}"/><input type="hidden" th:field="*{reason}"/>
+            <input type="hidden" name="confirmAffectedAppointments" value="true"/>
+            <button type="submit">Confirm change</button>
+        </form>
+        <form method="post" th:if="${pendingAction == 'close'}" th:action="@{/schedules/{id}/close(id=${form.scheduleId})}" th:object="${form}">
+            <input type="hidden" th:field="*{expectedVersion}"/><input type="hidden" th:field="*{reason}"/>
+            <input type="hidden" name="confirmAffectedAppointments" value="true"/>
+            <button type="submit" class="danger">Confirm close</button>
+        </form>
+    </div>
+
+    <div th:if="${schedule != null}">
+        <p>
+            <strong th:text="${schedule.resourceId} + ' @ ' + ${schedule.locationId} + ' - ' + ${schedule.modality}"></strong>
+            <span class="status" th:classappend="${schedule.status}" th:text="${schedule.status}"></span>
+            <span class="hint" th:text="'version ' + ${schedule.version}"></span>
+        </p>
+
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Slot</th><th>Booked / capacity</th><th>Bookable</th></tr></thead>
+                <tbody>
+                <tr th:each="slot : ${schedule.slots}">
+                    <td th:text="${#temporals.format(slot.start, 'HH:mm')} + '-' + ${#temporals.format(slot.end, 'HH:mm')}"></td>
+                    <td th:text="${slot.bookedCount} + ' / ' + ${slot.capacity}"></td>
+                    <td th:text="${slot.bookable} ? 'Yes' : 'No'"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div th:if="${!#lists.isEmpty(schedule.appointmentsPendingRescheduling)}" class="message warn">
+            <strong>Pending rescheduling:</strong>
+            <ul><li th:each="a : ${schedule.appointmentsPendingRescheduling}" th:text="${a.bookingReference} + ' - ' + ${a.reason}"></li></ul>
+        </div>
+
+        <form th:if="${schedule.status.name() == 'OPEN'}" method="post" th:action="@{/schedules/{id}/update(id=${schedule.scheduleId})}" th:object="${form}">
+            <fieldset>
+                <legend>Update time window and capacity</legend>
+                <input type="hidden" th:field="*{expectedVersion}"/>
+                <label>Date <input type="date" th:field="*{date}"/></label>
+                <span class="field-error" th:if="${errors != null and errors['date'] != null}" th:text="${errors['date']}"></span>
+                <label>Start <input type="time" th:field="*{startTime}"/></label>
+                <span class="field-error" th:if="${errors != null and errors['startTime'] != null}" th:text="${errors['startTime']}"></span>
+                <label>End <input type="time" th:field="*{endTime}"/></label>
+                <span class="field-error" th:if="${errors != null and errors['endTime'] != null}" th:text="${errors['endTime']}"></span>
+                <label>Slot duration (minutes) <input type="number" min="5" th:field="*{slotDurationMinutes}"/></label>
+                <span class="field-error" th:if="${errors != null and errors['slotDurationMinutes'] != null}" th:text="${errors['slotDurationMinutes']}"></span>
+                <label>Places per slot <input type="number" min="1" th:field="*{capacityPerSlot}"/></label>
+                <span class="field-error" th:if="${errors != null and errors['capacityPerSlot'] != null}" th:text="${errors['capacityPerSlot']}"></span>
+                <label>Reason (optional) <input type="text" th:field="*{reason}"/></label>
+                <button type="submit">Save changes</button>
+            </fieldset>
+        </form>
+
+        <form th:if="${schedule.status.name() == 'OPEN'}" method="post" th:action="@{/schedules/{id}/close(id=${schedule.scheduleId})}">
+            <fieldset>
+                <legend>Close schedule</legend>
+                <input type="hidden" name="expectedVersion" th:value="${schedule.version}"/>
+                <label>Reason <input type="text" name="reason" placeholder="Equipment maintenance"/></label>
+                <span class="field-error" th:if="${errors != null and errors['reason'] != null}" th:text="${errors['reason']}"></span>
+                <p class="hint">New bookings are blocked; existing appointments are kept.</p>
+                <button type="submit" class="danger">Close schedule</button>
+            </fieldset>
+        </form>
+
+        <form th:if="${schedule.status.name() == 'CLOSED'}" method="post" th:action="@{/schedules/{id}/reopen(id=${schedule.scheduleId})}">
+            <fieldset>
+                <legend>Reopen schedule</legend>
+                <input type="hidden" name="expectedVersion" th:value="${schedule.version}"/>
+                <label>Reason (optional) <input type="text" name="reason"/></label>
+                <p class="hint">Capacity and conflicts are checked again before the slots become bookable.</p>
+                <button type="submit">Reopen schedule</button>
+            </fieldset>
+        </form>
+    </div>
+</main>
+</body>
+</html>

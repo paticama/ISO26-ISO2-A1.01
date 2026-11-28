@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Appointment Details – SESCAM</title>
+    <style>
+        :root { --border: #d0d7de; --error: #b42318; --warning: #9a6700; --bg: #f6f8fa; }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: system-ui, sans-serif; color: #1f2328; }
+        header, main { padding: 16px; }
+        header { background: var(--bg); border-bottom: 1px solid var(--border); }
+        main { max-width: 900px; margin: auto; display: grid; gap: 14px; }
+        .card { padding: 14px; border: 1px solid var(--border); border-radius: 6px; }
+        .message { padding: 12px; border: 1px solid var(--border); border-radius: 6px; }
+        .error { color: var(--error); border-color: var(--error); }
+        .warning { color: var(--warning); }
+        label { display: block; margin: 10px 0; }
+        input { padding: 6px; }
+        button { padding: 7px 12px; border: 1px solid #0969da; border-radius: 5px; background: #0969da; color: white; cursor: pointer; }
+        button.danger { background: #b42318; border-color: #b42318; }
+        .field-error { color: var(--error); display: block; }
+    </style>
+</head>
+<body>
+<header><h1>Appointment Details</h1><a th:href="@{/appointments}">Back to My Appointments</a></header>
+<main>
+    <p th:if="${failure != null}" class="message error" role="alert" th:text="${failure}"></p>
+    <p th:if="${success != null}" class="message" role="status" th:text="${success}"></p>
+    <section th:if="${appointment != null}" class="card" id="appointment-detail">
+        <h2 th:text="${appointment.summary().examTypeName() != null ? appointment.summary().examTypeName() : appointment.examTypeCode()}"></h2>
+        <p>Date and time: <strong th:text="|${appointment.summary().scheduledStart()} – ${appointment.summary().scheduledEnd()}|"></strong></p>
+        <p>Location: <span th:text="${appointment.summary().locationId()}"></span> · Room/equipment: <span th:text="${appointment.summary().resourceId()}"></span></p>
+        <p>Status: <strong th:text="${appointment.summary().status()}"></strong></p>
+        <section th:if="${appointment.preparation() != null}" aria-labelledby="preparation-title">
+            <h3 id="preparation-title">Preparation instructions</h3>
+            <p th:if="${appointment.preparation().preparationGuide() != null}" th:text="${appointment.preparation().preparationGuide()}"></p>
+            <ul>
+                <li th:if="${appointment.preparation().fastingRequired()}">Fasting is required.</li>
+                <li th:if="${appointment.preparation().contrastRequired()}">Contrast medium will be used.</li>
+                <li th:if="${appointment.preparation().informedConsentRequired()}">Informed consent is required.</li>
+            </ul>
+        </section>
+        <p th:if="${appointment.preparation() == null}">No additional preparation instructions are available.</p>
+        <section th:if="${appointment.pendingRequest() != null}" class="card" id="pending-reschedule">
+            <h3>Rescheduling request</h3>
+            <p>Status: <strong th:text="${appointment.pendingRequest().status()}"></strong></p>
+            <p th:text="${appointment.pendingRequest().reason()}"></p>
+        </section>
+        <p th:if="${appointment.allowedActions().isEmpty()}" class="message">
+            No actions are available for this appointment.
+            <span th:if="${appointment.serviceContact() != null}" th:text="|Contact: ${appointment.serviceContact()}|"></span>
+        </p>
+
+        <form th:if="${canConfirm}" method="post" th:action="@{/appointments/{id}/confirm(id=${appointment.summary().bookingId()})}" id="confirm-form">
+            <input type="hidden" name="expectedBookingVersion" th:value="${appointment.version()}" />
+            <button type="submit">Confirm appointment</button>
+        </form>
+
+        <section th:if="${canReschedule}" class="card">
+            <h3>Request a reschedule</h3>
+            <form method="post" th:action="@{/appointments/{id}/reschedule-requests(id=${appointment.summary().bookingId()})}" th:object="${form}" id="reschedule-form">
+                <label>Reason <input type="text" th:field="*{reason}" required maxlength="500" /></label>
+                <span class="field-error" th:if="${errors != null and errors['reason'] != null}" th:text="${errors['reason']}"></span>
+                <label>Preferred dates (optional, YYYY-MM-DD, comma-separated)
+                    <input type="text" th:field="*{preferredDates}" placeholder="2026-12-10, 2026-12-12" />
+                </label>
+                <span class="field-error" th:if="${errors != null and errors['preferredDates'] != null}" th:text="${errors['preferredDates']}"></span>
+                <button type="submit">Send request to Admissions</button>
+            </form>
+        </section>
+
+        <section th:if="${canCancel}" class="card">
+            <h3>Cancel appointment</h3>
+            <p th:if="${priorityExamination}" class="warning" role="note">
+                This examination has clinical priority. Please contact the service before cancelling.
+                <span th:if="${appointment.serviceContact() != null}" th:text="|Contact: ${appointment.serviceContact()}|"></span>
+            </p>
+            <form method="post" th:action="@{/appointments/{id}/cancel(id=${appointment.summary().bookingId()})}" th:object="${form}" id="cancel-form">
+                <input type="hidden" name="expectedBookingVersion" th:value="${appointment.version()}" />
+                <label>Reason (optional) <input type="text" th:field="*{reason}" maxlength="500" /></label>
+                <label><input type="checkbox" th:field="*{cancellationConfirmed}" required /> I understand and confirm that I want to cancel this appointment.</label>
+                <span class="field-error" th:if="${errors != null and errors['cancellationConfirmed'] != null}" th:text="${errors['cancellationConfirmed']}"></span>
+                <label th:if="${priorityExamination}"><input type="checkbox" th:field="*{priorityWarningAcknowledged}" /> I have read the clinical priority warning.</label>
+                <span class="field-error" th:if="${errors != null and errors['priorityWarningAcknowledged'] != null}" th:text="${errors['priorityWarningAcknowledged']}"></span>
+                <button type="submit" class="danger">Cancel appointment</button>
+            </form>
+        </section>
+    </section>
+</main>
+</body>
+</html>

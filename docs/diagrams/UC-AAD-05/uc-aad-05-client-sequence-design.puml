@@ -1,0 +1,42 @@
+@startuml uc-aad-05-client-sequence-design
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+
+title UC-AAD-05: Book Requested Examination - Client Design Sequence Diagram (C5 v1.0.0)
+
+actor "Admissions Staff" as User
+participant "bookings/index.html" as View
+participant "BookingViewController" as Ctrl
+participant "BookingForm" as Form
+participant "BookingApiClient" as Client
+participant "Server (/api/v1/bookings)" as Server
+
+User -> Ctrl : GET /bookings?orderId=... (X-Actor-Id, X-Actor-Role)
+Ctrl -> Client : listPendingOrders(actorId, actorRole)
+Client -> Server : GET /api/v1/bookings/pending-orders
+Server --> Client : List<PendingExamRequestDTO>
+Ctrl -> Client : findCompatibleSlots(orderId, actorId, actorRole)
+Client -> Server : GET /api/v1/bookings/slots?orderId=...
+Server --> Client : List<SlotDTO>
+Ctrl -> Client : listWorklist(date, actorId, actorRole)
+Client -> Server : GET /api/v1/bookings/worklist
+Server --> Client : List<WorklistItemDTO>
+Ctrl --> View : render pending orders, slots, and worklist
+
+User -> Ctrl : POST /bookings (BookingForm)
+Ctrl -> Form : validate()
+alt missing orderId or slotId
+    Ctrl --> View : render field errors
+else valid
+    Ctrl -> Client : createBooking(payload, actorId, actorRole)
+    Client -> Server : POST /api/v1/bookings
+    alt 201 Created
+        Server --> Client : BookingDTO
+        Ctrl --> View : redirect /bookings/{bookingId}
+    else 409 SLOT_UNAVAILABLE (A1)
+        Server --> Client : BookingErrorResponse(alternativeSlots)
+        Client --> Ctrl : throw BookingClientException(alternativeSlots)
+        Ctrl --> View : show conflict + alternative slots to pick
+    end
+end
+@enduml

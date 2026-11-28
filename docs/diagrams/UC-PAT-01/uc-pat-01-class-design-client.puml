@@ -1,0 +1,139 @@
+@startuml uc-pat-01-class-design-client
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam classAttributeIconSize 0
+set separator none
+left to right direction
+
+title UC-PAT-01: Design Class Diagram – client slice (sescam-client-app)\nC5 sescam-admissions v1.1.0 – <<NEW>> = added by PAT-01, the rest exists since UC-AAD-05
+
+package "sescam-client-app (com.sescam.radiodiagnostics.client.admissions)" {
+  class MyAppointmentsViewController <<Controller, NEW>> {
+    - apiClient : AppointmentApiClient
+    + list(...) : String  <<GET /my-appointments>>
+    + details(id, ...) : String  <<GET .../{id}>>
+    + confirm(id, version, ...) : String  <<POST .../{id}/confirm>>
+    + rescheduleForm(id, ...) : String  <<GET .../{id}/reschedule>>
+    + requestReschedule(id, form, ...) : String  <<POST .../{id}/reschedule>>
+    + cancelForm(id, ...) : String  <<GET .../{id}/cancel>>
+    + cancel(id, form, ...) : String  <<POST .../{id}/cancel>>
+    - showError(BookingClientException, model) : String
+    .. (...) = model, redirect, X-Actor-Id, X-Actor-Role ..
+  }
+
+  class AppointmentApiClient <<Component, NEW>> {
+    - restClient : RestClient
+    + listMyAppointments(actorId, actorRole) : List<AppointmentSummaryDTO>
+    + getDetails(id, actorId, actorRole) : AppointmentDetailsDTO
+    + confirm(id, expectedBookingVersion, actorId, actorRole) : AppointmentDetailsDTO
+    + requestReschedule(id, ReschedulePayload, actorId, actorRole) : RescheduleRequestStatusDTO
+    + cancel(id, CancelPayload, actorId, actorRole) : AppointmentDetailsDTO
+    ~ toException(ClientHttpResponse) : BookingClientException
+  }
+  class "AppointmentApiClient.ReschedulePayload" as ReschedulePayload <<record, NEW>> {
+    reason, preferredDates
+  }
+  class "AppointmentApiClient.CancelPayload" as CancelPayload <<record, NEW>> {
+    expectedBookingVersion, reason, priorityWarningAcknowledged
+  }
+
+  class RescheduleRequestForm <<NEW>> {
+    - reason : String
+    - preferredDates : List<LocalDate>
+    + validate(today) : Map<String, String>
+    + toPayload() : ReschedulePayload
+  }
+  class CancellationForm <<NEW>> {
+    - reason : String
+    - confirmed : boolean
+    - priorityWarningAcknowledged : boolean
+    - expectedBookingVersion : long
+    + validate(PriorityLevel) : Map<String, String>
+    + toPayload() : CancelPayload
+  }
+
+  class BookingClientException <<exception>> {
+    - code : String
+    - statusCode : int
+    - invalidFields : List<String>
+    + getCode() : String
+    + getStatusCode() : int
+  }
+
+  class "my-appointments/list.html" as ListView <<Thymeleaf view, NEW>> {
+    appointments in chronological order
+    date, time, examination, modality, location, status
+    "no upcoming appointments" + link to follow-ups (A1)
+  }
+  class "my-appointments/detail.html" as DetailView <<Thymeleaf view, NEW>> {
+    details + preparation instructions
+    buttons from allowedActions only
+    pending request status (A2, A6)
+    status + actions disabled (A7)
+    service contact (A5)
+  }
+  class "my-appointments/reschedule.html" as RescheduleView <<Thymeleaf view, NEW>> {
+    reason, preferred dates
+  }
+  class "my-appointments/cancel.html" as CancelView <<Thymeleaf view, NEW>> {
+    "Are you sure?" + reason
+    clinical priority warning + checkbox (A4)
+  }
+}
+
+package "sescam-common (common.admissions, common.orders)" {
+  class AppointmentSummaryDTO <<record>>
+  class AppointmentDetailsDTO <<record>>
+  class RescheduleRequestStatusDTO <<record>>
+  enum BookingStatus
+  enum AppointmentAction
+  enum PriorityLevel
+}
+
+package "sescam-server-app" {
+  class PatientAppointmentRestController {
+    GET /api/v1/my-appointments
+    GET /api/v1/my-appointments/{id}
+    POST .../{id}/confirm
+    POST .../{id}/reschedule-requests
+    POST .../{id}/cancel
+  }
+}
+
+MyAppointmentsViewController --> AppointmentApiClient
+MyAppointmentsViewController ..> RescheduleRequestForm : binds
+MyAppointmentsViewController ..> CancellationForm : binds
+MyAppointmentsViewController ..> ListView : renders
+MyAppointmentsViewController ..> DetailView : renders
+MyAppointmentsViewController ..> RescheduleView : renders
+MyAppointmentsViewController ..> CancelView : renders
+RescheduleRequestForm ..> ReschedulePayload : creates
+CancellationForm ..> CancelPayload : creates
+CancellationForm ..> PriorityLevel
+AppointmentApiClient ..> ReschedulePayload : sends
+AppointmentApiClient ..> CancelPayload : sends
+AppointmentApiClient ..> AppointmentSummaryDTO
+AppointmentApiClient ..> AppointmentDetailsDTO
+AppointmentApiClient ..> RescheduleRequestStatusDTO
+AppointmentApiClient ..> BookingClientException : <<throws>>
+DetailView ..> AppointmentAction : shows buttons
+AppointmentApiClient ..> PatientAppointmentRestController : REST/JSON\nX-Actor-Id, X-Actor-Role
+
+note bottom of CancellationForm
+  confirmed must be true (explicit confirmation, A3).
+  If priority is STAT_URGENT or PREFERENTIAL,
+  priorityWarningAcknowledged must be true (A4).
+end note
+
+note bottom of BookingClientException
+  Same exception as the AAD-05 client.
+  Codes the view handles:
+  403 UNAUTHORIZED_BOOKING_ACCESS (A8),
+  404 BOOKING_NOT_FOUND,
+  409 REQUEST_ALREADY_PROCESSED / CONCURRENT_BOOKING (A7),
+  409 BOOKING_CONFLICT -> show serviceContact (A5),
+  409 DUPLICATE_PENDING_REQUEST -> reload pending request (A6),
+  400 INVALID_BOOKING_DATA (+ invalidFields).
+end note
+@enduml

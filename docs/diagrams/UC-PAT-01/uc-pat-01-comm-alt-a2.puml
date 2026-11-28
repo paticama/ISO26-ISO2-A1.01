@@ -1,0 +1,41 @@
+@startuml uc-pat-01-comm-alt-a2
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+
+title UC-PAT-01: Manage My Appointments (C5 v1.1.0)\nCommunication Diagram - Alternative Flow A2: Request Rescheduling (at step 7)
+
+actor ":Patient" as pat
+boundary ":MyAppointmentsUI" as ui
+control ":PatientAppointmentController" as ctrl
+control ":PatientAppointmentService" as srv
+control ":AccessControlService (C1)" as c1
+entity ":Booking" as booking
+control ":AppointmentRules" as rules
+entity ":RescheduleRequest" as req
+control ":AuditService (C1)" as audit
+
+pat -- ui : 1: chooseRequestRescheduling()\n2: enterReasonAndPreferredDates(reason, preferredDates) >\n< 7: displayRequestStatus(PENDING_REVIEW)
+
+ui -- ctrl : 3: POST my-appointments/{bookingId}/reschedule-requests >\n< 6: HTTP 201 (RescheduleRequestStatusDTO)
+
+ctrl -- srv : 4: requestRescheduling(PatientRescheduleRequestDTO) >\n< 5: RescheduleRequestStatusDTO
+
+srv -- c1 : 4.1: canManageOwnAppointments(actorId, role) >
+
+srv -- booking : 4.2: isOwnedBy(actorId) >
+
+srv -- req : 4.5: findPending(bookingId) -> [none]\n4.6: create(bookingId, reason, preferredDates, PENDING_REVIEW) >
+
+srv -- rules : 4.3: invalidRescheduleFields(request, today) -> [none]\n4.4: checkReschedule(booking, now) -> [active] >
+
+srv -- audit : 4.7: recordEvent(APPOINTMENT_RESCHEDULE_REQUESTED) >
+
+note bottom of booking
+  The appointment is NOT changed (status, slot and version stay),
+  so no BookingChangedEvent is published.
+  Admissions Staff process the request in UC-AAD-05
+  (ACCEPTED -> AAD-05 reschedule, or REJECTED).
+  The patient sees the request status in the details (step 6).
+end note
+@enduml

@@ -1,0 +1,219 @@
+@startuml uc-phy-01-class-design
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam classAttributeIconSize 0
+
+title UC-PHY-01: Design Class Diagram (sescam-common, sescam-orders, sescam-server-app)\nC4 sescam-orders v1.0.0
+' Names are the design proposal of UC-PHY-01. Differences with the spec and the analysis diagrams:
+'   - OrderService (module table, PLAN18-11 section 3) instead of OrderEntryService.
+'   - No ConsentAndPrepEngine / SafetyVerificationService / NotificationService in common:
+'     consent comes from the catalogue, safety is a rule inside C4, the hand-off is an event (ADR-014).
+
+package "sescam-common contracts (com.sescam.radiodiagnostics.common.orders)" {
+  interface OrderService {
+    + createOrder(CreateOrderDTO) : OrderResponseDTO
+  }
+
+  interface OrderEventPublisher {
+    + publishOrderCreated(OrderCreatedEvent) : void
+  }
+
+  interface PatientSafetyGateway {
+    + getActiveConstraints(patientId : String) : List<SafetyConstraintDTO>
+  }
+
+  class CreateOrderDTO <<record>> {
+    + patientId : String
+    + examTypeCode : String
+    + clinicalIndication : String
+    + clinicalJustification : String
+    + priority : PriorityLevel
+    + overrideJustification : String
+    + actorId : String
+    + actorRole : String
+  }
+
+  class OrderResponseDTO <<record>> {
+    + orderId : String
+    + orderNumber : String
+    + patientId : String
+    + examTypeCode : String
+    + examTypeName : String
+    + modality : ModalityType
+    + clinicalIndication : String
+    + clinicalJustification : String
+    + priority : PriorityLevel
+    + status : OrderStatus
+    + requiresContrast : boolean
+    + consent : ConsentAndPreparationDTO
+    + overrideApproved : boolean
+    + overrideJustification : String
+    + orderedBy : String
+    + orderedAt : Instant
+    + version : long
+  }
+
+  class ConsentAndPreparationDTO <<record>> {
+    + informedConsentRequired : boolean
+    + consentTemplateId : String
+    + preparationGuide : String
+    + fastingRequired : boolean
+    + contrastRequired : boolean
+  }
+
+  class SafetyConstraintDTO <<record>> {
+    + constraintId : String
+    + type : ConstraintType
+    + absoluteContraindication : boolean
+    + description : String
+  }
+
+  class OrderCreatedEvent <<record>> {
+    + orderId : String
+    + orderNumber : String
+    + patientId : String
+    + examTypeCode : String
+    + priority : PriorityLevel
+    + requiresContrast : boolean
+    + orderedAt : Instant
+  }
+
+  enum PriorityLevel {
+    STAT_URGENT
+    PREFERENTIAL
+    ROUTINE
+  }
+  enum OrderStatus {
+    PENDING_SCHEDULING
+    SCHEDULED
+    IN_PROGRESS
+    EXECUTED_PENDING_REPORT
+    INCOMPLETE_INCIDENT
+    REPORTED
+    CANCELLED
+  }
+  enum ConstraintType {
+    CONTRAST_ALLERGY
+    RENAL_IMPAIRMENT
+    PREGNANCY
+    FERROMAGNETIC_IMPLANT
+  }
+
+  class InvalidOrderDataException <<exception>> {
+    + getInvalidFields() : List<String>
+  }
+  class UnauthorizedOrderAccessException <<exception>>
+  class SafetyAlertException <<exception>> {
+    + getConstraints() : List<SafetyConstraintDTO>
+  }
+}
+
+package "sescam-common catalogue (C2) - NEW, needs C2 owner approval" {
+  interface ExamTypeService {
+    + listActiveExamTypes() : List<ExamTypeDTO>
+    + getActiveExamType(code : String) : ExamTypeDTO
+  }
+  class ExamTypeDTO <<record>> {
+    + code : String
+    + name : String
+    + modality : ModalityType
+    + estimatedDurationMinutes : int
+    + preparationGuide : String
+    + requiresFasting : boolean
+    + requiresContrast : boolean
+    + requiresInformedConsent : boolean
+    + consentTemplateId : String
+    + active : boolean
+  }
+  enum ModalityType {
+    MRI
+    CT
+    X_RAY
+    ULTRASOUND
+    NUCLEAR_MEDICINE
+  }
+  class ExamTypeNotFoundException <<exception>>
+}
+
+package "sescam-common security (C1)" {
+  interface AccessControlService {
+    + canOrderProcedures(actorId, role) : boolean  <<default, NEW>>
+  }
+  interface AuditService {
+    + recordEvent(AuditEventDTO) : void
+  }
+}
+
+package "sescam-orders module (com.sescam.radiodiagnostics.orders) - implemented in the server slice" {
+  class OrderServiceImpl implements OrderService {
+    - orderRepository : OrderRepository
+    - examTypeService : ExamTypeService
+    - patientSafetyGateway : PatientSafetyGateway
+    - accessControlService : AccessControlService
+    - auditService : AuditService
+    - eventPublisher : OrderEventPublisher
+  }
+
+  interface OrderRepository {
+    + save(DiagnosticOrder) : DiagnosticOrder
+    + findById(String) : Optional<DiagnosticOrder>
+  }
+  class InMemoryOrderRepository implements OrderRepository
+
+  class SafetyRules {
+    + incompatibleConstraints(ExamTypeDTO, List<SafetyConstraintDTO>) : List<SafetyConstraintDTO>
+  }
+
+  class NoOpPatientSafetyGateway implements PatientSafetyGateway
+  class NoOpOrderEventPublisher implements OrderEventPublisher
+
+  class DiagnosticOrder <<entity>> {
+    - id : String
+    - orderNumber : String
+    - patientId : String
+    - examTypeCode : String
+    - clinicalIndication : String
+    - clinicalJustification : String
+    - priority : PriorityLevel
+    - status : OrderStatus
+    - requiresContrast : boolean
+    - requiresInformedConsent : boolean
+    - overrideApproved : boolean
+    - overrideJustification : String
+    - orderedBy : String
+    - orderedAt : Instant
+    - version : long
+  }
+}
+
+package "sescam-server-app (com.sescam.radiodiagnostics.server.orders)" {
+  class OrderRestController {
+    + createOrder(payload, actorId, role)
+    + listExamTypes(actorId, role)
+  }
+  class OrderExceptionHandler
+  class OrderWiringConfig
+}
+
+OrderRestController --> OrderService
+OrderRestController --> ExamTypeService
+OrderServiceImpl --> OrderRepository
+OrderServiceImpl --> ExamTypeService
+OrderServiceImpl --> PatientSafetyGateway
+OrderServiceImpl --> AccessControlService
+OrderServiceImpl --> AuditService
+OrderServiceImpl --> OrderEventPublisher
+OrderServiceImpl --> SafetyRules
+OrderServiceImpl ..> DiagnosticOrder : creates
+OrderService ..> CreateOrderDTO
+OrderService ..> OrderResponseDTO
+OrderResponseDTO --> ConsentAndPreparationDTO
+SafetyAlertException --> SafetyConstraintDTO
+
+note bottom of OrderServiceImpl
+  The patient is not read from C6: the id comes from the EHR selection
+  (precondition 2). Whether C4 must check that the patient exists, and with
+  which permission, is an open point (see sequence diagram).
+end note
+@enduml

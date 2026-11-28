@@ -1,0 +1,108 @@
+@startuml uc-phy-01-sequence-design
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+
+title UC-PHY-01: Design Sequence Diagram – Create order, alternatives 4a, 6a and 6b
+
+actor "Physician" as Phy
+participant "client-app\n(see client diagram)" as UI
+participant "OrderRestController\n(server-app)" as RC
+participant "OrderServiceImpl\n(sescam-orders)" as S
+participant "AccessControlService\n(C1)" as AC
+participant "ExamTypeService\n(C2)" as CAT
+participant "PatientSafetyGateway\n(C9 / no-op)" as SG
+participant "OrderRepository\n(sescam-orders)" as R
+participant "AuditService\n(C1)" as AU
+participant "OrderEventPublisher\n(C5 subscribes)" as EV
+
+== 0. Catalogue (steps 1-3) ==
+Phy -> UI : order new procedure for patient
+UI -> RC : GET /api/v1/orders/exam-types\n[X-Actor-Id, X-Actor-Role]
+RC -> CAT : listActiveExamTypes()
+CAT --> RC : List<ExamTypeDTO>
+RC --> UI : 200 OK
+UI --> Phy : render catalogue
+
+== 1. Submit (steps 4-5) ==
+Phy -> UI : examType, indication, justification, priority
+alt 4a. Mandatory data missing [client]
+  UI --> Phy : block submission, highlight fields\n(no request is sent)
+else Form valid
+  UI -> RC : POST /api/v1/orders\n[Body: CreateOrderPayload -> CreateOrderDTO]
+  RC -> S : createOrder(request)
+  S -> AC : canOrderProcedures(actorId, role)
+  alt actorId blank OR not a physician
+    S -> AU : recordEvent(ORDER_ACCESS_DENIED)\n[best effort, actor "UNKNOWN" if blank]
+    S --> RC : throw UnauthorizedOrderAccessException (403)
+  else Authorized
+    S -> S : validate patientId, examTypeCode,\nindication, justification, priority
+    alt Invalid (server-side 4a)
+      S -> AU : recordEvent(ORDER_REJECTED) [best effort]
+      S --> RC : throw InvalidOrderDataException (400)
+    else Valid
+      S -> CAT : getActiveExamType(examTypeCode)
+      alt Unknown or inactive
+        S --> RC : throw ExamTypeNotFoundException (404)
+      else Found
+        CAT --> S : ExamTypeDTO
+
+        note over S, SG : <<include>> Verify Patient Safety Constraints & Contrast Allergies (step 6)
+        S -> SG : getActiveConstraints(patientId)
+        SG --> S : List<SafetyConstraintDTO>
+        S -> S : SafetyRules.incompatibleConstraints(examType, constraints)
+        alt 6b. Incompatible constraint AND overrideJustification blank
+          S -> AU : recordEvent(ORDER_SAFETY_ALERT) [best effort]
+          S --> RC : throw SafetyAlertException(constraints)
+          RC --> UI : 422 Unprocessable [constraints]
+          UI --> Phy : show contraindication alert
+          alt Physician cancels
+            Phy -> UI : cancel
+            UI --> Phy : nothing stored
+          else Physician overrides
+            Phy -> UI : enter justification, resubmit
+            UI -> RC : POST /api/v1/orders [same payload + overrideJustification]
+            note right of S
+              Same call as above: the server repeats the checks
+              (stateless) and now accepts the override.
+            end note
+          end
+        end
+
+        note over S, EV : Persist and hand off (step 7)
+        alt 6a. examType.requiresContrast OR requiresInformedConsent
+          S -> S : consent = ConsentAndPreparationDTO\n(from examType: template, guide, fasting, contrast)
+        end
+        S -> S : build DiagnosticOrder status=PENDING_SCHEDULING,\noverrideApproved, version=1
+        S -> AU : recordEvent(ORDER_CREATED | ORDER_CREATED_CONTRAST_CONSENT |\nORDER_OVERRIDE_APPROVED)
+        note right of AU
+          Audited before saving (NFR-11): if the audit fails,
+          nothing is stored or published, so a retry
+          does not create a duplicate order.
+        end note
+        S -> R : save(DiagnosticOrder)
+        opt save fails
+          S -> AU : recordEvent(ORDER_CREATION_FAILED, same order id) [best effort]
+          S --> RC : storage error (500), nothing published
+        end
+        S -> EV : publishOrderCreated(OrderCreatedEvent)
+        S --> RC : OrderResponseDTO
+        RC --> UI : 201 Created [OrderResponseDTO]
+        UI --> Phy : confirmation with orderNumber (step 8)
+      end
+    end
+  end
+end
+
+note over S, EV
+  Open points (module owners / team):
+  1. Patient existence: PatientService.getPatientById requires canManagePatients,
+     which a physician does not have. Needs a read permission or an exists() in C6.
+  2. Override of an ABSOLUTE contraindication: allowed here (always justified and
+     audited); confirm with clinical stakeholders.
+  3. ExamTypeService is new in C2 (approval of the C2 owner).
+  Audit rule: refusals (denied, rejected, safety alert) are audited best effort so a
+  failing audit store never hides the 403/400/422; the audit of a stored order is
+  mandatory and its failure fails the request (NFR-11).
+  Client side of this flow: uc-phy-01-sequence-design-client.puml
+end note
+@enduml

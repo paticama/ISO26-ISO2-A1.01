@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.sescam.radiodiagnostics</groupId>
         <artifactId>sescam-parent</artifactId>
-        <version>0.1.0</version>
+        <version>0.2.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -43,9 +43,33 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
+            <artifactId>sescam-orders</artifactId>
+            <!-- module version (ADR-016), not the build version managed in the parent -->
+            <version>1.0.3</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>sescam-diagnostics</artifactId>
+            <!-- module version (ADR-016), not the build version managed in the parent -->
+            <version>1.1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
             <artifactId>sescam-patients</artifactId>
             <!-- module version (ADR-016), not the build version managed in the parent -->
             <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>sescam-schedules</artifactId>
+            <!-- module version (ADR-016), not the build version managed in the parent -->
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>sescam-admissions</artifactId>
+            <!-- module version (ADR-016), not the build version managed in the parent -->
+            <version>1.1.0</version>
         </dependency>
     </dependencies>
 

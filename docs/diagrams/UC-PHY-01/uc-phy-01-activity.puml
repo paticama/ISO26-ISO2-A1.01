@@ -1,0 +1,68 @@
+@startuml uc-phy-01-activity
+title UC-PHY-01 – Activity diagram (main flow + 4a, 6a, 6b)\nC4 sescam-orders v1.0.0
+skinparam shadowing false
+
+|Physician (client)|
+start
+note right
+  Preconditions: physician authenticated (SSO);
+  patient registered and selected from the EHR.
+end note
+:1. Select "order new diagnostic procedure"\nfor an assigned patient;
+
+|Server|
+:2. Retrieve active catalogue of examination types\n(modality, duration, preparation, contrast,\nconsent, safety constraints);
+
+|Physician (client)|
+:3. Render catalogue; select examination type;
+repeat
+  :4. Enter clinical indication, clinical justification\nand priority (Urgent/Stat, Preferential, Routine);
+  :5. Validate form;
+repeat while (4a. Indication, justification or\npriority missing?) is (yes: block submission,\nhighlight missing fields)
+->no;
+:5. Submit prescription (CreateOrderDTO);
+
+|Server|
+if (Actor is a physician?) then (no)
+  :Audit ORDER_ACCESS_DENIED;
+  |Physician (client)|
+  :Show "not authorized";
+  stop
+else (yes)
+endif
+|Server|
+:Validate mandatory data again\n(server side of 4a);
+:6. <<include>> Verify Patient Safety Constraints\n& Contrast Allergies against the EHR profile;
+if (6b. Constraint incompatible with\nthe examination?) then (yes)
+  if (Override justification given?) then (no)
+    :Audit ORDER_SAFETY_ALERT;\nnothing is stored;
+    |Physician (client)|
+    :6b. Show contraindication alert;
+    if (Physician decision) then (cancel)
+      :Discard order;
+      stop
+    else (override)
+      :Enter clinical override justification;
+      :Resubmit same order with justification;
+      note right: back to step 5 (server repeats every check)
+      stop
+    endif
+  else (yes)
+    |Server|
+    :Accept override\n(recorded and audited);
+  endif
+else (no)
+endif
+|Server|
+if (6a. Contrast or informed consent required?) then (yes)
+  :Attach informed consent document\nand preparation guidelines;
+else (no)
+endif
+:7. Persist order with status PENDING_SCHEDULING;
+:Audit entry (ORDER_CREATED / ..._CONTRAST_CONSENT_REQUIRED /\nORDER_OVERRIDE_APPROVED);
+:Publish OrderCreated for Admissions worklist;
+
+|Physician (client)|
+:8. Show confirmation with tracking number\n(and consent/preparation if attached);
+stop
+@enduml

@@ -59,12 +59,12 @@
   - **Audit:** confirmed changes (`INTEGRATION_CONFIGURATION_UPDATED`), rejected changes (`INTEGRATION_CONFIGURATION_REJECTED`), connection retries (`INTEGRATION_CONNECTION_CHECKED`) and denied attempts (`INTEGRATION_ACCESS_DENIED`) are recorded in the C1 audit trail, without secrets.
 
 ## Acceptance Criteria
-- [ ] Authorized administrators can view configured integrations and their status.
-- [ ] Supported connection settings can be updated by authorized administrators.
-- [ ] Invalid settings and failed connection checks are reported without silently replacing working settings.
-- [ ] Credentials are protected in display, storage, and diagnostics.
-- [ ] Connection failures are visible and distinguishable from successful operation.
-- [ ] Successful changes are confirmed and attributable for audit.
+- [x] Authorized administrators can view configured integrations and their status.
+- [x] Supported connection settings can be updated by authorized administrators.
+- [x] Invalid settings and failed connection checks are reported without silently replacing working settings.
+- [x] Credentials are protected in display, storage, and diagnostics.
+- [x] Connection failures are visible and distinguishable from successful operation.
+- [x] Successful changes are confirmed and attributable for audit.
 
 ## Decisions (DECISIONS.md)
 - See [DECISIONS.md](../../DECISIONS.md).

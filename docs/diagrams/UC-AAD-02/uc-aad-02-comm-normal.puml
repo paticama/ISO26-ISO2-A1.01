@@ -1,0 +1,33 @@
+@startuml uc-aad-02-comm-normal
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+
+title UC-AAD-02: Manage Schedules (C3 v1.0.0)\nCommunication Diagram - Main Success Scenario (open / update)
+
+actor ":AdmissionsStaff" as adm
+boundary ":ScheduleView" as ui
+control ":ScheduleRestController" as ctrl
+control ":ScheduleServiceImpl" as srv
+control ":ScheduleAccessPolicy" as policy
+control ":ScheduleRules" as rules
+control ":PolicyService (C2)" as c2
+database ":ScheduleRepository" as repo
+entity ":Schedule" as sch
+control ":AuditService (C1)" as c1
+control ":ScheduleEventPublisher (C5)" as c5
+
+adm -- ui : 1: selectDateResourceOrLocation() >\n3: editSchedule(window, resource, location, capacity) >\n4: confirm(open | update) >\n< 14: displayAvailabilityAndReschedulingActions()
+
+ui -- ctrl : 2: GET /api/v1/schedules?date&resourceId&locationId >\n5: POST /api/v1/schedules | PUT /api/v1/schedules/{id} >\n< 13: 201 / 200 ScheduleChangeResultDTO
+
+ctrl -- srv : 2.1: searchSchedules(criteria) >\n5.1: openSchedule(req) | updateSchedule(req) >\n< 12: ScheduleChangeResultDTO
+
+srv -- policy : 2.2 / 5.2: canViewSchedules() / canOperateSchedules() >
+srv -- rules : 6: validateIdentity(), validateWindow(start, end, slot, capacity) >
+rules -- c2 : 6.1: getIntPolicy("schedules.max-capacity-per-slot") >
+srv -- repo : 2.3: search(criteria) >\n7: findByResource(resourceId) [overlap check] >\n9.1: save(schedule) >
+srv -- sch : 8: appointmentsAffectedBy(window, slot, capacity) = [] >\n9: new Schedule(...) | update(...) >
+srv -- c1 : 10: recordEvent(SCHEDULE_OPENED | SCHEDULE_UPDATED) >
+srv -- c5 : 11: publish(ScheduleChangedEvent) >
+@enduml
