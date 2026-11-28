@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.sescam.radiodiagnostics</groupId>
         <artifactId>sescam-parent</artifactId>
-        <version>0.1.0-SNAPSHOT</version>
+        <version>0.3.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -21,7 +21,7 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>sescam-common</artifactId>
             <!-- build version: the parent manages it as ${project.version}, which here would be 1.1.0 -->
-            <version>0.1.0-SNAPSHOT</version>
+            <version>0.3.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
 </project>
