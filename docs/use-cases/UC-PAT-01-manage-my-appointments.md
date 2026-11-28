@@ -45,10 +45,10 @@
 
 ## RADIT Disciplines
 - [x] Requirements: Specify appointment consultation, preparation instructions, confirmation, rescheduling request, and cancellation workflow.
-- [ ] Analysis: Define the boundary between the patient views and `sescam-admissions` (bookings).
-- [ ] Design: Define appointment DTOs, request state machine (`Pending Review`, `Accepted`, `Rejected`), and service interfaces.
-- [ ] Implementation: Implement the patient appointment service and portal views.
-- [ ] Testing: Unit and integration tests for ownership, policy windows, state transitions, and request routing.
+- [x] Analysis: [analysis class diagram](../diagrams/UC-PAT-01/uc-pat-01-class-analysis.puml) (boundary between the patient views and the bookings of `sescam-admissions`) and communication diagrams ([normal](../diagrams/UC-PAT-01/uc-pat-01-comm-normal.puml), [A1](../diagrams/UC-PAT-01/uc-pat-01-comm-alt-a1.puml), [A2](../diagrams/UC-PAT-01/uc-pat-01-comm-alt-a2.puml), [A3](../diagrams/UC-PAT-01/uc-pat-01-comm-alt-a3.puml), [A4](../diagrams/UC-PAT-01/uc-pat-01-comm-alt-a4.puml), [A5](../diagrams/UC-PAT-01/uc-pat-01-comm-alt-a5.puml), [A6](../diagrams/UC-PAT-01/uc-pat-01-comm-alt-a6.puml), [A7](../diagrams/UC-PAT-01/uc-pat-01-comm-alt-a7.puml), [A8](../diagrams/UC-PAT-01/uc-pat-01-comm-alt-a8.puml)).
+- [x] Design: `PatientAppointmentService`, DTOs and the request states (`PENDING_REVIEW`, `ACCEPTED`, `REJECTED`) in `sescam-common` (`common.admissions`); server [design class diagram](../diagrams/UC-PAT-01/uc-pat-01-class-design.puml) and [sequence diagram](../diagrams/UC-PAT-01/uc-pat-01-sequence-design.puml); client [design class diagram](../diagrams/UC-PAT-01/uc-pat-01-class-design-client.puml) and [sequence diagram](../diagrams/UC-PAT-01/uc-pat-01-sequence-design-client.puml).
+- [x] Implementation: server slice (`sescam-admissions` 1.1.0: `PatientAppointmentServiceImpl`, `AppointmentRules`, `RescheduleRequest`; `PatientAppointmentRestController` in `sescam-server-app`) and client slice (`PatientAppointmentViewController`, `PatientAppointmentForm`, `PatientAppointmentApiClient`, `appointments/index.html`, `appointments/detail.html` in `sescam-client-app`). Stand-ins: orders in memory (`InMemoryPendingOrderGateway`, until C4 is connected), `DefaultBookingPolicyGateway` (C2) and `NoOpBookingNotificationGateway` (C8). Admissions cannot accept or reject a rescheduling request yet.
+- [x] Testing: JUnit 5 + Mockito. `sescam-admissions` 39 tests (repositories, policy rules, service per flow A1-A8), `sescam-server-app` `PatientAppointmentRestControllerTest` 2, `sescam-client-app` 15 (form, REST client, view controller), `sescam-common` 11 (contracts, role check). JaCoCo ≥ 80% in the four modules.
 
 ## Contracts and Interfaces
 - `Client:` Patient portal (web and mobile) for appointment list, details, instructions, and actions.
@@ -61,12 +61,12 @@
 - `Errors:` `APPOINTMENT_NOT_FOUND`, `ACCESS_DENIED`, `INVALID_APPOINTMENT_STATE`, `ACTION_OUTSIDE_POLICY_WINDOW`, and `DUPLICATE_PENDING_REQUEST` are returned explicitly; no error is treated as success.
 
 ## Acceptance Criteria
-- [ ] The patient sees only their own appointments; any attempt to access another patient's appointment is denied and audited.
-- [ ] Each appointment shows date, time, examination type, location, and status; its details include the preparation instructions of the examination type.
-- [ ] A confirmation changes the status to `Confirmed` and is audited.
-- [ ] A rescheduling request never modifies the appointment until Admissions processes it, and its status is visible to the patient.
-- [ ] A cancellation requires explicit confirmation, releases the slot, and informs Admissions and the patient.
-- [ ] Actions outside the policy window, or on executed or cancelled appointments, are rejected.
+- [x] The patient sees only their own appointments; any attempt to access another patient's appointment is denied and audited.
+- [x] Each appointment shows date, time, examination type, location, and status; its details include the preparation instructions of the examination type.
+- [x] A confirmation changes the status to `Confirmed` and is audited.
+- [x] A rescheduling request never modifies the appointment until Admissions processes it, and its status is visible to the patient.
+- [ ] A cancellation requires explicit confirmation, releases the slot, and informs Admissions and the patient. *Done: explicit confirmation, slot released, order back to pending and worklist updated. The patient is not informed yet: the notice goes to `NoOpBookingNotificationGateway` until C8 (PAT-03).*
+- [x] Actions outside the policy window, or on executed or cancelled appointments, are rejected.
 
 ## Decisions (DECISIONS.md)
 - See [DECISIONS.md](../../DECISIONS.md).
